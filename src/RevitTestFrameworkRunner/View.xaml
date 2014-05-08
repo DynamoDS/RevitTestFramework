@@ -127,17 +127,9 @@
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged">
-            <!--<TreeView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="{Binding RunText}" 
-                              Command="{Binding RunCommand}"
-                              CommandParameter="{Binding SelectedItem}">
-                    </MenuItem>
-                </ContextMenu>
-            </TreeView.ContextMenu>-->
         </TreeView>
-    
-        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" Content="{Binding RunText}" Command="{Binding RunCommand}"></Button>
+
+        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" Content="{Binding RunText}" Command="{Binding RunCommand}" CommandParameter="{Binding SelectedItem}"></Button>
     </Grid>
 
 </Window>

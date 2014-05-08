@@ -183,6 +183,12 @@ namespace RevitTestFrameworkRunner
 
         private void Run(object parameter)
         {
+            if (string.IsNullOrEmpty(Program._results))
+            {
+                MessageBox.Show("Please select an output path for the results.");
+                return;
+            }
+
             if (File.Exists(Program._results) && !Program._concat)
             {
                 File.Delete(Program._results);

@@ -337,16 +337,14 @@ namespace RevitTestFrameworkRunner
 
         private static bool ReadTest(MethodInfo test, IFixtureData data)
         {
-            var testModelAttribs =  test.GetCustomAttributes(typeof(TestModelAttribute), false);
-            //if (!testModelAttribs.Any())
-            //{
-            //    //Console.WriteLine("The specified test does not have the required TestModelAttribute.");
-            //    return false;
-            //}
+            //set the default modelPath to the empty.rfa file that will live in the build directory
+            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
 
-            string modelPath = "";
+            var testModelAttribs = test.GetCustomAttributes(typeof(TestModelAttribute), false);
             if (testModelAttribs.Any())
             {
+                //overwrite the model path with the one
+                //specified in the test model attribute
                 modelPath = Path.GetFullPath(Path.Combine(_workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
             }
 
@@ -551,6 +549,11 @@ namespace RevitTestFrameworkRunner
 
         private static resultType LoadResults(string resultsPath)
         {
+            if (!File.Exists(resultsPath))
+            {
+                return null;
+            }
+
             resultType results = null;
 
             //write to the file
