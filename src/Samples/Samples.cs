@@ -6,7 +6,7 @@ using RevitServices.Persistence;
 namespace Samples
 {
     [TestFixture]
-    public class TestExamples
+    public class FixtureOne
     {
         [Test]
         public void TestOne()
@@ -51,7 +51,7 @@ namespace Samples
     }
 
     [TestFixture]
-    public class TestExampleFixture
+    public class FixtureTwo
     {
         [Test]
         public void TestA()
