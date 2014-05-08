@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Data;
 using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
@@ -20,8 +17,7 @@ namespace RevitTestFrameworkRunner
     {
         private ObservableCollection<IAssemblyData> _assemblies;
         private ObservableCollection<RevitProduct> _products;
- 
-        private string _runText = string.Empty;
+
         private object _selectedItem;
         private int _selectedProductIndex;
 
@@ -65,24 +61,23 @@ namespace RevitTestFrameworkRunner
             {
                 if (SelectedItem is IAssemblyData)
                 {
-                    return "Run all tests in assembly.";
+                    return "Run All Tests in Selected Assembly.";
                 }
                 
                 if (SelectedItem is IFixtureData)
                 {
-                    return "Run all tests in fixture.";
+                    return "Run All Tests in Selected Fixture";
                 }
                  
                 if(SelectedItem is ITestData)
                 {
-                    return "Run test.";
+                    return "Run Selected Test";
                 }
 
-                return "Nothing selected.";
+                return "Nothing Selected";
             }
             set
             {
-                _runText = value;
                 RaisePropertyChanged("RunText");
             }
         }

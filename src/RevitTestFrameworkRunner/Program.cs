@@ -338,13 +338,17 @@ namespace RevitTestFrameworkRunner
         private static bool ReadTest(MethodInfo test, IFixtureData data)
         {
             var testModelAttribs =  test.GetCustomAttributes(typeof(TestModelAttribute), false);
-            if (!testModelAttribs.Any())
+            //if (!testModelAttribs.Any())
+            //{
+            //    //Console.WriteLine("The specified test does not have the required TestModelAttribute.");
+            //    return false;
+            //}
+
+            string modelPath = "";
+            if (testModelAttribs.Any())
             {
-                //Console.WriteLine("The specified test does not have the required TestModelAttribute.");
-                return false;
+                modelPath = Path.GetFullPath(Path.Combine(_workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
             }
-            
-            var modelPath = Path.GetFullPath(Path.Combine(_workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
 
             var runDynamoAttribs = test.GetCustomAttributes(typeof(RunDynamoAttribute),false);
             var runDynamo = false;

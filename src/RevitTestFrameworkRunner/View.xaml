@@ -58,7 +58,8 @@
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
-            </Grid.RowDefinitions>
+                <RowDefinition Height="40"></RowDefinition>
+        </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
                 <ColumnDefinition Width="80"></ColumnDefinition>
@@ -89,12 +90,22 @@
                     <TextBlock Text="{Binding Name}"></TextBlock>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
+            <ComboBox.ToolTip>
+                <TextBlock Text="Select an installed version of Revit on which you would like to run the tests."></TextBlock>
+            </ComboBox.ToolTip>
         </ComboBox>
         
         <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Margin="5">
             <CheckBox Content="Debug" IsChecked="{Binding IsDebug, Mode=TwoWay}"></CheckBox>
-            <TextBlock Margin="20,0,0,0" Text="Timeout"></TextBlock>
+            <TextBlock Margin="20,0,0,0" Text="Timeout">
+               <TextBlock.ToolTip>
+                   <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
+               </TextBlock.ToolTip>
+            </TextBlock>
             <TextBox Width ="100" Margin="5,0,0,0" Text="{Binding Timeout, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}"></TextBox>
+            <StackPanel.ToolTip>
+                <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
+            </StackPanel.ToolTip>
         </StackPanel>
         
         <TreeView Margin="5" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
@@ -104,15 +115,17 @@
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged">
-            <TreeView.ContextMenu>
+            <!--<TreeView.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="{Binding RunText}" 
                               Command="{Binding RunCommand}"
                               CommandParameter="{Binding SelectedItem}">
                     </MenuItem>
                 </ContextMenu>
-            </TreeView.ContextMenu>
+            </TreeView.ContextMenu>-->
         </TreeView>
+    
+        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" Content="{Binding RunText}" Command="{Binding RunCommand}"></Button>
     </Grid>
 
 </Window>
