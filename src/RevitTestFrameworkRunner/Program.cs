@@ -602,6 +602,20 @@ namespace RevitTestFrameworkRunner
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
 
+        public string ShortModelPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ModelPath))
+                {
+                    return string.Empty;
+                }
+
+                var info = new FileInfo(ModelPath);
+                return string.Format("[{0}]",info.Name);
+            }
+        }
+
         public TestStatus TestStatus
         {
             get { return _testStatus; }

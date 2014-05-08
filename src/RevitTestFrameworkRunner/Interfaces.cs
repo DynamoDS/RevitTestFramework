@@ -26,6 +26,7 @@ namespace RevitTestFrameworkRunner
         string Name { get; set; }
         bool RunDynamo { get; set; }
         string ModelPath { get; set; }
+        string ShortModelPath { get; }
         TestStatus TestStatus { get; set; }
         ObservableCollection<IResultData> ResultData { get; set; }
     }

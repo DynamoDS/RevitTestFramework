@@ -26,8 +26,10 @@
                                   ItemsSource="{Binding ResultData}"
                                   ItemTemplate="{StaticResource ResultTemplate}">
             <StackPanel Orientation="Vertical">
-                <TextBlock Text="{Binding Name}" HorizontalAlignment="Left" Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}"></TextBlock>
-                <!--<TextBlock Text="{Binding ModelPath}" HorizontalAlignment="Left"></TextBlock>-->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}" HorizontalAlignment="Left" Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}"></TextBlock>
+                    <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" Foreground="DarkGray"></TextBlock>
+                </StackPanel>
             </StackPanel>
         </HierarchicalDataTemplate>
         
