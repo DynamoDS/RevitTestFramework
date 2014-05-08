@@ -59,28 +59,40 @@
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
                 <RowDefinition Height="40"></RowDefinition>
-        </Grid.RowDefinitions>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="80"></ColumnDefinition>
+                <ColumnDefinition Width="40"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             
-        <Button Margin="5"  Grid.Column="1" Grid.Row="0" Content="..." Command="{Binding SetAssemblyPathCommand}"></Button>
-        <Button Margin="5" Grid.Column="1" Grid.Row="1" Content="..." Command="{Binding SetResultsPathCommand}"></Button>
-        <Button Margin="5" Grid.Column="1" Grid.Row="2" Content="..." Command="{Binding SetWorkingPathCommand}"></Button>
+        <Button Margin="5"  Grid.Column="1" Grid.Row="0" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetAssemblyPathCommand}"></Button>
+        <Button Margin="5" Grid.Column="1" Grid.Row="1" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetResultsPathCommand}"></Button>
+        <Button Margin="5" Grid.Column="1" Grid.Row="2" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetWorkingPathCommand}"></Button>
 
         <StackPanel Margin="5" Grid.Row="0" Grid.Column="0" >
-            <TextBlock Text="Test Assembly:"></TextBlock>
+            <TextBlock Text="Test Assembly:">
+                <TextBlock.ToolTip>
+                    <TextBlock Text="The path of the assembly (.dll, .exe) which contains test fixtures."></TextBlock>
+                </TextBlock.ToolTip>
+            </TextBlock>
             <TextBox Text="{Binding AssemblyPath, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" ></TextBox>
         </StackPanel>
 
         <StackPanel Margin="5" Grid.Row="1" Grid.Column="0">
-            <TextBlock Text="Results File Path:"></TextBlock>
+            <TextBlock Text="Results File Path:">
+                <TextBlock.ToolTip>
+                    <TextBlock Text="The path of the results file."></TextBlock>
+                </TextBlock.ToolTip>
+            </TextBlock>
             <TextBox  Text="{Binding ResultsPath, Converter={StaticResource ResultsPathConverter}, Mode=TwoWay}"></TextBox>
         </StackPanel>
 
         <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" >
-            <TextBlock Text="Working Directory (Location of empty.rfa):"></TextBlock>
+            <TextBlock Text="Working Directory (Location of empty.rfa):">
+                <TextBlock.ToolTip>
+                    <TextBlock Text="The directory where the RTF addin file is located and relative to which all test models will be sourced."></TextBlock>
+                </TextBlock.ToolTip>
+            </TextBlock>
             <TextBox Text="{Binding WorkingPath, Converter={StaticResource WorkingPathConverter}, Mode=TwoWay}"></TextBox>
         </StackPanel>
         
