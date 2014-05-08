@@ -1,9 +1,9 @@
 ﻿using System;
-using NUnit.Framework;
 using Autodesk.Revit.DB;
+using NUnit.Framework;
 using RevitServices.Persistence;
 
-namespace Dynamo.Tests
+namespace Samples
 {
     [TestFixture]
     public class TestExamples
