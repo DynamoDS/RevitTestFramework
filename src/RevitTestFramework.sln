@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFramework", "RevitTestFramework\RevitTestFramework.csproj", "{745CCA0F-549E-4756-A31E-41BF7F905B8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkRunner", "RevitTestFrameworkRunner\RevitTestFrameworkRunner.csproj", "{D21140F7-D29A-4265-A679-BA76770B7257}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
