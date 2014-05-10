@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Dynamo.Tests;
@@ -10,6 +11,18 @@ namespace Samples
     [TestFixture]
     public class FixtureOne
     {
+        [SetUp]
+        public void Setup()
+        {
+            //startup logic executed before every test
+        }
+
+        [TearDown]
+        public void Shutdown()
+        {
+            //shutdown logic executed after every test
+        }
+
         [Test]
         public void CanCreateAReferencePoint()
         {
@@ -57,6 +70,33 @@ namespace Samples
         {
             //this will pass.
             Assert.AreEqual(0,0);
-        } 
+        }
+
+        [Test, TestCaseSource("SetupManyTests")]
+        public void RunManyTests(string dynamoFilePath, string revitFilePath)
+        {
+            SwapCurrentModel(revitFilePath);
+
+            //test on this model
+        }
+
+        private static List<object[]> SetupManyTests()
+        {
+            var testParams = new List<object[]>();
+
+            //fill this list with arrays like [<dynamoFilePath>,<revitFilePath>]
+
+            return testParams;
+        }
+
+        /// <summary>
+        /// Opens and activates a new model, and closes the old model.
+        /// </summary>
+        private void SwapCurrentModel(string modelPath)
+        {
+            Document initialDoc = DocumentManager.Instance.CurrentUIDocument.Document;
+            DocumentManager.Instance.CurrentUIApplication.OpenAndActivateDocument(modelPath);
+            initialDoc.Close(false);
+        }
     }
 }
