@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using Autodesk.Revit.DB;
+using Dynamo.Tests;
 using NUnit.Framework;
 using RevitServices.Persistence;
 
@@ -9,7 +11,7 @@ namespace Samples
     public class FixtureOne
     {
         [Test]
-        public void TestOne()
+        public void CanCreateAReferencePoint()
         {
             using (var t = new Transaction(DocumentManager.Instance.CurrentDBDocument))
             {
@@ -37,9 +39,17 @@ namespace Samples
         }
 
         [Test]
-        public void TestTwo()
+        [TestModel(@"./bricks.rfa")]
+        public void ModelHasTheCorrectNumberOfBricks()
         {
-            Assert.Inconclusive("This is inconclusive.");
+            var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
+            fec.OfClass(typeof(FamilyInstance));
+
+            var bricks = fec.ToElements()
+                .Cast<FamilyInstance>()
+                .Where(fi => fi.Symbol.Family.Name == "brick");
+
+            Assert.AreEqual(bricks.Count(), 4);
         }
 
         [Test]
@@ -48,27 +58,5 @@ namespace Samples
             //this will pass.
             Assert.AreEqual(0,0);
         } 
-    }
-
-    [TestFixture]
-    public class FixtureTwo
-    {
-        [Test]
-        public void TestA()
-        {
-            Assert.Fail("This test fails");
-        }
-
-        [Test]
-        public void TestB()
-        {
-            Assert.AreEqual(0, 0);
-        }
-
-        [Test]
-        public void TestC()
-        {
-            Assert.Inconclusive("This is inconclusive");
-        }
     }
 }
