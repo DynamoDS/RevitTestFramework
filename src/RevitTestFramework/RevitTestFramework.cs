@@ -97,6 +97,8 @@ namespace Dynamo.Tests
                     Debugger.Launch();
                 }
 
+                DocumentManager.Instance.CurrentUIDocument = revit.Application.ActiveUIDocument;
+
                 var fixtureResult = RunTests(canReadData);
 
                 CalculateCaseTotalsOnSuite(fixtureResult);
