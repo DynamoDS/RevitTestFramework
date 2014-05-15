@@ -383,6 +383,30 @@ namespace RevitTestFrameworkRunner
             }
         }
 
+        internal static void CreateAddin(string addinPath, string assemblyPath)
+        {
+            using (var tw = new StreamWriter(addinPath, false))
+            {
+                var addin = string.Format(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
+                    "<RevitAddIns>\n" +
+                    "<AddIn Type=\"Command\">\n" +
+                    "<Name>Dynamo Test Framework</Name>\n" +
+                    "<Assembly>\"{0}\"</Assembly>\n" +
+                    "<AddInId>487f9ff0-5b34-4e7e-97bf-70fbff69194f</AddInId>\n" +
+                    "<FullClassName>Dynamo.Tests.RevitTestFramework</FullClassName>\n" +
+                    "<VendorId>ADSK</VendorId>\n" +
+                    "<VendorDescription>Autodesk</VendorDescription>\n" +
+                    "</AddIn>\n" +
+                    "</RevitAddIns>",
+                    assemblyPath
+                    );
+
+                tw.Write(addin);
+                tw.Flush();
+            }
+        }
+
         public static void Refresh(ViewModel vm)
         {
             vm.Assemblies.Clear();
@@ -407,19 +431,18 @@ namespace RevitTestFrameworkRunner
 
         public static void RunTest(ITestData td)
         {
-            var path = Path.Combine(_workingDirectory, td.Name + ".txt");
-
-            CreateJournal(path, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, _results, td.ModelPath);
+            var journalPath = Path.Combine(_workingDirectory, td.Name + ".txt");
+            CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, _results, td.ModelPath);
 
             var startInfo = new ProcessStartInfo()
             {
                 FileName = _revitPath,
                 WorkingDirectory = _workingDirectory,
-                Arguments = path,
+                Arguments = journalPath,
                 UseShellExecute = false
             };
 
-            Console.WriteLine("Running {0}", path);
+            Console.WriteLine("Running {0}", journalPath);
             var process = new Process { StartInfo = startInfo };
             process.Start();
 
@@ -433,7 +456,6 @@ namespace RevitTestFrameworkRunner
             {
                 var time = 0;
                 while(!process.WaitForExit(1000))
-                //if (!process.WaitForExit(_timeout))
                 {
                     Console.Write(".");
                     time += 1000;
@@ -539,6 +561,12 @@ namespace RevitTestFrameworkRunner
                 foreach (var journal in journals)
                 {
                     File.Delete(journal);
+                }
+
+                var addinPath = Path.Combine(_workingDirectory, "RevitTestFramework.addin");
+                if (File.Exists(addinPath))
+                {
+                    File.Delete(addinPath);
                 }
             }
             catch (IOException ex)
