@@ -1,23 +1,24 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows.Controls.Primitives;
 
 namespace RevitTestFrameworkRunner
 {
     public enum TestStatus{None,Cancelled, Error, Failure, Ignored, Inconclusive, NotRunnable, Skipped, Success,TimedOut}
+    public enum FixtureStatus{None, Success, Failure, Mixed}
 
     public interface IAssemblyData
     {
         string Path { get; set; }
         string Name { get; set; }
-        IList<IFixtureData> Fixtures { get; set; } 
+        ObservableCollection<IFixtureData> Fixtures { get; set; } 
     }
 
     public interface IFixtureData
     {
         IAssemblyData Assembly { get; set; }
         string Name { get; set; }
-        IList<ITestData> Tests { get; set; } 
+        ObservableCollection<ITestData> Tests { get; set; } 
+        FixtureStatus FixtureStatus { get; set; }
     }
 
     public interface ITestData

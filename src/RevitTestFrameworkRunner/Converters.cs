@@ -107,6 +107,34 @@ namespace RevitTestFrameworkRunner
         }
     }
 
+    public class FixtureStatusToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType,
+            object parameter, CultureInfo culture)
+        {
+            var status = (FixtureStatus)value;
+            switch (status)
+            {
+                case FixtureStatus.None:
+                    return Brushes.Transparent;
+                case FixtureStatus.Mixed:
+                    return new SolidColorBrush(Colors.Orange);
+                case FixtureStatus.Failure:
+                    return new SolidColorBrush(Colors.OrangeRed);
+                case FixtureStatus.Success:
+                    return new SolidColorBrush(Colors.GreenYellow);
+                default:
+                    return Brushes.Transparent;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType,
+            object parameter, CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
     public class EmptyStringToCollapsedConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

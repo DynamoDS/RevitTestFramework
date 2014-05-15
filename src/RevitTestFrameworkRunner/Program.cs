@@ -14,6 +14,7 @@ using Dynamo.Utilities;
 using Microsoft.Practices.Prism.ViewModel;
 using NDesk.Options;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace RevitTestFrameworkRunner
 {
@@ -599,26 +600,94 @@ namespace RevitTestFrameworkRunner
     {
         public string Path { get; set; }
         public string Name { get; set; }
-        public IList<IFixtureData> Fixtures { get; set; }
+        public ObservableCollection<IFixtureData> Fixtures { get; set; }
 
         public AssemblyData(string path, string name)
         {
-            Fixtures = new List<IFixtureData>();
+            Fixtures = new ObservableCollection<IFixtureData>();
             Path = path;
             Name = name;
         }
     }
 
-    internal class FixtureData : IFixtureData
+    internal class FixtureData : NotificationObject, IFixtureData
     {
         public string Name { get; set; }
-        public IList<ITestData> Tests { get; set; }
+        public ObservableCollection<ITestData> Tests { get; set; }
+        public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
+
+        public string FixtureSummary
+        {
+            get
+            {
+                var successCount = Tests.Count(x => x.TestStatus == TestStatus.Success);
+                var failCount = Tests.Count(x => x.TestStatus == TestStatus.Failure);
+                var otherCount = Tests.Count - successCount - failCount;
+                return string.Format("[Total: {0}, Success: {1}, Failure: {2}, Other: {3}]", Tests.Count, successCount, failCount, otherCount);
+            }
+        }
+
         public FixtureData(IAssemblyData assembly, string name)
         {
             Assembly = assembly;
-            Tests = new List<ITestData>();
+            Tests = new ObservableCollection<ITestData>();
             Name = name;
+            FixtureStatus = FixtureStatus.None;
+
+            Tests.CollectionChanged += Tests_CollectionChanged;
+        }
+
+        void Tests_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var item in e.NewItems)
+                    {
+                        var td = item as TestData;
+                        td.PropertyChanged += td_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var item in e.OldItems)
+                    {
+                        var td = item as TestData;
+                        td.PropertyChanged -= td_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    foreach (var item in e.OldItems)
+                    {
+                        var td = item as TestData;
+                        td.PropertyChanged -= td_PropertyChanged;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "TestStatus")
+            {
+                if (Tests.All(t => t.TestStatus == TestStatus.Success))
+                {
+                    FixtureStatus = FixtureStatus.Success;   
+                }
+                else if (Tests.Any(t => t.TestStatus == TestStatus.Failure))
+                {
+                    FixtureStatus = FixtureStatus.Failure;
+                }
+                else
+                {
+                    FixtureStatus = FixtureStatus.Mixed;
+                }
+
+                RaisePropertyChanged("FixtureStatus");
+                RaisePropertyChanged("FixtureSummary");
+            }
         }
     }
 
