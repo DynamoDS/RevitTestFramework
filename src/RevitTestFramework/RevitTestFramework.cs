@@ -231,30 +231,6 @@ namespace Dynamo.Tests
             }
         }
 
-        //private void StartDynamo()
-        //{
-        //    var fecLevel = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
-        //    fecLevel.OfClass(typeof(Level));
-
-        //    DocumentManager.Instance.CurrentUIApplication = DocumentManager.Instance.CurrentUIApplication;
-        //    //DocumentManager.Instance.CurrentUIDocument = DocumentManager.Instance.CurrentUIDocument;
-        //    dynRevitSettings.DefaultLevel = null;
-
-        //    BaseUnit.HostApplicationInternalAreaUnit = DynamoAreaUnit.SquareFoot;
-        //    BaseUnit.HostApplicationInternalLengthUnit = DynamoLengthUnit.DecimalFoot;
-        //    BaseUnit.HostApplicationInternalVolumeUnit = DynamoVolumeUnit.CubicFoot;
-
-        //    //create dynamo
-        //    var r = new Regex(@"\b(Autodesk |Structure |MEP |Architecture )\b");
-        //    string context = r.Replace(DocumentManager.Instance.CurrentUIApplication.Application.VersionName, "");
-
-        //    // create the transaction manager object
-        //    TransactionManager.SetupManager(new AutomaticTransactionStrategy());
-
-        //    var dynamoController = new DynamoController_Revit(DynamoRevit.Updater, typeof(DynamoRevitViewModel), context);
-        //    DynamoController.IsTestMode = true;
-        //}
-
         private void CalculateTotalsOnResultsRoot(resultType result)
         {
             var resultItems = result.testsuite.results.Items.ToList();
