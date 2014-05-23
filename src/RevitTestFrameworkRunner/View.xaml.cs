@@ -13,9 +13,8 @@ namespace RevitTestFrameworkRunner
             InitializeComponent();
             DataContext = vm;
 
-            this.Closing += View_Closing;
-
-            this.Loaded += View_Loaded;
+            Closing += View_Closing;
+            Loaded += View_Loaded;
         }
 
         void View_Loaded(object sender, RoutedEventArgs e)

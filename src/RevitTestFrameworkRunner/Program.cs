@@ -1,52 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Serialization;
-using Autodesk.RevitAddIns;
-using Dynamo.NUnit.Tests;
-using Dynamo.Tests;
 using Dynamo.Utilities;
-using Microsoft.Practices.Prism.ViewModel;
-using NDesk.Options;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
+using RevitTestFrameworkRunner;
 
-namespace RevitTestFrameworkRunner
+namespace RevitTestFramework
 {
     class Program
     {
-        internal static string _testAssembly = null;
-        internal static string _test = null;
-        internal static string _fixture = null;
-        internal static bool _isDebug = false;
-        internal static string _results = null;
-        internal const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
-        internal const string _pluginClass = "Dynamo.Tests.RevitTestFramework";
-        internal static string _workingDirectory;
-        internal static bool _gui = true;
-        internal static string _revitPath;
-        internal static List<string> _journalPaths = new List<string>();
-        internal static int _runCount = 0;
-        internal static int _timeout = 120000;
-        internal static bool _concat = false;
-        internal static string _addinPath;
-        internal static string _assemblyPath;
-
         private static ViewModel _vm;
-        public static event EventHandler TestRunsComplete;
-        private static void OnTestRunsComplete()
-        {
-            if (TestRunsComplete != null)
-            {
-                TestRunsComplete(null, EventArgs.Empty);
-            }
-        }
-
+        
         [STAThread]
         static void Main(string[] args)
         {
@@ -54,726 +18,101 @@ namespace RevitTestFrameworkRunner
 
             try
             {
-                TestRunsComplete += Program_TestRunsComplete;
+                var runner = new Runner();
+                _vm = new ViewModel(runner);
 
-                if (!ParseArguments(args))
+                if (!runner.ParseArguments(args))
                 {
                     return;
                 }
 
-                _vm = new ViewModel();
-
-                if (!FindRevit(_vm.Products))
+                if (!runner.FindRevit(runner.Products))
                 {
                     return;
                 }
                 
-                if (_gui)
+                if (runner.Gui)
                 {
-                    LoadSettings();
+                    runner.LoadSettings();
 
-                    if (!string.IsNullOrEmpty(_testAssembly) && File.Exists(_testAssembly))
+                    if (!string.IsNullOrEmpty(runner.TestAssembly) && File.Exists(runner.TestAssembly))
                     {
-                        Refresh(_vm);
+                        runner.Refresh();
                     }
 
                     // Show the user interface
                     var view = new View(_vm);
                     view.ShowDialog();
 
-                    SaveSettings();
+                    runner.SaveSettings();
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(_revitPath))
+                    if (string.IsNullOrEmpty(runner.RevitPath))
                     {
-                        _revitPath = Path.Combine(_vm.Products.First().InstallLocation, "revit.exe");
+                        runner.RevitPath = Path.Combine(runner.Products.First().InstallLocation, "revit.exe");
                     }
 
-                    if (string.IsNullOrEmpty(_workingDirectory))
+                    if (string.IsNullOrEmpty(runner.WorkingDirectory))
                     {
-                        _workingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                        runner.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     }
 
                     // In any case here, the test assembly cannot be null
-                    if (string.IsNullOrEmpty(_testAssembly))
+                    if (string.IsNullOrEmpty(runner.TestAssembly))
                     {
                         Console.WriteLine("You must specify at least a test assembly.");
                         return;
                     }
 
-                    if (!ReadAssembly(_testAssembly, _vm.Assemblies))
+                    if (!runner.ReadAssembly(runner.TestAssembly, runner.Assemblies))
                     {
                         return;
                     }
 
-                    if (File.Exists(_results) && !_concat)
+                    if (File.Exists(runner.Results) && !runner.Concat)
                     {
-                        File.Delete(_results);
+                        File.Delete(runner.Results);
                     }
 
-                    Console.WriteLine("Assembly : {0}", _testAssembly);
-                    Console.WriteLine("Fixture : {0}", _fixture);
-                    Console.WriteLine("Test : {0}", _test);
-                    Console.WriteLine("Results Path : {0}", _results);
-                    Console.WriteLine("Timeout : {0}", _timeout);
-                    Console.WriteLine("Debug : {0}", _isDebug ? "True" : "False");
-                    Console.WriteLine("Working Directory : {0}", _workingDirectory);
-                    Console.WriteLine("GUI : {0}", _gui ? "True" : "False");
-                    Console.WriteLine("Revit : {0}", _revitPath);
-                    Console.WriteLine("Addin Path : {0}", _addinPath);
-                    Console.WriteLine("Assembly Path : {0}", _assemblyPath);
+                    Console.WriteLine(runner.ToString());
 
-                    if (string.IsNullOrEmpty(_fixture) && string.IsNullOrEmpty(_test))
+                    if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test))
                     {
-                        _runCount = _vm.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests)).Count();
-                        foreach (var ad in _vm.Assemblies)
+                        runner.RunCount = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests)).Count();
+                        foreach (var ad in runner.Assemblies)
                         {
-                            RunAssembly(ad);
+                            runner.RunAssembly(ad);
                         }
                     }
-                    else if (string.IsNullOrEmpty(_test) && !string.IsNullOrEmpty(_fixture))
+                    else if (string.IsNullOrEmpty(runner.Test) && !string.IsNullOrEmpty(runner.Fixture))
                     {
-                        var fd = _vm.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == _fixture);
+                        var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
                         if (fd != null)
                         {
-                            _runCount = fd.Tests.Count;
-                            RunFixture(fd);
+                            runner.RunCount = fd.Tests.Count;
+                            runner.RunFixture(fd);
                         }
                     }
-                    else if (string.IsNullOrEmpty(_fixture) && !string.IsNullOrEmpty(_test))
+                    else if (string.IsNullOrEmpty(runner.Fixture) && !string.IsNullOrEmpty(runner.Test))
                     {
                         var td =
-                            _vm.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
-                                .FirstOrDefault(t => t.Name == _test);
+                            runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
+                                .FirstOrDefault(t => t.Name == runner.Test);
                         if (td != null)
                         {
-                            _runCount = 1;
-                            RunTest(td);
+                            runner.RunCount = 1;
+                            runner.RunTest(td);
                         }
                     }
                 }
 
-                Cleanup();
+                runner.Cleanup();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
         }
-
-        static void Program_TestRunsComplete(object sender, EventArgs e)
-        {
-            //if (!string.IsNullOrEmpty(_results) && 
-            //    File.Exists(_results) &&
-            //    _gui)
-            //{
-            //    Process.Start(_results);
-            //}
-        }
-
-        private static bool FindRevit(IList<RevitProduct> productList)
-        {
-            var products = RevitProductUtility.GetAllInstalledRevitProducts();
-            if (!products.Any())
-            {
-                Console.WriteLine("No versions of revit could be found");
-                return false;
-            }
-
-            products.ForEach(productList.Add);
-            return true;
-        }
-
-        private static void SaveSettings()
-        {
-            Properties.Settings.Default.workingDirectory = _workingDirectory;
-            Properties.Settings.Default.assemblyPath = _testAssembly;
-            Properties.Settings.Default.resultsPath = _results;
-            Properties.Settings.Default.isDebug = _isDebug;
-            Properties.Settings.Default.timeout = _timeout;
-            Properties.Settings.Default.Save();
-        }
-
-        private static void LoadSettings()
-        {
-            _workingDirectory = !string.IsNullOrEmpty(Properties.Settings.Default.workingDirectory)
-                ? Properties.Settings.Default.workingDirectory
-                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            _testAssembly = !string.IsNullOrEmpty(Properties.Settings.Default.assemblyPath)
-                ? Properties.Settings.Default.assemblyPath
-                : null;
-
-            _results = !string.IsNullOrEmpty(Properties.Settings.Default.resultsPath)
-                ? Properties.Settings.Default.resultsPath
-                : null;
-
-            _timeout = Properties.Settings.Default.timeout;
-
-            _isDebug = Properties.Settings.Default.isDebug;
-        }
-
-        private static bool ParseArguments(IEnumerable<string> args)
-        {
-            var showHelp = false;
-
-            var p = new OptionSet()
-            {
-                {"dir:","The path to the working directory.", v=> _workingDirectory = Path.GetFullPath(v)},
-                {"a:|assembly:", "The path to the test assembly.", v => _testAssembly = Path.GetFullPath(v)},
-                {"r:|results:", "The path to the results file.", v=>_results = Path.GetFullPath(v)},
-                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => _fixture = v},
-                {"t:|testName:", "The name of a test to run", v => _test = v},
-                {"c:|concatenate:", "Concatenate results with existing results file.", v=> _concat = v != null},
-                {"gui:", "Show the revit test runner gui.", v=>_gui = v != null},
-                {"d|debug", "Run in debug mode.", v=>_isDebug = v != null},
-                {"h|help", "Show this message and exit.", v=> showHelp = v != null}
-            };
-
-            var notParsed = new List<string>();
-
-            const string helpMessage = "Try 'DynamoTestFrameworkRunner --help' for more information.";
-            
-            try
-            {
-                notParsed = p.Parse(args);
-            }
-            catch (OptionException e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(helpMessage);
-                return false;
-            }
-
-            if (notParsed.Count > 0)
-            {
-                Console.WriteLine(string.Join(" ", notParsed.ToArray()));
-                return false;
-            }
-
-            if (showHelp)
-            {
-                ShowHelp(p);
-                return false;
-            }
-
-            if (!string.IsNullOrEmpty(_testAssembly) && !File.Exists(_testAssembly))
-            {
-                Console.Write("The specified test assembly does not exist.");
-                return false;
-            }
-
-            if (!string.IsNullOrEmpty(_workingDirectory) && !Directory.Exists(_workingDirectory))
-            {
-                Console.Write("The specified working directory does not exist.");
-                return false;
-            }
-
-            return true;
-        }
-
-        static void ShowHelp(OptionSet p)
-        {
-            Console.WriteLine("Usage: DynamoTestFrameworkRunner [OPTIONS]");
-            Console.WriteLine("Run a test or a fixture of tests from an assembly.");
-            Console.WriteLine();
-            Console.WriteLine("Options:");
-            p.WriteOptionDescriptions(Console.Out);
-        }
-
-        private static bool ReadAssembly(string assemblyPath, IList<IAssemblyData> data)
-        {
-            try
-            {
-                var assembly = Assembly.LoadFrom(assemblyPath);
-
-                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
-                data.Add(assData);
-
-                foreach (var fixtureType in assembly.GetTypes())
-                {
-                    if (!ReadFixture(fixtureType, assData))
-                    {
-                        //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
-                    } 
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine("The specified assembly could not be loaded for testing.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool ReadFixture(Type fixtureType, IAssemblyData data)
-        {
-            var fixtureAttribs = fixtureType.GetCustomAttributes(typeof (TestFixtureAttribute), true);
-            if (!fixtureAttribs.Any())
-            {
-                //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
-                return false;
-            }
-
-            var fixData = new FixtureData(data, fixtureType.Name);
-            data.Fixtures.Add(fixData);
-
-            foreach (var test in fixtureType.GetMethods())
-            {
-                var testAttribs = test.GetCustomAttributes(typeof(TestAttribute), false);
-                if (!testAttribs.Any())
-                {
-                    // skip this method
-                    continue;
-                }
-
-                if (!ReadTest(test, fixData))
-                {
-                    //Console.WriteLine(string.Format("Journal could not be created for test:{0} in fixture:{1}", _test,_fixture));
-                    continue;
-                }
-            }
-
-            return true;
-        }
-
-        private static bool ReadTest(MethodInfo test, IFixtureData data)
-        {
-            //set the default modelPath to the empty.rfa file that will live in the build directory
-            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
-
-            var testModelAttribs = test.GetCustomAttributes(typeof(TestModelAttribute), false);
-            if (testModelAttribs.Any())
-            {
-                //overwrite the model path with the one
-                //specified in the test model attribute
-                modelPath = Path.GetFullPath(Path.Combine(_workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
-            }
-
-            var runDynamoAttribs = test.GetCustomAttributes(typeof(RunDynamoAttribute),false);
-            var runDynamo = false;
-            if (runDynamoAttribs.Any())
-            {
-                runDynamo = ((RunDynamoAttribute)runDynamoAttribs[0]).RunDynamo;
-            }
-
-            var testData = new TestData(data, test.Name, modelPath, runDynamo);
-            data.Tests.Add(testData);
-
-            return true;
-        }
-
-        private static void CreateJournal(string path, string testName, string fixtureName, string assemblyPath, string resultsPath, string modelPath)
-        {
-            using (var tw = new StreamWriter(path, false))
-            {
-                var journal = string.Format(@"'" +
-                                            "Dim Jrn \n" +
-                                            "Set Jrn = CrsJournalScript \n" +
-                                            "Jrn.Command \"StartupPage\" , \"Open this project , ID_FILE_MRU_FIRST\" \n" +
-                                            "Jrn.Data \"MRUFileName\"  , \"{0}\" \n" +
-                                            "Jrn.RibbonEvent \"Execute external command:{1}:{2}\" \n" +
-                                            "Jrn.Data \"APIStringStringMapJournalData\", 5, \"testName\", \"{3}\", \"fixtureName\", \"{4}\", \"testAssembly\", \"{5}\", \"resultsPath\", \"{6}\", \"debug\",\"{7}\" \n" +
-                                            "Jrn.Command \"Internal\" , \"Flush undo and redo stacks , ID_FLUSH_UNDO\" \n" +
-                                            "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"",
-                    modelPath, _pluginGuid, _pluginClass, testName, fixtureName, assemblyPath, resultsPath, _isDebug);
-
-                tw.Write(journal);
-                tw.Flush();
-
-                _journalPaths.Add(path);
-            }
-        }
-
-        internal static void CreateAddin(string addinPath, string assemblyPath)
-        {
-            using (var tw = new StreamWriter(addinPath, false))
-            {
-                var addin = string.Format(
-                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
-                    "<RevitAddIns>\n" +
-                    "<AddIn Type=\"Command\">\n" +
-                    "<Name>Dynamo Test Framework</Name>\n" +
-                    "<Assembly>\"{0}\"</Assembly>\n" +
-                    "<AddInId>487f9ff0-5b34-4e7e-97bf-70fbff69194f</AddInId>\n" +
-                    "<FullClassName>Dynamo.Tests.RevitTestFramework</FullClassName>\n" +
-                    "<VendorId>ADSK</VendorId>\n" +
-                    "<VendorDescription>Autodesk</VendorDescription>\n" +
-                    "</AddIn>\n" +
-                    "</RevitAddIns>",
-                    assemblyPath
-                    );
-
-                tw.Write(addin);
-                tw.Flush();
-            }
-        }
-
-        public static void Refresh(ViewModel vm)
-        {
-            vm.Assemblies.Clear();
-            ReadAssembly(_testAssembly, vm.Assemblies);
-        }
-
-        public static void RunAssembly(IAssemblyData ad)
-        {
-            foreach (var fix in ad.Fixtures)
-            {
-                RunFixture(fix);
-            }
-        }
-
-        public static void RunFixture(IFixtureData fd)
-        {
-            foreach (var td in fd.Tests)
-            {
-                RunTest(td);
-            }
-        }
-
-        public static void RunTest(ITestData td)
-        {
-            var journalPath = Path.Combine(_workingDirectory, td.Name + ".txt");
-            CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, _results, td.ModelPath);
-
-            var startInfo = new ProcessStartInfo()
-            {
-                FileName = _revitPath,
-                WorkingDirectory = _workingDirectory,
-                Arguments = journalPath,
-                UseShellExecute = false
-            };
-
-            Console.WriteLine("Running {0}", journalPath);
-            var process = new Process { StartInfo = startInfo };
-            process.Start();
-
-            var timedOut = false;
-
-            if (_isDebug)
-            {
-                process.WaitForExit();
-            }  
-            else
-            {
-                var time = 0;
-                while(!process.WaitForExit(1000))
-                {
-                    Console.Write(".");
-                    time += 1000;
-                    if (time > _timeout)
-                    {
-                        Console.WriteLine("Test timed out.");
-                        td.TestStatus = TestStatus.TimedOut;
-                        timedOut = true;
-                        break;
-                    }
-                }
-                if (timedOut)
-                {
-                    if(!process.HasExited)
-                        process.Kill();
-                }
-            }
-
-            if(!timedOut && _gui)
-                GetTestResultStatus(td);
-
-            _runCount --;
-            if (_runCount == 0)
-            {
-                OnTestRunsComplete();
-            }
-        }
-
-        private static void GetTestResultStatus(ITestData td)
-        {
-            //set the test status
-            var results = LoadResults(_results);
-            if (results != null)
-            {
-                //find our results in the results
-                var mainSuite = results.testsuite;
-                var ourSuite =
-                    results.testsuite.results.Items
-                        .Cast<testsuiteType>()
-                        .FirstOrDefault(s => s.name == td.Fixture.Name);
-                var ourTest = ourSuite.results.Items
-                    .Cast<testcaseType>().FirstOrDefault(t => t.name == td.Name);
-
-                switch (ourTest.result)
-                {
-                    case "Cancelled":
-                        td.TestStatus = TestStatus.Cancelled;
-                        break;
-                    case "Error":
-                        td.TestStatus = TestStatus.Error;
-                        break;
-                    case "Failure":
-                        td.TestStatus = TestStatus.Failure;
-                        break;
-                    case "Ignored":
-                        td.TestStatus = TestStatus.Ignored;
-                        break;
-                    case "Inconclusive":
-                        td.TestStatus = TestStatus.Inconclusive;
-                        break;
-                    case "NotRunnable":
-                        td.TestStatus = TestStatus.NotRunnable;
-                        break;
-                    case "Skipped":
-                        td.TestStatus = TestStatus.Skipped;
-                        break;
-                    case "Success":
-                        td.TestStatus = TestStatus.Success;
-                        break;
-                }
-
-                if (ourTest.Item == null) return;
-                var failure = ourTest.Item as failureType;
-                if (failure == null) return;
-
-                if (_vm != null && _vm.UiDispatcher != null)
-                {
-                    _vm.UiDispatcher.BeginInvoke((Action)(()=> td.ResultData.Add(
-                        new ResultData()
-                        {
-                            StackTrace = failure.stacktrace,
-                            Message = failure.message
-                        })));
-                }
-            }
-        }
-
-        internal static void Cleanup()
-        {
-            try
-            {
-                foreach (var path in _journalPaths)
-                {
-                    if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-                }
-
-                _journalPaths.Clear();
-
-                var journals = Directory.GetFiles(_workingDirectory, "journal.*.txt");
-                foreach (var journal in journals)
-                {
-                    File.Delete(journal);
-                }
-
-                var addinPath = Path.Combine(_workingDirectory, "RevitTestFramework.addin");
-                if (File.Exists(addinPath))
-                {
-                    File.Delete(addinPath);
-                }
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine("One or more journal files could not be deleted.");
-            }
-        }
-
-        private static resultType LoadResults(string resultsPath)
-        {
-            if (!File.Exists(resultsPath))
-            {
-                return null;
-            }
-
-            resultType results = null;
-
-            //write to the file
-            var x = new XmlSerializer(typeof(resultType));
-            using (var reader = new StreamReader(resultsPath))
-            {
-                results = (resultType)x.Deserialize(reader);
-            }
-
-            return results;
-        }
     }
-
-    internal class AssemblyData : IAssemblyData
-    {
-        public string Path { get; set; }
-        public string Name { get; set; }
-        public ObservableCollection<IFixtureData> Fixtures { get; set; }
-
-        public AssemblyData(string path, string name)
-        {
-            Fixtures = new ObservableCollection<IFixtureData>();
-            Path = path;
-            Name = name;
-        }
-    }
-
-    internal class FixtureData : NotificationObject, IFixtureData
-    {
-        public string Name { get; set; }
-        public ObservableCollection<ITestData> Tests { get; set; }
-        public FixtureStatus FixtureStatus { get; set; }
-        public IAssemblyData Assembly { get; set; }
-
-        public string FixtureSummary
-        {
-            get
-            {
-                var successCount = Tests.Count(x => x.TestStatus == TestStatus.Success);
-                var failCount = Tests.Count(x => x.TestStatus == TestStatus.Failure);
-                var otherCount = Tests.Count - successCount - failCount;
-                return string.Format("[Total: {0}, Success: {1}, Failure: {2}, Other: {3}]", Tests.Count, successCount, failCount, otherCount);
-            }
-        }
-
-        public FixtureData(IAssemblyData assembly, string name)
-        {
-            Assembly = assembly;
-            Tests = new ObservableCollection<ITestData>();
-            Name = name;
-            FixtureStatus = FixtureStatus.None;
-
-            Tests.CollectionChanged += Tests_CollectionChanged;
-        }
-
-        void Tests_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    foreach (var item in e.NewItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged += td_PropertyChanged;
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    foreach (var item in e.OldItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged -= td_PropertyChanged;
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Reset:
-                    foreach (var item in e.OldItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged -= td_PropertyChanged;
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "TestStatus")
-            {
-                if (Tests.All(t => t.TestStatus == TestStatus.Success))
-                {
-                    FixtureStatus = FixtureStatus.Success;   
-                }
-                else if (Tests.Any(t => t.TestStatus == TestStatus.Failure))
-                {
-                    FixtureStatus = FixtureStatus.Failure;
-                }
-                else
-                {
-                    FixtureStatus = FixtureStatus.Mixed;
-                }
-
-                RaisePropertyChanged("FixtureStatus");
-                RaisePropertyChanged("FixtureSummary");
-            }
-        }
-    }
-
-    internal class TestData : NotificationObject, ITestData
-    {
-        private TestStatus _testStatus;
-        private IList<IResultData> _resultData;
-        public string Name { get; set; }
-        public bool RunDynamo { get; set; }
-        public string ModelPath { get; set; }
-
-        public string ShortModelPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(ModelPath))
-                {
-                    return string.Empty;
-                }
-
-                var info = new FileInfo(ModelPath);
-                return string.Format("[{0}]",info.Name);
-            }
-        }
-
-        public TestStatus TestStatus
-        {
-            get { return _testStatus; }
-            set
-            {
-                _testStatus = value; 
-                RaisePropertyChanged("TestStatus");
-            }
-        }
-
-        public ObservableCollection<IResultData> ResultData { get; set; }
-
-        public IFixtureData Fixture { get; set; }
-
-        public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
-        {
-            Fixture = fixture;
-            Name = name;
-            ModelPath = modelPath;
-            RunDynamo = runDynamo;
-            _testStatus = TestStatus.None;
-            ResultData = new ObservableCollection<IResultData>();
-
-            ResultData.CollectionChanged+= ResultDataOnCollectionChanged;
-        }
-
-        private void ResultDataOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
-        {
-            RaisePropertyChanged("ResultData");
-        }
-    }
-
-    internal class ResultData : NotificationObject, IResultData
-    {
-        private string _message = "";
-        private string _stackTrace = "";
-
-        public string Message
-        {
-            get { return _message; }
-            set
-            {
-                _message = value;
-                RaisePropertyChanged("Message");
-            }
-        }
-
-        public string StackTrace
-        {
-            get { return _stackTrace; }
-            set
-            {
-                _stackTrace = value;
-                RaisePropertyChanged("StackTrace");
-            }
-        }
-    }
-
-
 }

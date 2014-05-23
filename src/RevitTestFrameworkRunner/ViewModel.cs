@@ -3,11 +3,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Forms;
 using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
-using System.Windows.Forms;
+using RevitTestFramework;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
@@ -15,12 +16,15 @@ namespace RevitTestFrameworkRunner
 {
     public class ViewModel : NotificationObject
     {
-        private ObservableCollection<IAssemblyData> _assemblies;
-        private ObservableCollection<RevitProduct> _products;
+        #region private members
 
         private object _selectedItem;
         private int _selectedProductIndex;
+        private Runner _runner;
 
+        #endregion
+
+        #region public properties
         public DelegateCommand SetAssemblyPathCommand { get; set; }
         public DelegateCommand SetResultsPathCommand { get; set; }
         public DelegateCommand SetWorkingPathCommand { get; set; }
@@ -47,9 +51,9 @@ namespace RevitTestFrameworkRunner
             {
                 _selectedProductIndex = value;
 
-                Program._revitPath = _selectedProductIndex == -1 ? 
+                _runner.RevitPath = _selectedProductIndex == -1 ? 
                     string.Empty : 
-                    Path.Combine(Products[value].InstallLocation, "revit.exe");
+                    Path.Combine(_runner.Products[value].InstallLocation, "revit.exe");
 
                 RaisePropertyChanged("SelectedProductIndex");
             }
@@ -82,32 +86,12 @@ namespace RevitTestFrameworkRunner
             }
         }
         
-        public ObservableCollection<IAssemblyData> Assemblies
-        {
-            get { return _assemblies; }
-            set
-            {
-                _assemblies = value;
-                RaisePropertyChanged("Assemblies");
-            }
-        }
-
-        public ObservableCollection<RevitProduct> Products
-        {
-            get { return _products; }
-            set
-            {
-                _products = value;
-                RaisePropertyChanged("Products");
-            }
-        }
-
         public string ResultsPath
         {
-            get { return Program._results; }
+            get { return _runner.Results; }
             set
             {
-                Program._results = value;
+                _runner.Results = value;
                 RaisePropertyChanged("ResultsPath");
                 RunCommand.RaiseCanExecuteChanged();
             }
@@ -115,58 +99,74 @@ namespace RevitTestFrameworkRunner
 
         public string AssemblyPath
         {
-            get { return Program._testAssembly; }
+            get { return _runner.TestAssembly; }
             set
             {
-                Program._testAssembly = value;
-                Program.Refresh(this);
+                _runner.TestAssembly = value;
+                _runner.Refresh();
                 RaisePropertyChanged("AssemblyPath");
             }
         }
 
         public string WorkingPath
         {
-            get { return Program._workingDirectory; }
+            get { return _runner.WorkingDirectory; }
             set
             {
-                Program._workingDirectory = value;
+                _runner.WorkingDirectory = value;
                 RaisePropertyChanged("WorkingPath");
             }
         }
 
         public bool IsDebug
         {
-            get { return Program._isDebug; }
+            get { return _runner.IsDebug; }
             set
             {
-                Program._isDebug = value;
+                _runner.IsDebug = value;
                 RaisePropertyChanged("IsDebug");
             }
         }
 
         public int Timeout
         {
-            get { return Program._timeout; }
-            set { Program._timeout = value; }
+            get { return _runner.Timeout; }
+            set { _runner.Timeout = value; }
         }
 
-        internal ViewModel()
+        public ObservableCollection<IAssemblyData> Assemblies
         {
-            Assemblies = new ObservableCollection<IAssemblyData>();
-            Products = new ObservableCollection<RevitProduct>();
+            get { return _runner.Assemblies; }
+        }
+
+        public ObservableCollection<RevitProduct> Products
+        {
+            get { return _runner.Products; }
+        }
+
+        #endregion
+
+        #region constructors
+
+        internal ViewModel(Runner runner)
+        {
+            _runner = runner;
+            
             SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
             SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
             SetWorkingPathCommand = new DelegateCommand(SetWorkingPath, CanSetWorkingPath);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
 
-            Products.CollectionChanged += Products_CollectionChanged;
+            _runner.Products.CollectionChanged += Products_CollectionChanged;
         }
+
+        #endregion
 
         void Products_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             // When the products collection is changed, we want to set
             // the selected product index to the first in the list
-            if (Products.Count > 0)
+            if (_runner.Products.Count > 0)
             {
                 SelectedProductIndex = 0;
             }
@@ -183,21 +183,18 @@ namespace RevitTestFrameworkRunner
 
         private void Run(object parameter)
         {
-            if (string.IsNullOrEmpty(Program._results))
+            if (string.IsNullOrEmpty(_runner.Results))
             {
                 MessageBox.Show("Please select an output path for the results.");
                 return;
             }
 
-            if (File.Exists(Program._results) && !Program._concat)
+            if (File.Exists(_runner.Results) && !_runner.Concat)
             {
-                File.Delete(Program._results);
+                File.Delete(_runner.Results);
             }
 
-            Program._addinPath = Path.Combine(Program._workingDirectory, "RevitTestFramework.addin");
-            Program._assemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "RevitTestFramework.dll");
-            Program.CreateAddin(Program._addinPath, Program._assemblyPath);
+            _runner.CreateAddin(_runner.AddinPath, _runner.AssemblyPath);
 
             var worker = new BackgroundWorker();
 
@@ -210,22 +207,22 @@ namespace RevitTestFrameworkRunner
             if (e.Argument is IAssemblyData)
             {
                 var ad = e.Argument as IAssemblyData;
-                Program._runCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                Program.RunAssembly(ad);
+                _runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
+                _runner.RunAssembly(ad);
             }
             else if (e.Argument is IFixtureData)
             {
                 var fd = e.Argument as IFixtureData;
-                Program._runCount = fd.Tests.Count;
-                Program.RunFixture(fd);
+                _runner.RunCount = fd.Tests.Count;
+                _runner.RunFixture(fd);
             }
             else if (e.Argument is ITestData)
             {
-                Program._runCount = 1;
-                Program.RunTest(e.Argument as ITestData);
+                _runner.RunCount = 1;
+                _runner.RunTest(e.Argument as ITestData);
             }
 
-            Program.Cleanup();
+            _runner.Cleanup();
         }
 
         private bool CanSetWorkingPath()
