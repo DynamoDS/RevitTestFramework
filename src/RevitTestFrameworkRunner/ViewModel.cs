@@ -194,10 +194,10 @@ namespace RevitTestFrameworkRunner
                 File.Delete(Program._results);
             }
 
-            var addinPath = Path.Combine(Program._workingDirectory, "RevitTestFramework.addin");
-            var assemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            Program._addinPath = Path.Combine(Program._workingDirectory, "RevitTestFramework.addin");
+            Program._assemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RevitTestFramework.dll");
-            Program.CreateAddin(addinPath, assemblyPath);
+            Program.CreateAddin(Program._addinPath, Program._assemblyPath);
 
             var worker = new BackgroundWorker();
 

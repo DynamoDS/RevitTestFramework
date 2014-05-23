@@ -34,6 +34,8 @@ namespace RevitTestFrameworkRunner
         internal static int _runCount = 0;
         internal static int _timeout = 120000;
         internal static bool _concat = false;
+        internal static string _addinPath;
+        internal static string _assemblyPath;
 
         private static ViewModel _vm;
         public static event EventHandler TestRunsComplete;
@@ -119,6 +121,8 @@ namespace RevitTestFrameworkRunner
                     Console.WriteLine("Working Directory : {0}", _workingDirectory);
                     Console.WriteLine("GUI : {0}", _gui ? "True" : "False");
                     Console.WriteLine("Revit : {0}", _revitPath);
+                    Console.WriteLine("Addin Path : {0}", _addinPath);
+                    Console.WriteLine("Assembly Path : {0}", _assemblyPath);
 
                     if (string.IsNullOrEmpty(_fixture) && string.IsNullOrEmpty(_test))
                     {
