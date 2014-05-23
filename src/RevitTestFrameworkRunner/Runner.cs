@@ -117,9 +117,18 @@ namespace RevitTestFrameworkRunner
             get { return _workingDirectory; }
             set
             {
-                _workingDirectory = value;
-                AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
-                
+                if (value != _workingDirectory)
+                {
+                    _workingDirectory = value;
+
+                    // Delete any existing addins before resetting the addins path.
+                    if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
+                    {
+                        File.Delete(AddinPath);
+                    }
+                    AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
+                    CreateAddin(AddinPath, AssemblyPath);
+                }
             }
         }
 
@@ -556,10 +565,9 @@ namespace RevitTestFrameworkRunner
                     File.Delete(journal);
                 }
 
-                var addinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
-                if (File.Exists(addinPath))
+                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
                 {
-                    File.Delete(addinPath);
+                    File.Delete(AddinPath);
                 }
             }
             catch (IOException ex)

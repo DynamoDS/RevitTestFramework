@@ -194,8 +194,6 @@ namespace RevitTestFrameworkRunner
                 File.Delete(_runner.Results);
             }
 
-            _runner.CreateAddin(_runner.AddinPath, _runner.AssemblyPath);
-
             var worker = new BackgroundWorker();
 
             worker.DoWork += TestThread;
