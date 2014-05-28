@@ -1,5 +1,5 @@
 #RevitTestFramework
-==================
+=====
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
@@ -22,9 +22,9 @@ If you'd like to learn more about the command line options for RTF, you can simp
       -h, --help                    Show this message and exit.
 
 #Command Line Parameters
-========================
+=====
 
---dir
+*--dir
 
 The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.
 
