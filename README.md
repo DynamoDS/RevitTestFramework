@@ -5,6 +5,7 @@ The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revi
 
 RTF's gui allows you to choose tests from a treeview and to visualize the results of the tests as they are run. RTF can also be run as a command line process. In either case, the output file from a test run is an nunit results file compatible with many CI systems.
 
+If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkRunner -h" and you'll get something like this:
 
     Usage: DynamoTestFrameworkRunner [OPTIONS]
     Run a test or a fixture of tests from an assembly.
