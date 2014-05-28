@@ -1,5 +1,4 @@
 ##RevitTestFramework
-=====
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
@@ -22,7 +21,6 @@ If you'd like to learn more about the command line options for RTF, you can simp
       -h, --help                    Show this message and exit.
 
 ##Command Line Parameters
-=====
 
 **--dir**
 
