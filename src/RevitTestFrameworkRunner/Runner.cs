@@ -127,7 +127,6 @@ namespace RevitTestFrameworkRunner
                         File.Delete(AddinPath);
                     }
                     AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
-                    CreateAddin(AddinPath, AssemblyPath);
                 }
             }
         }
@@ -410,6 +409,11 @@ namespace RevitTestFrameworkRunner
 
         public void RunAssembly(IAssemblyData ad)
         {
+            if (!File.Exists(AddinPath))
+            {
+                CreateAddin(AddinPath, AssemblyPath);
+            }
+
             foreach (var fix in ad.Fixtures)
             {
                 RunFixture(fix);
@@ -418,6 +422,11 @@ namespace RevitTestFrameworkRunner
 
         public void RunFixture(IFixtureData fd)
         {
+            if (!File.Exists(AddinPath))
+            {
+                CreateAddin(AddinPath, AssemblyPath);
+            }
+
             foreach (var td in fd.Tests)
             {
                 RunTest(td);
@@ -426,6 +435,11 @@ namespace RevitTestFrameworkRunner
 
         public void RunTest(ITestData td)
         {
+            if (!File.Exists(AddinPath))
+            {
+                CreateAddin(AddinPath, AssemblyPath);
+            }
+
             var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
             CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
 

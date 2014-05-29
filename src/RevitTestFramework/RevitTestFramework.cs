@@ -131,13 +131,19 @@ namespace Dynamo.Tests
             string testAssemblyLoc = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), testAssembly);
 
             var package = new TestPackage("RevitTestFramework", new List<string>() {testAssemblyLoc});
-            runner.Load(package);
+            //runner.Load(package);
             TestSuite suite = builder.Build(package);
-
+            
             TestFixture fixture = null;
             FindFixtureByName(out fixture, suite, fixtureName);
             if (fixture == null)
                 throw new Exception(string.Format("Could not find fixture: {0}", fixtureName));
+
+            var setupMethods = fixture.GetSetUpMethods();
+            foreach (var m in setupMethods)
+            {
+                Debug.WriteLine("Setup method: {0}",m.Name);
+            }
 
             InitializeResults();
 

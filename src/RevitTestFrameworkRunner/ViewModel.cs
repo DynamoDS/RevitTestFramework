@@ -219,8 +219,6 @@ namespace RevitTestFrameworkRunner
                 _runner.RunCount = 1;
                 _runner.RunTest(e.Argument as ITestData);
             }
-
-            _runner.Cleanup();
         }
 
         private bool CanSetWorkingPath()
