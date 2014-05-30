@@ -82,5 +82,17 @@ namespace RevitTestFrameworkRunner.Properties {
                 this["timeout"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int selectedProduct {
+            get {
+                return ((int)(this["selectedProduct"]));
+            }
+            set {
+                this["selectedProduct"] = value;
+            }
+        }
     }
 }

@@ -17,5 +17,8 @@
     <Setting Name="timeout" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">120000</Value>
     </Setting>
+    <Setting Name="selectedProduct" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

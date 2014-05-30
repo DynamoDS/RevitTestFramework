@@ -19,7 +19,6 @@ namespace RevitTestFrameworkRunner
         #region private members
 
         private object _selectedItem;
-        private int _selectedProductIndex;
         private Runner _runner;
 
         #endregion
@@ -46,12 +45,12 @@ namespace RevitTestFrameworkRunner
 
         public int SelectedProductIndex
         {
-            get { return _selectedProductIndex; }
+            get { return _runner.SelectedProduct; }
             set
             {
-                _selectedProductIndex = value;
+                _runner.SelectedProduct = value;
 
-                _runner.RevitPath = _selectedProductIndex == -1 ? 
+                _runner.RevitPath = _runner.SelectedProduct == -1 ? 
                     string.Empty : 
                     Path.Combine(_runner.Products[value].InstallLocation, "revit.exe");
 

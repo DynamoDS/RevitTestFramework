@@ -45,6 +45,7 @@ namespace RevitTestFrameworkRunner
         private bool _concat;
         private string _addinPath;
         private string _assemblyPath;
+        private int _selectedProduct;
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
         private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
 
@@ -177,6 +178,16 @@ namespace RevitTestFrameworkRunner
         {
             get { return _runCount; }
             set { _runCount = value; }
+        }
+
+        public int SelectedProduct
+        {
+            get { return _selectedProduct; }
+            set
+            {
+                _selectedProduct = value;
+                RaisePropertyChanged("SelectedProduct");
+            }
         }
 
         #endregion
@@ -616,6 +627,7 @@ namespace RevitTestFrameworkRunner
             Settings.Default.resultsPath = Results;
             Settings.Default.isDebug = IsDebug;
             Settings.Default.timeout = Timeout;
+            Settings.Default.selectedProduct = SelectedProduct;  
             Settings.Default.Save();
         }
 
@@ -635,6 +647,16 @@ namespace RevitTestFrameworkRunner
 
             Timeout = Settings.Default.timeout;
             IsDebug = Settings.Default.isDebug;
+
+            if (Settings.Default.selectedProduct > Products.Count - 1)
+            {
+                SelectedProduct = -1;
+            }
+            else
+            {
+                SelectedProduct = Settings.Default.selectedProduct;
+            }
+            
         }
 
         internal bool FindRevit(IList<RevitProduct> productList)
