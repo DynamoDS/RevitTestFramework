@@ -51,9 +51,58 @@ namespace RevitTestFrameworkRunner
 
         #endregion
 
-        #region properties
+        #region internal properties
 
-        public ObservableCollection<IAssemblyData> Assemblies
+        internal static string PluginGuid
+        {
+            get { return _pluginGuid; }
+        }
+
+        internal static string PluginClass
+        {
+            get { return _pluginClass; }
+        }
+
+        internal bool Gui
+        {
+            get { return _gui; }
+            set { _gui = value; }
+        }
+
+        internal string AddinPath
+        {
+            get { return _addinPath; }
+            set { _addinPath = value; }
+        }
+
+        internal List<string> JournalPaths
+        {
+            get { return _journalPaths; }
+            set { _journalPaths = value; }
+        }
+
+        internal int RunCount
+        {
+            get { return _runCount; }
+            set { _runCount = value; }
+        }
+
+        internal int SelectedProduct
+        {
+            get { return _selectedProduct; }
+            set
+            {
+                _selectedProduct = value;
+                RaisePropertyChanged("SelectedProduct");
+            }
+        }
+        internal string AssemblyPath
+        {
+            get { return _assemblyPath; }
+            set { _assemblyPath = value; }
+        }
+
+        internal ObservableCollection<IAssemblyData> Assemblies
         {
             get { return _assemblies; }
             set
@@ -63,7 +112,7 @@ namespace RevitTestFrameworkRunner
             }
         }
 
-        public ObservableCollection<RevitProduct> Products
+        internal ObservableCollection<RevitProduct> Products
         {
             get { return _products; }
             set
@@ -72,6 +121,10 @@ namespace RevitTestFrameworkRunner
                 RaisePropertyChanged("Products");
             }
         }
+
+        #endregion
+
+        #region public properties
 
         public string Test
         {
@@ -103,16 +156,6 @@ namespace RevitTestFrameworkRunner
             set { _results = value; }
         }
 
-        public static string PluginGuid
-        {
-            get { return _pluginGuid; }
-        }
-
-        public static string PluginClass
-        {
-            get { return _pluginClass; }
-        }
-
         public string WorkingDirectory
         {
             get { return _workingDirectory; }
@@ -132,22 +175,10 @@ namespace RevitTestFrameworkRunner
             }
         }
 
-        public bool Gui
-        {
-            get { return _gui; }
-            set { _gui = value; }
-        }
-
         public string RevitPath
         {
             get { return _revitPath; }
             set { _revitPath = value; }
-        }
-
-        public List<string> JournalPaths
-        {
-            get { return _journalPaths; }
-            set { _journalPaths = value; }
         }
 
         public int Timeout
@@ -162,39 +193,11 @@ namespace RevitTestFrameworkRunner
             set { _concat = value; }
         }
 
-        public string AddinPath
-        {
-            get { return _addinPath; }
-            set { _addinPath = value; }
-        }
-
-        public string AssemblyPath
-        {
-            get { return _assemblyPath; }
-            set { _assemblyPath = value; }
-        }
-
-        public int RunCount
-        {
-            get { return _runCount; }
-            set { _runCount = value; }
-        }
-
-        public int SelectedProduct
-        {
-            get { return _selectedProduct; }
-            set
-            {
-                _selectedProduct = value;
-                RaisePropertyChanged("SelectedProduct");
-            }
-        }
-
         #endregion
 
         #region constructors
 
-        public Runner()
+        internal Runner()
         {
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RevitTestFramework.dll");

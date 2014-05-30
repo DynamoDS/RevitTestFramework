@@ -72,7 +72,8 @@ namespace Samples
             Assert.AreEqual(0,0);
         }
 
-        [Test, TestCaseSource("SetupManyTests")]
+        [Test] 
+        [TestCaseSource("SetupManyTests")]
         public void RunManyTests(string dynamoFilePath, string revitFilePath)
         {
             SwapCurrentModel(revitFilePath);
