@@ -7,17 +7,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Windows.Threading;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
-using Dynamo.Tests;
 using Microsoft.Practices.Prism.ViewModel;
 using NDesk.Options;
 using NUnit.Framework;
-using RevitTestFrameworkRunner.Properties;
+using RevitTestFramework;
 
-namespace RevitTestFrameworkRunner
+namespace Runner
 {
     public class Runner : NotificationObject
     {
@@ -63,7 +61,7 @@ namespace RevitTestFrameworkRunner
             get { return _pluginClass; }
         }
 
-        internal bool Gui
+        public bool Gui
         {
             get { return _gui; }
             set { _gui = value; }
@@ -81,28 +79,23 @@ namespace RevitTestFrameworkRunner
             set { _journalPaths = value; }
         }
 
-        internal int RunCount
+        public int RunCount
         {
             get { return _runCount; }
             set { _runCount = value; }
         }
 
-        internal int SelectedProduct
-        {
-            get { return _selectedProduct; }
-            set
-            {
-                _selectedProduct = value;
-                RaisePropertyChanged("SelectedProduct");
-            }
-        }
         internal string AssemblyPath
         {
             get { return _assemblyPath; }
             set { _assemblyPath = value; }
         }
 
-        internal ObservableCollection<IAssemblyData> Assemblies
+        #endregion
+
+        #region public properties
+
+        public ObservableCollection<IAssemblyData> Assemblies
         {
             get { return _assemblies; }
             set
@@ -112,7 +105,7 @@ namespace RevitTestFrameworkRunner
             }
         }
 
-        internal ObservableCollection<RevitProduct> Products
+        public ObservableCollection<RevitProduct> Products
         {
             get { return _products; }
             set
@@ -122,9 +115,15 @@ namespace RevitTestFrameworkRunner
             }
         }
 
-        #endregion
-
-        #region public properties
+        public int SelectedProduct
+        {
+            get { return _selectedProduct; }
+            set
+            {
+                _selectedProduct = value;
+                RaisePropertyChanged("SelectedProduct");
+            }
+        }
 
         public string Test
         {
@@ -197,7 +196,7 @@ namespace RevitTestFrameworkRunner
 
         #region constructors
 
-        internal Runner()
+        public Runner()
         {
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RevitTestFramework.dll");
@@ -207,74 +206,6 @@ namespace RevitTestFrameworkRunner
 
         #region private methods
 
-        internal bool ParseArguments(IEnumerable<string> args)
-        {
-            var showHelp = false;
-
-            var p = new OptionSet()
-            {
-                {"dir:","The path to the working directory.", v=> WorkingDirectory = Path.GetFullPath(v)},
-                {"a:|assembly:", "The path to the test assembly.", v => TestAssembly = Path.GetFullPath(v)},
-                {"r:|results:", "The path to the results file.", v=>Results = Path.GetFullPath(v)},
-                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => Fixture = v},
-                {"t:|testName:", "The name of a test to run", v => Test = v},
-                {"c:|concatenate:", "Concatenate results with existing results file.", v=> Concat = v != null},
-                {"gui:", "Show the revit test runner gui.", v=>Gui = v != null},
-                {"d|debug", "Run in debug mode.", v=>IsDebug = v != null},
-                {"h|help", "Show this message and exit.", v=> showHelp = v != null}
-            };
-
-            var notParsed = new List<string>();
-
-            const string helpMessage = "Try 'DynamoTestFrameworkRunner --help' for more information.";
-
-            try
-            {
-                notParsed = p.Parse(args);
-            }
-            catch (OptionException e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(helpMessage);
-                return false;
-            }
-
-            if (notParsed.Count > 0)
-            {
-                Console.WriteLine(String.Join(" ", notParsed.ToArray()));
-                return false;
-            }
-
-            if (showHelp)
-            {
-                ShowHelp(p);
-                return false;
-            }
-
-            if (!String.IsNullOrEmpty(TestAssembly) && !File.Exists(TestAssembly))
-            {
-                Console.Write("The specified test assembly does not exist.");
-                return false;
-            }
-
-            if (!String.IsNullOrEmpty(WorkingDirectory) && !Directory.Exists(WorkingDirectory))
-            {
-                Console.Write("The specified working directory does not exist.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void ShowHelp(OptionSet p)
-        {
-            Console.WriteLine("Usage: DynamoTestFrameworkRunner [OPTIONS]");
-            Console.WriteLine("Run a test or a fixture of tests from an assembly.");
-            Console.WriteLine();
-            Console.WriteLine("Options:");
-            p.WriteOptionDescriptions(Console.Out);
-        }
-
         private void OnTestRunsComplete()
         {
             if (TestRunsComplete != null)
@@ -283,7 +214,7 @@ namespace RevitTestFrameworkRunner
             }
         }
 
-        internal bool ReadAssembly(string assemblyPath, IList<IAssemblyData> data)
+        public bool ReadAssembly(string assemblyPath, IList<IAssemblyData> data)
         {
             try
             {
@@ -564,16 +495,23 @@ namespace RevitTestFrameworkRunner
                 //        })));
                 //}
 
-                Dispatcher.CurrentDispatcher.BeginInvoke((Action)(() => td.ResultData.Add(
+                //Dispatcher.CurrentDispatcher.BeginInvoke((Action)(() => td.ResultData.Add(
+                //        new ResultData()
+                //        {
+                //            StackTrace = failure.stacktrace,
+                //            Message = failure.message
+                //        })));
+
+                td.ResultData.Add(
                         new ResultData()
                         {
                             StackTrace = failure.stacktrace,
                             Message = failure.message
-                        })));
+                        });
             }
         }
 
-        internal void Cleanup()
+        public void Cleanup()
         {
             try
             {
@@ -623,46 +561,7 @@ namespace RevitTestFrameworkRunner
             return results;
         }
 
-        internal void SaveSettings()
-        {
-            Settings.Default.workingDirectory = WorkingDirectory;
-            Settings.Default.assemblyPath = TestAssembly;
-            Settings.Default.resultsPath = Results;
-            Settings.Default.isDebug = IsDebug;
-            Settings.Default.timeout = Timeout;
-            Settings.Default.selectedProduct = SelectedProduct;  
-            Settings.Default.Save();
-        }
-
-        internal void LoadSettings()
-        {
-            WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory)
-                ? Settings.Default.workingDirectory
-                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            TestAssembly = !String.IsNullOrEmpty(Settings.Default.assemblyPath)
-                ? Settings.Default.assemblyPath
-                : null;
-
-            Results = !String.IsNullOrEmpty(Settings.Default.resultsPath)
-                ? Settings.Default.resultsPath
-                : null;
-
-            Timeout = Settings.Default.timeout;
-            IsDebug = Settings.Default.isDebug;
-
-            if (Settings.Default.selectedProduct > Products.Count - 1)
-            {
-                SelectedProduct = -1;
-            }
-            else
-            {
-                SelectedProduct = Settings.Default.selectedProduct;
-            }
-            
-        }
-
-        internal bool FindRevit(IList<RevitProduct> productList)
+        public bool FindRevit(IList<RevitProduct> productList)
         {
             var products = RevitProductUtility.GetAllInstalledRevitProducts();
             if (!products.Any())

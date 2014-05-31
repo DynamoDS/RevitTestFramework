@@ -1,15 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Dynamo.Utilities;
-using RevitTestFrameworkRunner;
+using NDesk.Options;
+using RevitTestFrameworkApp.Properties;
 
-namespace RevitTestFramework
+namespace RevitTestFrameworkApp
 {
     class Program
     {
         private static ViewModel _vm;
+        private static Runner.Runner runner;
         
         [STAThread]
         static void Main(string[] args)
@@ -18,10 +21,10 @@ namespace RevitTestFramework
 
             try
             {
-                var runner = new Runner();
+                runner = new Runner.Runner();
                 _vm = new ViewModel(runner);
 
-                if (!runner.ParseArguments(args))
+                if (!ParseArguments(args))
                 {
                     return;
                 }
@@ -33,7 +36,7 @@ namespace RevitTestFramework
                 
                 if (runner.Gui)
                 {
-                    runner.LoadSettings();
+                    LoadSettings();
 
                     if (!string.IsNullOrEmpty(runner.TestAssembly) && File.Exists(runner.TestAssembly))
                     {
@@ -44,7 +47,7 @@ namespace RevitTestFramework
                     var view = new View(_vm);
                     view.ShowDialog();
 
-                    runner.SaveSettings();
+                    SaveSettings();
                 }
                 else
                 {
@@ -114,5 +117,112 @@ namespace RevitTestFramework
                 Console.WriteLine(ex.Message);
             }
         }
+
+        private static void SaveSettings()
+        {
+            Settings.Default.workingDirectory = runner.WorkingDirectory;
+            Settings.Default.assemblyPath = runner.TestAssembly;
+            Settings.Default.resultsPath = runner.Results;
+            Settings.Default.isDebug = runner.IsDebug;
+            Settings.Default.timeout = runner.Timeout;
+            Settings.Default.selectedProduct = runner.SelectedProduct;
+            Settings.Default.Save();
+        }
+
+        private static void LoadSettings()
+        {
+            runner.WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory)
+                ? Settings.Default.workingDirectory
+                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            runner.TestAssembly = !String.IsNullOrEmpty(Settings.Default.assemblyPath)
+                ? Settings.Default.assemblyPath
+                : null;
+
+            runner.Results = !String.IsNullOrEmpty(Settings.Default.resultsPath)
+                ? Settings.Default.resultsPath
+                : null;
+
+            runner.Timeout = Settings.Default.timeout;
+            runner.IsDebug = Settings.Default.isDebug;
+
+            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
+            {
+                runner.SelectedProduct = -1;
+            }
+            else
+            {
+                runner.SelectedProduct = Settings.Default.selectedProduct;
+            }
+        }
+
+        private static bool ParseArguments(IEnumerable<string> args)
+        {
+            var showHelp = false;
+
+            var p = new OptionSet()
+            {
+                {"dir:","The path to the working directory.", v=> runner.WorkingDirectory = Path.GetFullPath(v)},
+                {"a:|assembly:", "The path to the test assembly.", v => runner.TestAssembly = Path.GetFullPath(v)},
+                {"r:|results:", "The path to the results file.", v=>runner.Results = Path.GetFullPath(v)},
+                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
+                {"t:|testName:", "The name of a test to run", v => runner.Test = v},
+                {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
+                {"gui:", "Show the revit test runner gui.", v=>runner.Gui = v != null},
+                {"d|debug", "Run in debug mode.", v=>runner.IsDebug = v != null},
+                {"h|help", "Show this message and exit.", v=> showHelp = v != null}
+            };
+
+            var notParsed = new List<string>();
+
+            const string helpMessage = "Try 'DynamoTestFrameworkRunner --help' for more information.";
+
+            try
+            {
+                notParsed = p.Parse(args);
+            }
+            catch (OptionException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(helpMessage);
+                return false;
+            }
+
+            if (notParsed.Count > 0)
+            {
+                Console.WriteLine(String.Join(" ", notParsed.ToArray()));
+                return false;
+            }
+
+            if (showHelp)
+            {
+                ShowHelp(p);
+                return false;
+            }
+
+            if (!String.IsNullOrEmpty(runner.TestAssembly) && !File.Exists(runner.TestAssembly))
+            {
+                Console.Write("The specified test assembly does not exist.");
+                return false;
+            }
+
+            if (!String.IsNullOrEmpty(runner.WorkingDirectory) && !Directory.Exists(runner.WorkingDirectory))
+            {
+                Console.Write("The specified working directory does not exist.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ShowHelp(OptionSet p)
+        {
+            Console.WriteLine("Usage: DynamoTestFrameworkRunner [OPTIONS]");
+            Console.WriteLine("Run a test or a fixture of tests from an assembly.");
+            Console.WriteLine();
+            Console.WriteLine("Options:");
+            p.WriteOptionDescriptions(Console.Out);
+        }
+
     }
 }

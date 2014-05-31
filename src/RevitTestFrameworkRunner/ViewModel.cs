@@ -4,22 +4,22 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
-using RevitTestFramework;
+using Runner;
+using MessageBox = System.Windows.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
-namespace RevitTestFrameworkRunner
+namespace RevitTestFrameworkApp
 {
     public class ViewModel : NotificationObject
     {
         #region private members
 
         private object _selectedItem;
-        private Runner _runner;
+        private global::Runner.Runner _runner;
 
         #endregion
 
@@ -29,7 +29,7 @@ namespace RevitTestFrameworkRunner
         public DelegateCommand SetWorkingPathCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
 
-        public Dispatcher UiDispatcher { get; set; }
+        //public Dispatcher UiDispatcher { get; set; }
 
         public object SelectedItem
         {
@@ -147,7 +147,7 @@ namespace RevitTestFrameworkRunner
 
         #region constructors
 
-        internal ViewModel(Runner runner)
+        internal ViewModel(global::Runner.Runner runner)
         {
             _runner = runner;
             

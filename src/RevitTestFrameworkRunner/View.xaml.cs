@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 
-namespace RevitTestFrameworkRunner
+namespace RevitTestFrameworkApp
 {
     /// <summary>
     /// Interaction logic for View.xaml
@@ -20,7 +20,6 @@ namespace RevitTestFrameworkRunner
         void View_Loaded(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as ViewModel;
-            vm.UiDispatcher = Dispatcher;
         }
 
         private void View_Closing(object sender, CancelEventArgs e)

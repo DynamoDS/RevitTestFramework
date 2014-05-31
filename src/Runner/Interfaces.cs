@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace RevitTestFrameworkRunner
+namespace Runner
 {
     public enum TestStatus{None,Cancelled, Error, Failure, Ignored, Inconclusive, NotRunnable, Skipped, Success,TimedOut}
     public enum FixtureStatus{None, Success, Failure, Mixed}

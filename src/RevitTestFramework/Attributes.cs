@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Dynamo.Tests
+namespace RevitTestFramework
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class TestModelAttribute : Attribute

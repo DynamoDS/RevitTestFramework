@@ -5,6 +5,7 @@ using Autodesk.Revit.DB;
 using Dynamo.Tests;
 using NUnit.Framework;
 using RevitServices.Persistence;
+using RevitTestFramework;
 
 namespace Samples
 {
