@@ -64,6 +64,7 @@
     <ProjectReference Include="..\RevitTestFramework\RevitTestFramework.csproj">
       <Project>{745CCA0F-549E-4756-A31E-41BF7F905B8A}</Project>
       <Name>RevitTestFramework</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

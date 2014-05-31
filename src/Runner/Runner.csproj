@@ -67,6 +67,7 @@
     <ProjectReference Include="..\RevitTestFramework\RevitTestFramework.csproj">
       <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
       <Name>RevitTestFramework</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
