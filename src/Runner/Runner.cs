@@ -350,6 +350,23 @@ namespace Runner
             }
         }
 
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
+            sb.AppendLine(string.Format("Fixture : {0}", Fixture));
+            sb.AppendLine(string.Format("Test : {0}", Test));
+            sb.AppendLine(string.Format("Results Path : {0}", Results));
+            sb.AppendLine(string.Format("Timeout : {0}", Timeout));
+            sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
+            sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
+            sb.AppendLine(string.Format("GUI : {0}", Gui ? "True" : "False"));
+            sb.AppendLine(string.Format("Revit : {0}", RevitPath));
+            sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
+            sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
+            return sb.ToString();
+        }
+
         #endregion
 
         #region private methods
@@ -604,22 +621,6 @@ namespace Runner
 
         #endregion
 
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
-            sb.AppendLine(string.Format("Fixture : {0}", Fixture));
-            sb.AppendLine(string.Format("Test : {0}", Test));
-            sb.AppendLine(string.Format("Results Path : {0}", Results));
-            sb.AppendLine(string.Format("Timeout : {0}", Timeout));
-            sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
-            sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
-            sb.AppendLine(string.Format("GUI : {0}", Gui ? "True" : "False"));
-            sb.AppendLine(string.Format("Revit : {0}", RevitPath));
-            sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
-            sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
-            return sb.ToString();
-        }
     }
 
     public class AssemblyData : IAssemblyData
