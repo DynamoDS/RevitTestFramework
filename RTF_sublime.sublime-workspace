@@ -11,6 +11,22 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "src/RevitTestFrameworkRunner/RevitTestFrameworkApp.csproj",
+			"settings":
+			{
+				"buffer_size": 4524,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/RevitTestFramework/RevitTestFramework.csproj",
+			"settings":
+			{
+				"buffer_size": 3825,
+				"line_ending": "Windows"
+			}
+		}
 	],
 	"build_system": "",
 	"command_palette":
@@ -39,10 +55,10 @@
 	},
 	"file_history":
 	[
-		"/C/Users/Ian/Documents/GitHub/Dynamo/src/Config/CS.props",
 		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/Samples/SampleTests.csproj",
-		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/Runner/Runner.csproj",
 		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/RevitTestFrameworkRunner/RevitTestFrameworkApp.csproj",
+		"/C/Users/Ian/Documents/GitHub/Dynamo/src/Config/CS.props",
+		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/Runner/Runner.csproj",
 		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/RevitTestFramework/RevitTestFramework.csproj",
 		"/C/Users/Ian/Documents/GitHub/RevitTestFramework/src/Config/CS.props",
 		"/C/Users/Ian/Documents/GitHub/Dynamo/src/Libraries/Tesellation/Tessellation.csproj",
@@ -157,8 +173,69 @@
 	"groups":
 	[
 		{
+			"selected": 1,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "src/RevitTestFrameworkRunner/RevitTestFrameworkApp.csproj",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4524,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								789,
+								794
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "src/RevitTestFramework/RevitTestFramework.csproj",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 3825,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1124,
+								1124
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 720.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
 			]
 		}
 	],
