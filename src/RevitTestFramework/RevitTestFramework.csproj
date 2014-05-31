@@ -45,7 +45,6 @@
     <Reference Include="DynamoUtilities">
       <HintPath>..\..\lib\DynamoUtilities.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Practices.Prism, Version=4.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="nunit.core">
       <HintPath>..\..\lib\NUnit\nunit.core.dll</HintPath>
     </Reference>
