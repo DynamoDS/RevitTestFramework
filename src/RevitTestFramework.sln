@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFramework", "RevitTestFramework\RevitTestFramework.csproj", "{745CCA0F-549E-4756-A31E-41BF7F905B8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkApp", "RevitTestFrameworkRunner\RevitTestFrameworkApp.csproj", "{D21140F7-D29A-4265-A679-BA76770B7257}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleTests", "Samples\SampleTests.csproj", "{BE4EB3BC-1593-4404-8402-FB831F3FEE42}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runner", "Runner\Runner.csproj", "{4A25BB46-081A-4ACD-9C38-297CD800550F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkApp", "RevitTestFrameworkApp\RevitTestFrameworkApp.csproj", "{D21140F7-D29A-4265-A679-BA76770B7257}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,10 +19,6 @@ Global
 		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -31,6 +27,10 @@ Global
 		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

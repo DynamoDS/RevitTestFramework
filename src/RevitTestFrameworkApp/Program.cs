@@ -51,6 +51,7 @@ namespace RevitTestFrameworkApp
                     var view = new View(_vm);
                     view.ShowDialog();
 
+
                     SaveSettings();
                 }
                 else

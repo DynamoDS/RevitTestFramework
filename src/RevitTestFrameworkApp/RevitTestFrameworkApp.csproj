@@ -51,10 +51,8 @@
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="RevitAddInUtility, Version=2015.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAddInUtility">
+      <HintPath>..\..\..\..\..\..\..\Program Files\Autodesk\Revit Architecture 2014\RevitAddInUtility.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
