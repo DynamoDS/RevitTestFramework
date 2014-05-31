@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Dynamo.Utilities;
+using Microsoft.Practices.Prism;
 using NDesk.Options;
 using RevitTestFrameworkApp.Properties;
 
@@ -29,10 +30,13 @@ namespace RevitTestFrameworkApp
                     return;
                 }
 
-                if (!runner.FindRevit(runner.Products))
+                var products = Runner.Runner.FindRevit();
+                if (products == null)
                 {
                     return;
                 }
+
+                runner.Products.AddRange(products);
                 
                 if (runner.Gui)
                 {
@@ -68,10 +72,14 @@ namespace RevitTestFrameworkApp
                         return;
                     }
 
-                    if (!runner.ReadAssembly(runner.TestAssembly, runner.Assemblies))
+                    var assemblyDatas = Runner.Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory);
+                    if (assemblyDatas == null)
                     {
                         return;
                     }
+
+                    runner.Assemblies.Clear();
+                    runner.Assemblies.AddRange(assemblyDatas);
 
                     if (File.Exists(runner.Results) && !runner.Concat)
                     {

@@ -10,6 +10,7 @@ using System.Text;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
+using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
 using NUnit.Framework;
 using RevitTestFramework;
@@ -60,12 +61,6 @@ namespace Runner
             get { return _pluginClass; }
         }
 
-        public bool Gui
-        {
-            get { return _gui; }
-            set { _gui = value; }
-        }
-
         internal string AddinPath
         {
             get { return _addinPath; }
@@ -112,6 +107,12 @@ namespace Runner
                 _products = value;
                 RaisePropertyChanged("Products");
             }
+        }
+
+        public bool Gui
+        {
+            get { return _gui; }
+            set { _gui = value; }
         }
 
         public int SelectedProduct
@@ -201,155 +202,28 @@ namespace Runner
                 "RevitTestFramework.dll");
         }
 
+        public static Runner BySetupPaths(string workingDirectory, string testAssembly,
+            string resultsPath,string testName="", string fixtureName="")
+        {
+            var products = FindRevit();
+
+            var runner = new Runner
+            {
+                WorkingDirectory = workingDirectory,
+                TestAssembly = testAssembly,
+                Test = testName,
+                Fixture = fixtureName,
+                Results = resultsPath,
+                Gui = false,
+                RevitPath = Path.Combine(products.First().InstallLocation, "revit.exe")
+            };
+
+            return runner;
+        }
+
         #endregion
 
-        #region private methods
-
-        private void OnTestRunsComplete()
-        {
-            if (TestRunsComplete != null)
-            {
-                TestRunsComplete(null, EventArgs.Empty);
-            }
-        }
-
-        public bool ReadAssembly(string assemblyPath, IList<IAssemblyData> data)
-        {
-            try
-            {
-                var assembly = Assembly.LoadFrom(assemblyPath);
-
-                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
-                data.Add(assData);
-
-                foreach (var fixtureType in assembly.GetTypes())
-                {
-                    if (!ReadFixture(fixtureType, assData))
-                    {
-                        //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine("The specified assembly could not be loaded for testing.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool ReadFixture(Type fixtureType, IAssemblyData data)
-        {
-            var fixtureAttribs = fixtureType.GetCustomAttributes(typeof(TestFixtureAttribute), true);
-            if (!fixtureAttribs.Any())
-            {
-                //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
-                return false;
-            }
-
-            var fixData = new FixtureData(data, fixtureType.Name);
-            data.Fixtures.Add(fixData);
-
-            foreach (var test in fixtureType.GetMethods())
-            {
-                var testAttribs = test.GetCustomAttributes(typeof(TestAttribute), false);
-                if (!testAttribs.Any())
-                {
-                    // skip this method
-                    continue;
-                }
-
-                if (!ReadTest(test, fixData))
-                {
-                    //Console.WriteLine(string.Format("Journal could not be created for test:{0} in fixture:{1}", _test,_fixture));
-                    continue;
-                }
-            }
-
-            return true;
-        }
-
-        private bool ReadTest(MethodInfo test, IFixtureData data)
-        {
-            //set the default modelPath to the empty.rfa file that will live in the build directory
-            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
-
-            var testModelAttribs = test.GetCustomAttributes(typeof(TestModelAttribute), false);
-            if (testModelAttribs.Any())
-            {
-                //overwrite the model path with the one
-                //specified in the test model attribute
-                modelPath = Path.GetFullPath(Path.Combine(WorkingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
-            }
-
-            var runDynamoAttribs = test.GetCustomAttributes(typeof(RunDynamoAttribute), false);
-            var runDynamo = false;
-            if (runDynamoAttribs.Any())
-            {
-                runDynamo = ((RunDynamoAttribute)runDynamoAttribs[0]).RunDynamo;
-            }
-
-            var testData = new TestData(data, test.Name, modelPath, runDynamo);
-            data.Tests.Add(testData);
-
-            return true;
-        }
-
-        private void CreateJournal(string path, string testName, string fixtureName, string assemblyPath, string resultsPath, string modelPath)
-        {
-            using (var tw = new StreamWriter(path, false))
-            {
-                var journal = String.Format(@"'" +
-                                            "Dim Jrn \n" +
-                                            "Set Jrn = CrsJournalScript \n" +
-                                            "Jrn.Command \"StartupPage\" , \"Open this project , ID_FILE_MRU_FIRST\" \n" +
-                                            "Jrn.Data \"MRUFileName\"  , \"{0}\" \n" +
-                                            "Jrn.RibbonEvent \"Execute external command:{1}:{2}\" \n" +
-                                            "Jrn.Data \"APIStringStringMapJournalData\", 5, \"testName\", \"{3}\", \"fixtureName\", \"{4}\", \"testAssembly\", \"{5}\", \"resultsPath\", \"{6}\", \"debug\",\"{7}\" \n" +
-                                            "Jrn.Command \"Internal\" , \"Flush undo and redo stacks , ID_FLUSH_UNDO\" \n" +
-                                            "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"",
-                    modelPath, PluginGuid, PluginClass, testName, fixtureName, assemblyPath, resultsPath, IsDebug);
-
-                tw.Write(journal);
-                tw.Flush();
-
-                JournalPaths.Add(path);
-            }
-        }
-
-        internal void CreateAddin(string addinPath, string assemblyPath)
-        {
-            using (var tw = new StreamWriter(addinPath, false))
-            {
-                var addin = String.Format(
-                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
-                    "<RevitAddIns>\n" +
-                    "<AddIn Type=\"Command\">\n" +
-                    "<Name>Dynamo Test Framework</Name>\n" +
-                    "<Assembly>\"{0}\"</Assembly>\n" +
-                    "<AddInId>{1}</AddInId>\n" +
-                    "<FullClassName>{2}</FullClassName>\n" +
-                    "<VendorId>ADSK</VendorId>\n" +
-                    "<VendorDescription>Autodesk</VendorDescription>\n" +
-                    "</AddIn>\n" +
-                    "</RevitAddIns>",
-                    assemblyPath, _pluginGuid, _pluginClass
-                    );
-
-                tw.Write(addin);
-                tw.Flush();
-            }
-        }
-
-        public void Refresh()
-        {
-            Assemblies.Clear();
-            ReadAssembly(TestAssembly, Assemblies);
-
-            Console.WriteLine(this.ToString());
-        }
+        #region public methods
 
         public void RunAssembly(IAssemblyData ad)
         {
@@ -437,6 +311,103 @@ namespace Runner
             }
         }
 
+        public void Refresh()
+        {
+            Assemblies.Clear();
+            Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
+
+            Console.WriteLine(ToString());
+        }
+
+        public void Cleanup()
+        {
+            try
+            {
+                foreach (var path in JournalPaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                }
+
+                JournalPaths.Clear();
+
+                var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
+                foreach (var journal in journals)
+                {
+                    File.Delete(journal);
+                }
+
+                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
+                {
+                    File.Delete(AddinPath);
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("One or more journal files could not be deleted.");
+            }
+        }
+
+        #endregion
+
+        #region private methods
+
+        private void OnTestRunsComplete()
+        {
+            if (TestRunsComplete != null)
+            {
+                TestRunsComplete(null, EventArgs.Empty);
+            }
+        }
+
+        private void CreateJournal(string path, string testName, string fixtureName, string assemblyPath, string resultsPath, string modelPath)
+        {
+            using (var tw = new StreamWriter(path, false))
+            {
+                var journal = String.Format(@"'" +
+                                            "Dim Jrn \n" +
+                                            "Set Jrn = CrsJournalScript \n" +
+                                            "Jrn.Command \"StartupPage\" , \"Open this project , ID_FILE_MRU_FIRST\" \n" +
+                                            "Jrn.Data \"MRUFileName\"  , \"{0}\" \n" +
+                                            "Jrn.RibbonEvent \"Execute external command:{1}:{2}\" \n" +
+                                            "Jrn.Data \"APIStringStringMapJournalData\", 5, \"testName\", \"{3}\", \"fixtureName\", \"{4}\", \"testAssembly\", \"{5}\", \"resultsPath\", \"{6}\", \"debug\",\"{7}\" \n" +
+                                            "Jrn.Command \"Internal\" , \"Flush undo and redo stacks , ID_FLUSH_UNDO\" \n" +
+                                            "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"",
+                    modelPath, PluginGuid, PluginClass, testName, fixtureName, assemblyPath, resultsPath, IsDebug);
+
+                tw.Write(journal);
+                tw.Flush();
+
+                JournalPaths.Add(path);
+            }
+        }
+
+        private void CreateAddin(string addinPath, string assemblyPath)
+        {
+            using (var tw = new StreamWriter(addinPath, false))
+            {
+                var addin = String.Format(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
+                    "<RevitAddIns>\n" +
+                    "<AddIn Type=\"Command\">\n" +
+                    "<Name>Dynamo Test Framework</Name>\n" +
+                    "<Assembly>\"{0}\"</Assembly>\n" +
+                    "<AddInId>{1}</AddInId>\n" +
+                    "<FullClassName>{2}</FullClassName>\n" +
+                    "<VendorId>ADSK</VendorId>\n" +
+                    "<VendorDescription>Autodesk</VendorDescription>\n" +
+                    "</AddIn>\n" +
+                    "</RevitAddIns>",
+                    assemblyPath, _pluginGuid, _pluginClass
+                    );
+
+                tw.Write(addin);
+                tw.Flush();
+            }
+        }
+
         private void GetTestResultStatus(ITestData td)
         {
             //set the test status
@@ -510,38 +481,7 @@ namespace Runner
             }
         }
 
-        public void Cleanup()
-        {
-            try
-            {
-                foreach (var path in JournalPaths)
-                {
-                    if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-                }
-
-                JournalPaths.Clear();
-
-                var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
-                foreach (var journal in journals)
-                {
-                    File.Delete(journal);
-                }
-
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine("One or more journal files could not be deleted.");
-            }
-        }
-
-        internal resultType LoadResults(string resultsPath)
+        private resultType LoadResults(string resultsPath)
         {
             if (!File.Exists(resultsPath))
             {
@@ -560,21 +500,110 @@ namespace Runner
             return results;
         }
 
-        public bool FindRevit(IList<RevitProduct> productList)
+        #endregion
+
+        #region public static methods
+
+        public static IList<RevitProduct> FindRevit()
         {
             var products = RevitProductUtility.GetAllInstalledRevitProducts();
             if (!products.Any())
             {
                 Console.WriteLine("No versions of revit could be found");
+                return null;
+            }
+
+            return products;
+        }
+
+        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory)
+        {
+            IList<IAssemblyData> data = new List<IAssemblyData>();
+
+            try
+            {
+                var assembly = Assembly.LoadFrom(assemblyPath);
+
+                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
+                data.Add(assData);
+
+                foreach (var fixtureType in assembly.GetTypes())
+                {
+                    if (!ReadFixture(fixtureType, assData, workingDirectory))
+                    {
+                        //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("The specified assembly could not be loaded for testing.");
+                return null;
+            }
+
+            return data;
+        }
+
+        public static bool ReadFixture(Type fixtureType, IAssemblyData data, string workingDirectory)
+        {
+            var fixtureAttribs = fixtureType.GetCustomAttributes(typeof(TestFixtureAttribute), true);
+            if (!fixtureAttribs.Any())
+            {
+                //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
                 return false;
             }
 
-            products.ForEach(productList.Add);
+            var fixData = new FixtureData(data, fixtureType.Name);
+            data.Fixtures.Add(fixData);
+
+            foreach (var test in fixtureType.GetMethods())
+            {
+                var testAttribs = test.GetCustomAttributes(typeof(TestAttribute), false);
+                if (!testAttribs.Any())
+                {
+                    // skip this method
+                    continue;
+                }
+
+                if (!ReadTest(test, fixData, workingDirectory))
+                {
+                    //Console.WriteLine(string.Format("Journal could not be created for test:{0} in fixture:{1}", _test,_fixture));
+                    continue;
+                }
+            }
+
+            return true;
+        }
+
+        public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
+        {
+            //set the default modelPath to the empty.rfa file that will live in the build directory
+            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
+
+            var testModelAttribs = test.GetCustomAttributes(typeof(TestModelAttribute), false);
+            if (testModelAttribs.Any())
+            {
+                //overwrite the model path with the one
+                //specified in the test model attribute
+                modelPath = Path.GetFullPath(Path.Combine(workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
+            }
+
+            var runDynamoAttribs = test.GetCustomAttributes(typeof(RunDynamoAttribute), false);
+            var runDynamo = false;
+            if (runDynamoAttribs.Any())
+            {
+                runDynamo = ((RunDynamoAttribute)runDynamoAttribs[0]).RunDynamo;
+            }
+
+            var testData = new TestData(data, test.Name, modelPath, runDynamo);
+            data.Tests.Add(testData);
+
             return true;
         }
 
         #endregion
-    
+
         public override string ToString()
         {
             var sb = new StringBuilder();
