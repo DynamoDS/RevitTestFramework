@@ -34,6 +34,8 @@ namespace Runner
         private string _results;
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
         private const string _pluginClass = "Dynamo.Tests.RevitTestFramework";
+        private const string _appGuid = "c950020f-3da0-4e48-ab82-5e30c3f4b345";
+        private const string _appClass = "Dynamo.Tests.RevitTestFrameworkExternalApp";
         private string _workingDirectory;
         private bool _gui = true;
         private string _revitPath;
@@ -394,6 +396,15 @@ namespace Runner
                                             "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"",
                     modelPath, PluginGuid, PluginClass, testName, fixtureName, assemblyPath, resultsPath, IsDebug, WorkingDirectory);
 
+                //var journal = String.Format(@"'" +
+                //                            "Dim Jrn \n" +
+                //                            "Set Jrn = CrsJournalScript \n" +
+                //                            "Jrn.Command \"StartupPage\" , \"Open this project , ID_FILE_MRU_FIRST\" \n" +
+                //                            "Jrn.Data \"MRUFileName\"  , \"{0}\" \n" +
+                //                            "Jrn.RibbonEvent \"Execute external command:{1}:{2}\" \n" +
+                //                            "Jrn.Data \"APIStringStringMapJournalData\", 6, \"testName\", \"{3}\", \"fixtureName\", \"{4}\", \"testAssembly\", \"{5}\", \"resultsPath\", \"{6}\", \"debug\",\"{7}\",\"workingDirectory\",\"{8}\" \n",
+                //    modelPath, PluginGuid, PluginClass, testName, fixtureName, assemblyPath, resultsPath, IsDebug, WorkingDirectory);
+
                 tw.Write(journal);
                 tw.Flush();
 
@@ -408,16 +419,44 @@ namespace Runner
                 var addin = String.Format(
                     "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
                     "<RevitAddIns>\n" +
-                    "<AddIn Type=\"Command\">\n" +
-                    "<Name>Dynamo Test Framework</Name>\n" +
+
+                    "<AddIn Type=\"Application\">\n" +
+                    "<Name>Dynamo Test Framework App</Name>\n" +
                     "<Assembly>\"{0}\"</Assembly>\n" +
                     "<AddInId>{1}</AddInId>\n" +
                     "<FullClassName>{2}</FullClassName>\n" +
-                    "<VendorId>ADSK</VendorId>\n" +
-                    "<VendorDescription>Autodesk</VendorDescription>\n" +
+                    "<VendorId>Dynamo</VendorId>\n" +
+                    "<VendorDescription>Dynamo</VendorDescription>\n" +
                     "</AddIn>\n" +
+
+                    "<AddIn Type=\"Command\">\n" +
+                    "<Name>Dynamo Test Framework</Name>\n" +
+                    "<Assembly>\"{0}\"</Assembly>\n" +
+                    "<AddInId>{3}</AddInId>\n" +
+                    "<FullClassName>{4}</FullClassName>\n" +
+                    "<VendorId>Dynamo</VendorId>\n" +
+                    "<VendorDescription>Dynamo</VendorDescription>\n" +
+                    "</AddIn>\n" +
+
                     "</RevitAddIns>",
-                    assemblyPath, _pluginGuid, _pluginClass
+                    assemblyPath,_appGuid, _appClass, _pluginGuid, _pluginClass
+                    );
+
+                tw.Write(addin);
+                tw.Flush();
+            }
+        }
+
+        private void CreateApplicationAddin(string appPath, string assemblyPath)
+        {
+            using (var tw = new StreamWriter(appPath, false))
+            {
+                var addin = String.Format(
+                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
+                    "<RevitAddIns>\n" +
+                    
+                    "</RevitAddIns>",
+                    assemblyPath, _appGuid, _appClass
                     );
 
                 tw.Write(addin);
