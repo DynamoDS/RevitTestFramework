@@ -66,12 +66,17 @@ namespace Dynamo.Tests
 
         #endregion
 
+        public static ExternalCommandData CommandData { get; internal set; }
+        public static string WorkingDirectory { get; set; }
+
         public Result Execute(ExternalCommandData revit, ref string message, ElementSet elements)
         {
             AppDomain.CurrentDomain.AssemblyResolve += Dynamo.Utilities.AssemblyHelper.CurrentDomain_AssemblyResolve;
 
             try
             {
+                CommandData = revit;
+                
                 var docManager = DocumentManager.Instance;
                 docManager.CurrentUIApplication = revit.Application;
 
@@ -234,6 +239,10 @@ namespace Dynamo.Tests
                 {
                     isDebug = false;
                 }
+            }
+            if (dataMap.ContainsKey("workingDirectory"))
+            {
+                WorkingDirectory = dataMap["workingDirectory"];
             }
         }
 
