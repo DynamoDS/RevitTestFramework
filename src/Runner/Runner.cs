@@ -449,23 +449,6 @@ namespace Runner
             }
         }
 
-        private void CreateApplicationAddin(string appPath, string assemblyPath)
-        {
-            using (var tw = new StreamWriter(appPath, false))
-            {
-                var addin = String.Format(
-                    "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"no\"?>\n" +
-                    "<RevitAddIns>\n" +
-                    
-                    "</RevitAddIns>",
-                    assemblyPath, _appGuid, _appClass
-                    );
-
-                tw.Write(addin);
-                tw.Flush();
-            }
-        }
-
         private void GetTestResultStatus(ITestData td)
         {
             System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke((Action)(() => td.ResultData.Clear()));
@@ -530,7 +513,7 @@ namespace Runner
                             new ResultData()
                             {
                                 StackTrace = failure.stacktrace,
-                                Message = failure.message
+                                Message = ourTest.name + ":" + failure.message
                             })));
                 }
                 

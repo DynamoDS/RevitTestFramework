@@ -72,6 +72,12 @@ namespace Samples
             Assert.AreEqual(0,0);
         }
 
+        [Test]
+        public void LeaveAMessage()
+        {
+            Assert.Pass("This test passed. Hooray!");
+        }
+
         [Test] 
         [TestCaseSource("SetupManyTests")]
         public void RunManyTests(object a, object b)
