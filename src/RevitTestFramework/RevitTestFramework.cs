@@ -5,8 +5,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -14,9 +16,38 @@ using Dynamo.NUnit.Tests;
 using NUnit.Core;
 using NUnit.Core.Filters;
 using RevitServices.Persistence;
+using RevitServices.Threading;
+using RevitServices.Transactions;
 
 namespace Dynamo.Tests
 {
+    [Transaction(Autodesk.Revit.Attributes.TransactionMode.Automatic)]
+    [Regeneration(RegenerationOption.Manual)]
+    public class RevitTestFrameworkExternalApp : IExternalApplication
+    {
+        public static ControlledApplication ControlledApplication;
+
+        public Result OnStartup(UIControlledApplication application)
+        {
+            //try
+            //{
+            //    ControlledApplication = application.ControlledApplication;
+            //    IdlePromise.RegisterIdle(application);
+            //    TransactionManager.SetupManager(new AutomaticTransactionStrategy());
+                return Result.Succeeded;
+            //}
+            //catch
+            //{
+            //    return Result.Failed;
+            //}
+        }
+
+        public Result OnShutdown(UIControlledApplication application)
+        {
+            return Result.Succeeded;
+        }
+    }
+
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     [Journaling(JournalingMode.UsingCommandData)]
@@ -104,13 +135,14 @@ namespace Dynamo.Tests
 
                 DocumentManager.Instance.CurrentUIDocument = revit.Application.ActiveUIDocument;
 
-                var fixtureResult = RunTests(canReadData);
+                // Start the test thread for queuing.
+                //var testThread = new Thread(TestThread);
+                //testThread.Start(canReadData);
+                //testThread.Join();
 
-                CalculateCaseTotalsOnSuite(fixtureResult);
-                CalculateSweetTotalsOnOuterSweet(rootSuite);
-                CalculateTotalsOnResultsRoot(resultsRoot);
+                TestThread(canReadData);
 
-                SaveResults();
+
             }
             catch (Exception ex)
             {
@@ -121,6 +153,25 @@ namespace Dynamo.Tests
             }
 
             return Result.Succeeded;
+        }
+
+        private void TestThread(object canReadData)
+        {
+            //IdlePromise.ExecuteOnIdleAsync(() =>
+            //{
+                var fixtureResult = RunTests((bool)canReadData);
+
+                CalculateCaseTotalsOnSuite(fixtureResult);
+                CalculateSweetTotalsOnOuterSweet(rootSuite);
+                CalculateTotalsOnResultsRoot(resultsRoot);
+
+                SaveResults();
+
+                //close logic
+
+                CommandData = null;
+                WorkingDirectory = null;
+            //});
         }
 
         private testsuiteType RunTests(bool canReadData)
@@ -379,13 +430,13 @@ namespace Dynamo.Tests
             //result types
             //Ignored, Failure, NotRunnable, Error, Success
             var testCase = new testcaseType
-                {
-                    name = t.TestName.Name,
-                    executed = result.Executed.ToString(),
-                    success = result.IsSuccess.ToString(),
-                    asserts = result.AssertCount.ToString(CultureInfo.InvariantCulture),
-                    time = result.Time.ToString(CultureInfo.InvariantCulture)
-                };
+            {
+                name = t.TestName.Name,
+                executed = result.Executed.ToString(),
+                success = result.IsSuccess.ToString(),
+                asserts = result.AssertCount.ToString(CultureInfo.InvariantCulture),
+                time = result.Time.ToString(CultureInfo.InvariantCulture)
+            };
 
             switch (result.ResultState)
             {
