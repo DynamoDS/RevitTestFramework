@@ -195,8 +195,9 @@ namespace RevitTestFrameworkApp
 
             var worker = new BackgroundWorker();
 
-            worker.DoWork += TestThread;
-            worker.RunWorkerAsync(parameter);   
+            //worker.DoWork += TestThread;
+            //worker.RunWorkerAsync(parameter);   
+            TestThread(this, new DoWorkEventArgs(parameter));
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)

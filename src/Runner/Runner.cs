@@ -304,7 +304,9 @@ namespace Runner
             }
 
             if (!timedOut && Gui)
+            {
                 GetTestResultStatus(td);
+            }
 
             RunCount--;
             if (RunCount == 0)
@@ -466,6 +468,8 @@ namespace Runner
 
         private void GetTestResultStatus(ITestData td)
         {
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke((Action)(() => td.ResultData.Clear()));
+
             //set the test status
             var results = LoadResults(Results);
             if (results != null)
@@ -476,64 +480,60 @@ namespace Runner
                     results.testsuite.results.Items
                         .Cast<testsuiteType>()
                         .FirstOrDefault(s => s.name == td.Fixture.Name);
-                var ourTest = ourSuite.results.Items
-                    .Cast<testcaseType>().FirstOrDefault(t => t.name == td.Name);
 
-                switch (ourTest.result)
+                // parameterized tests will have multiple results
+                var ourTests = ourSuite.results.Items
+                    .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
+
+                if (!ourTests.Any())
                 {
-                    case "Cancelled":
-                        td.TestStatus = TestStatus.Cancelled;
-                        break;
-                    case "Error":
-                        td.TestStatus = TestStatus.Error;
-                        break;
-                    case "Failure":
-                        td.TestStatus = TestStatus.Failure;
-                        break;
-                    case "Ignored":
-                        td.TestStatus = TestStatus.Ignored;
-                        break;
-                    case "Inconclusive":
-                        td.TestStatus = TestStatus.Inconclusive;
-                        break;
-                    case "NotRunnable":
-                        td.TestStatus = TestStatus.NotRunnable;
-                        break;
-                    case "Skipped":
-                        td.TestStatus = TestStatus.Skipped;
-                        break;
-                    case "Success":
-                        td.TestStatus = TestStatus.Success;
-                        break;
+                    return;
                 }
 
-                if (ourTest.Item == null) return;
-                var failure = ourTest.Item as failureType;
-                if (failure == null) return;
+                foreach (var ourTest in ourTests)
+                {
+                    switch (ourTest.result)
+                    {
+                        case "Cancelled":
+                            td.TestStatus = TestStatus.Cancelled;
+                            break;
+                        case "Error":
+                            td.TestStatus = TestStatus.Error;
+                            break;
+                        case "Failure":
+                            td.TestStatus = TestStatus.Failure;
+                            break;
+                        case "Ignored":
+                            td.TestStatus = TestStatus.Ignored;
+                            break;
+                        case "Inconclusive":
+                            td.TestStatus = TestStatus.Inconclusive;
+                            break;
+                        case "NotRunnable":
+                            td.TestStatus = TestStatus.NotRunnable;
+                            break;
+                        case "Skipped":
+                            td.TestStatus = TestStatus.Skipped;
+                            break;
+                        case "Success":
+                            td.TestStatus = TestStatus.Success;
+                            break;
+                    }
 
-                //if (_vm != null && _vm.UiDispatcher != null)
-                //{
-                //    _vm.UiDispatcher.BeginInvoke((Action)(() => td.ResultData.Add(
-                //        new ResultData()
-                //        {
-                //            StackTrace = failure.stacktrace,
-                //            Message = failure.message
-                //        })));
-                //}
+                    if (ourTest.Item == null) continue;
 
-                //Dispatcher.CurrentDispatcher.BeginInvoke((Action)(() => td.ResultData.Add(
-                //        new ResultData()
-                //        {
-                //            StackTrace = failure.stacktrace,
-                //            Message = failure.message
-                //        })));
+                    var failure = ourTest.Item as failureType;
+                    if (failure == null) return;
 
-                td.ResultData.Add(
-                        new ResultData()
-                        {
-                            StackTrace = failure.stacktrace,
-                            Message = failure.message
-                        });
+                    System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke((Action)(() => 
+                        td.ResultData.Add(
+                            new ResultData()
+                            {
+                                StackTrace = failure.stacktrace,
+                                Message = failure.message
+                            })));
+                }
+                
             }
         }
 
@@ -736,7 +736,7 @@ namespace Runner
 
         void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "TestStatus")
+            if (e.PropertyName == "TestStatus" || e.PropertyName=="ResultData")
             {
                 if (Tests.All(t => t.TestStatus == TestStatus.Success))
                 {

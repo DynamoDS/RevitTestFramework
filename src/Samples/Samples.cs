@@ -74,18 +74,19 @@ namespace Samples
 
         [Test] 
         [TestCaseSource("SetupManyTests")]
-        public void RunManyTests(string dynamoFilePath, string revitFilePath)
+        public void RunManyTests(object a, object b)
         {
-            SwapCurrentModel(revitFilePath);
-
-            //test on this model
+            Assert.IsTrue((int)a+(int)b <= 4);
         }
 
         private static List<object[]> SetupManyTests()
         {
-            var testParams = new List<object[]>();
-
-            //fill this list with arrays like [<dynamoFilePath>,<revitFilePath>]
+            var testParams = new List<object[]>
+            {
+                new object[] {1, 1}, 
+                new object[] {2, 2}, 
+                new object[] {3, 3}
+            };
 
             return testParams;
         }
