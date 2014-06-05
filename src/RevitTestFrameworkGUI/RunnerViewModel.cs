@@ -25,6 +25,7 @@ namespace RevitTestFrameworkGUI
 
         private object selectedItem;
         private readonly Runner.Runner runner;
+        private bool isRunning = false;
 
         #endregion
 
@@ -145,6 +146,16 @@ namespace RevitTestFrameworkGUI
             get { return runner.Products; }
         }
 
+        public bool IsRunning
+        {
+            get { return isRunning; }
+            set
+            {
+                isRunning = value;
+                RaisePropertyChanged("IsRunning");
+            }
+        }
+
         #endregion
 
         #region commands
@@ -230,6 +241,8 @@ namespace RevitTestFrameworkGUI
 
         private void TestThread(object sender, DoWorkEventArgs e)
         {
+            IsRunning = true;
+
             if (e.Argument is IAssemblyData)
             {
                 var ad = e.Argument as IAssemblyData;
@@ -247,6 +260,8 @@ namespace RevitTestFrameworkGUI
                 runner.RunCount = 1;
                 runner.RunTest(e.Argument as ITestData);
             }
+
+            IsRunning = false;
         }
 
         private bool CanSetWorkingPath()

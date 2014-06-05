@@ -14,6 +14,7 @@
         <revitTestFrameworkGui:TestStatusToColorConverter x:Key="TestStatusToColorConverter"></revitTestFrameworkGui:TestStatusToColorConverter>
         <revitTestFrameworkGui:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></revitTestFrameworkGui:FixtureStatusToColorConverter>
         <revitTestFrameworkGui:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></revitTestFrameworkGui:EmptyStringToCollapsedConverter>
+        <revitTestFrameworkGui:BoolInverseConverter x:Key="BoolInverseConverter"></revitTestFrameworkGui:BoolInverseConverter>
 
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
                                   DataType="{x:Type runner:ResultData}">
@@ -78,9 +79,15 @@
                 <ColumnDefinition Width="40"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             
-        <Button Margin="5"  Grid.Column="1" Grid.Row="0" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetAssemblyPathCommand}"></Button>
-        <Button Margin="5" Grid.Column="1" Grid.Row="1" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetResultsPathCommand}"></Button>
-        <Button Margin="5" Grid.Column="1" Grid.Row="2" Height="18" VerticalAlignment="Bottom" Content="..." Command="{Binding SetWorkingPathCommand}"></Button>
+        <Button Margin="5"  Grid.Column="1" Grid.Row="0" Height="18" VerticalAlignment="Bottom" Content="..." 
+                Command="{Binding SetAssemblyPathCommand}"
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
+        <Button Margin="5" Grid.Column="1" Grid.Row="1" Height="18" VerticalAlignment="Bottom" Content="..." 
+                Command="{Binding SetResultsPathCommand}"
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
+        <Button Margin="5" Grid.Column="1" Grid.Row="2" Height="18" VerticalAlignment="Bottom" Content="..." 
+                Command="{Binding SetWorkingPathCommand}"
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
 
         <StackPanel Margin="5" Grid.Row="0" Grid.Column="0" >
             <TextBlock Text="Test Assembly:">
@@ -88,7 +95,8 @@
                     <TextBlock Text="The path of the assembly (.dll, .exe) which contains test fixtures."></TextBlock>
                 </TextBlock.ToolTip>
             </TextBlock>
-            <TextBox Text="{Binding AssemblyPath, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" ></TextBox>
+            <TextBox Text="{Binding AssemblyPath, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" 
+                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></TextBox>
         </StackPanel>
 
         <StackPanel Margin="5" Grid.Row="1" Grid.Column="0">
@@ -97,7 +105,8 @@
                     <TextBlock Text="The path of the results file."></TextBlock>
                 </TextBlock.ToolTip>
             </TextBlock>
-            <TextBox  Text="{Binding ResultsPath, Converter={StaticResource ResultsPathConverter}, Mode=TwoWay}"></TextBox>
+            <TextBox  Text="{Binding ResultsPath, Converter={StaticResource ResultsPathConverter}, Mode=TwoWay}"
+                      IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></TextBox>
         </StackPanel>
 
         <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" >
@@ -106,10 +115,13 @@
                     <TextBlock Text="The directory where the RTF addin file is located and relative to which all test models will be sourced."></TextBlock>
                 </TextBlock.ToolTip>
             </TextBlock>
-            <TextBox Text="{Binding WorkingPath, Converter={StaticResource WorkingPathConverter}, Mode=TwoWay}"></TextBox>
+            <TextBox Text="{Binding WorkingPath, Converter={StaticResource WorkingPathConverter}, Mode=TwoWay}"
+                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></TextBox>
         </StackPanel>
         
-        <ComboBox ItemsSource="{Binding Products}" Grid.Row="3" Grid.Column="0" Margin="5" SelectedIndex="{Binding SelectedProductIndex, Mode=TwoWay}">
+        <ComboBox ItemsSource="{Binding Products}" Grid.Row="3" Grid.Column="0" Margin="5" 
+                  SelectedIndex="{Binding SelectedProductIndex, Mode=TwoWay}"
+                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding Name}"></TextBlock>
@@ -139,10 +151,15 @@
                   VirtualizingStackPanel.IsVirtualizing="True"
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 
-                  SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged">
+                  SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
+                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
         </TreeView>
 
-        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" Content="{Binding RunText}" Command="{Binding RunCommand}" CommandParameter="{Binding SelectedItem}"></Button>
+        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" 
+                Content="{Binding RunText}" 
+                Command="{Binding RunCommand}" 
+                CommandParameter="{Binding SelectedItem}"
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
     </Grid>
 
 </Window>
