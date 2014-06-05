@@ -36,15 +36,6 @@ namespace RevitTestFrameworkGUI
             Loaded += View_Loaded;
         }
 
-        /// <summary>
-        /// Handler for the Runner's TestComplete event.
-        /// </summary>
-        /// <param name="data"></param>
-        void runner_TestComplete(Runner.ITestData data)
-        {
-            throw new NotImplementedException();
-        }
-
         void View_Loaded(object sender, RoutedEventArgs e)
         {
             vm.LoadSettingsCommand.Execute();
