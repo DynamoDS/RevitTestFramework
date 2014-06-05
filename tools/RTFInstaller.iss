@@ -4,7 +4,7 @@
 #define MyAppName "Revit Test Framework"
 #define MyAppVersion "0.1"
 #define MyAppPublisher "Dynamo"
-#define MyAppExeName "RevitTestFrameworkApp.exe"
+#define MyAppExeName "RevitTestFrameworkGUI.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.

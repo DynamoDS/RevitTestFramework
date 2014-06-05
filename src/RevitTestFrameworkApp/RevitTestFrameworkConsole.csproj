@@ -10,8 +10,8 @@
     <ProjectGuid>{D21140F7-D29A-4265-A679-BA76770B7257}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RevitTestFrameworkApp</RootNamespace>
-    <AssemblyName>RevitTestFrameworkApp</AssemblyName>
+    <RootNamespace>RevitTestFrameworkConsole</RootNamespace>
+    <AssemblyName>RevitTestFrameworkConsole</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
