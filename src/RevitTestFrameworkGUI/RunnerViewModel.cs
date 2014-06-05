@@ -26,6 +26,7 @@ namespace RevitTestFrameworkGUI
         private object selectedItem;
         private readonly Runner.Runner runner;
         private bool isRunning = false;
+        private object isRunningLock = new object();
 
         #endregion
 
@@ -148,11 +149,20 @@ namespace RevitTestFrameworkGUI
 
         public bool IsRunning
         {
-            get { return isRunning; }
+            get
+            {
+                lock (isRunningLock)
+                {
+                    return isRunning;  
+                }
+            }
             set
             {
-                isRunning = value;
-                RaisePropertyChanged("IsRunning");
+                lock (isRunningLock)
+                {
+                    isRunning = value;
+                    RaisePropertyChanged("IsRunning");
+                }
             }
         }
 
@@ -167,6 +177,7 @@ namespace RevitTestFrameworkGUI
         public DelegateCommand SaveSettingsCommand { get; set; }
         public DelegateCommand LoadSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
+        public DelegateCommand CancelCommand { get; set; }
 
         #endregion
 
@@ -183,6 +194,7 @@ namespace RevitTestFrameworkGUI
             LoadSettingsCommand = new DelegateCommand(LoadSettings, CanLoadSettings);
             SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
+            CancelCommand = new DelegateCommand(Cancel, CanCancel);
 
             this.runner.Products.CollectionChanged += Products_CollectionChanged;
         }
@@ -236,7 +248,6 @@ namespace RevitTestFrameworkGUI
 
             worker.DoWork += TestThread;
             worker.RunWorkerAsync(parameter);   
-            //TestThread(this, new DoWorkEventArgs(parameter));
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)
@@ -373,6 +384,16 @@ namespace RevitTestFrameworkGUI
         private bool CanLoadSettings()
         {
             return true;
+        }
+
+        private bool CanCancel()
+        {
+            return isRunning;
+        }
+
+        private void Cancel()
+        {
+            IsRunning = false;
         }
 
         #endregion

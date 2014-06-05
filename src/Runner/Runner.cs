@@ -55,6 +55,7 @@ namespace Runner
         private int _selectedProduct;
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
         private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
+        private bool isRunning = false;
 
         #endregion
 
