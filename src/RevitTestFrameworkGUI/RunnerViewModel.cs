@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -7,36 +8,34 @@ using System.Windows.Forms;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
+using RevitTestFrameworkApp.Properties;
 using Runner;
 using MessageBox = System.Windows.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
-namespace RevitTestFrameworkApp
+namespace RevitTestFrameworkGUI
 {
-    public class ViewModel : NotificationObject
+    /// <summary>
+    /// The Runner's view model.
+    /// </summary>
+    public class RunnerViewModel : NotificationObject
     {
         #region private members
 
-        private object _selectedItem;
-        private global::Runner.Runner _runner;
+        private object selectedItem;
+        private readonly Runner.Runner runner;
 
         #endregion
 
         #region public properties
-        public DelegateCommand SetAssemblyPathCommand { get; set; }
-        public DelegateCommand SetResultsPathCommand { get; set; }
-        public DelegateCommand SetWorkingPathCommand { get; set; }
-        public DelegateCommand<object> RunCommand { get; set; }
-
-        //public Dispatcher UiDispatcher { get; set; }
 
         public object SelectedItem
         {
-            get { return _selectedItem; }
+            get { return selectedItem; }
             set
             {
-                _selectedItem = value;
+                selectedItem = value;
                 RaisePropertyChanged("SelectedItem");
                 RaisePropertyChanged("RunText");
                 RunCommand.RaiseCanExecuteChanged();
@@ -45,14 +44,14 @@ namespace RevitTestFrameworkApp
 
         public int SelectedProductIndex
         {
-            get { return _runner.SelectedProduct; }
+            get { return runner.SelectedProduct; }
             set
             {
-                _runner.SelectedProduct = value;
+                runner.SelectedProduct = value;
 
-                _runner.RevitPath = _runner.SelectedProduct == -1 ? 
+                runner.RevitPath = runner.SelectedProduct == -1 ? 
                     string.Empty : 
-                    Path.Combine(_runner.Products[value].InstallLocation, "revit.exe");
+                    Path.Combine(runner.Products[value].InstallLocation, "revit.exe");
 
                 RaisePropertyChanged("SelectedProductIndex");
             }
@@ -87,10 +86,10 @@ namespace RevitTestFrameworkApp
         
         public string ResultsPath
         {
-            get { return _runner.Results; }
+            get { return runner.Results; }
             set
             {
-                _runner.Results = value;
+                runner.Results = value;
                 RaisePropertyChanged("ResultsPath");
                 RunCommand.RaiseCanExecuteChanged();
             }
@@ -98,74 +97,99 @@ namespace RevitTestFrameworkApp
 
         public string AssemblyPath
         {
-            get { return _runner.TestAssembly; }
+            get { return runner.TestAssembly; }
             set
             {
-                _runner.TestAssembly = value;
-                _runner.Refresh();
-                RaisePropertyChanged("AssemblyPath");
+                runner.TestAssembly = value;
+                if (value != null)
+                {
+                    runner.Refresh();
+                    RaisePropertyChanged("AssemblyPath");
+                }
             }
         }
 
         public string WorkingPath
         {
-            get { return _runner.WorkingDirectory; }
+            get { return runner.WorkingDirectory; }
             set
             {
-                _runner.WorkingDirectory = value;
+                runner.WorkingDirectory = value;
                 RaisePropertyChanged("WorkingPath");
             }
         }
 
         public bool IsDebug
         {
-            get { return _runner.IsDebug; }
+            get { return runner.IsDebug; }
             set
             {
-                _runner.IsDebug = value;
+                runner.IsDebug = value;
                 RaisePropertyChanged("IsDebug");
             }
         }
 
         public int Timeout
         {
-            get { return _runner.Timeout; }
-            set { _runner.Timeout = value; }
+            get { return runner.Timeout; }
+            set { runner.Timeout = value; }
         }
 
         public ObservableCollection<IAssemblyData> Assemblies
         {
-            get { return _runner.Assemblies; }
+            get { return runner.Assemblies; }
         }
 
         public ObservableCollection<RevitProduct> Products
         {
-            get { return _runner.Products; }
+            get { return runner.Products; }
         }
+
+        #endregion
+
+        #region commands
+
+        public DelegateCommand SetAssemblyPathCommand { get; set; }
+        public DelegateCommand SetResultsPathCommand { get; set; }
+        public DelegateCommand SetWorkingPathCommand { get; set; }
+        public DelegateCommand<object> RunCommand { get; set; }
+        public DelegateCommand SaveSettingsCommand { get; set; }
+        public DelegateCommand LoadSettingsCommand { get; set; }
+        public DelegateCommand CleanupCommand { get; set; }
 
         #endregion
 
         #region constructors
 
-        internal ViewModel(global::Runner.Runner runner)
+        internal RunnerViewModel(Runner.Runner runner)
         {
-            _runner = runner;
+            this.runner = runner;
             
             SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
             SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
             SetWorkingPathCommand = new DelegateCommand(SetWorkingPath, CanSetWorkingPath);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
+            LoadSettingsCommand = new DelegateCommand(LoadSettings, CanLoadSettings);
+            SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
+            CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
 
-            _runner.Products.CollectionChanged += Products_CollectionChanged;
+            this.runner.Products.CollectionChanged += Products_CollectionChanged;
+        }
+
+        private bool CanCleanup()
+        {
+            return true;
         }
 
         #endregion
+
+        #region event handlers
 
         void Products_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             // When the products collection is changed, we want to set
             // the selected product index to the first in the list
-            if (_runner.Products.Count > 0)
+            if (runner.Products.Count > 0)
             {
                 SelectedProductIndex = 0;
             }
@@ -175,6 +199,10 @@ namespace RevitTestFrameworkApp
             }
         }
 
+        #endregion
+
+        #region private methods
+
         private bool CanRun(object parameter)
         {
             return SelectedItem != null;
@@ -182,22 +210,22 @@ namespace RevitTestFrameworkApp
 
         private void Run(object parameter)
         {
-            if (string.IsNullOrEmpty(_runner.Results))
+            if (string.IsNullOrEmpty(runner.Results))
             {
                 MessageBox.Show("Please select an output path for the results.");
                 return;
             }
 
-            if (File.Exists(_runner.Results) && !_runner.Concat)
+            if (File.Exists(runner.Results) && !runner.Concat)
             {
-                File.Delete(_runner.Results);
+                File.Delete(runner.Results);
             }
 
             var worker = new BackgroundWorker();
 
-            //worker.DoWork += TestThread;
-            //worker.RunWorkerAsync(parameter);   
-            TestThread(this, new DoWorkEventArgs(parameter));
+            worker.DoWork += TestThread;
+            worker.RunWorkerAsync(parameter);   
+            //TestThread(this, new DoWorkEventArgs(parameter));
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)
@@ -205,19 +233,19 @@ namespace RevitTestFrameworkApp
             if (e.Argument is IAssemblyData)
             {
                 var ad = e.Argument as IAssemblyData;
-                _runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                _runner.RunAssembly(ad);
+                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
+                runner.RunAssembly(ad);
             }
             else if (e.Argument is IFixtureData)
             {
                 var fd = e.Argument as IFixtureData;
-                _runner.RunCount = fd.Tests.Count;
-                _runner.RunFixture(fd);
+                runner.RunCount = fd.Tests.Count;
+                runner.RunFixture(fd);
             }
             else if (e.Argument is ITestData)
             {
-                _runner.RunCount = 1;
-                _runner.RunTest(e.Argument as ITestData);
+                runner.RunCount = 1;
+                runner.RunTest(e.Argument as ITestData);
             }
         }
 
@@ -281,5 +309,57 @@ namespace RevitTestFrameworkApp
                 AssemblyPath = files.FileName;
             }
         }
+
+        internal void SaveSettings()
+        {
+            Settings.Default.workingDirectory = runner.WorkingDirectory;
+            Settings.Default.assemblyPath = runner.TestAssembly;
+            Settings.Default.resultsPath = runner.Results;
+            Settings.Default.isDebug = runner.IsDebug;
+            Settings.Default.timeout = runner.Timeout;
+            Settings.Default.selectedProduct = runner.SelectedProduct;
+            Settings.Default.Save();
+        }
+
+        internal void LoadSettings()
+        {
+            WorkingPath = !String.IsNullOrEmpty(Settings.Default.workingDirectory) && 
+                Directory.Exists(Settings.Default.workingDirectory)
+                ? Settings.Default.workingDirectory
+                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            AssemblyPath = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
+                File.Exists(Settings.Default.assemblyPath)
+                ? Settings.Default.assemblyPath
+                : null;
+
+            ResultsPath = !String.IsNullOrEmpty(Settings.Default.resultsPath)
+                ? Settings.Default.resultsPath
+                : null;
+
+            Timeout = Settings.Default.timeout;
+            IsDebug = Settings.Default.isDebug;
+
+            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
+            {
+                SelectedProductIndex = -1;
+            }
+            else
+            {
+                SelectedProductIndex = Settings.Default.selectedProduct;
+            }
+        }
+
+        private bool CanSaveSettings()
+        {
+            return true;
+        }
+
+        private bool CanLoadSettings()
+        {
+            return true;
+        }
+
+        #endregion
     }
 }

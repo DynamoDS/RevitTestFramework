@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Windows.Threading;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
@@ -17,11 +18,17 @@ using RevitTestFramework;
 
 namespace Runner
 {
+    public delegate void TestCompleteHandler(ITestData data, string resultsPath);
+
+    /// <summary>
+    /// The Runner model.
+    /// </summary>
     public class Runner : NotificationObject
     {
         #region events
 
-        public static event EventHandler TestRunsComplete;
+        public event EventHandler TestRunsComplete;
+        public event TestCompleteHandler TestComplete;
 
         #endregion
 
@@ -255,10 +262,7 @@ namespace Runner
 
         public void RunTest(ITestData td)
         {
-            if (!File.Exists(AddinPath))
-            {
-                CreateAddin(AddinPath, AssemblyPath);
-            }
+            CreateAddin(AddinPath, AssemblyPath);
 
             var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
             CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
@@ -305,7 +309,8 @@ namespace Runner
 
             if (!timedOut && Gui)
             {
-                GetTestResultStatus(td);
+                OnTestComplete(td);
+                //GetTestResultStatus(td);
             }
 
             RunCount--;
@@ -383,6 +388,14 @@ namespace Runner
             }
         }
 
+        private void OnTestComplete(ITestData data)
+        {
+            if (TestComplete != null)
+            {
+                TestComplete(data, Results);
+            }
+        }
+
         private void CreateJournal(string path, string testName, string fixtureName, string assemblyPath, string resultsPath, string modelPath)
         {
             using (var tw = new StreamWriter(path, false))
@@ -447,96 +460,6 @@ namespace Runner
                 tw.Write(addin);
                 tw.Flush();
             }
-        }
-
-        private void GetTestResultStatus(ITestData td)
-        {
-            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke((Action)(() => td.ResultData.Clear()));
-
-            //set the test status
-            var results = LoadResults(Results);
-            if (results != null)
-            {
-                //find our results in the results
-                var mainSuite = results.testsuite;
-                var ourSuite =
-                    results.testsuite.results.Items
-                        .Cast<testsuiteType>()
-                        .FirstOrDefault(s => s.name == td.Fixture.Name);
-
-                // parameterized tests will have multiple results
-                var ourTests = ourSuite.results.Items
-                    .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
-
-                if (!ourTests.Any())
-                {
-                    return;
-                }
-
-                foreach (var ourTest in ourTests)
-                {
-                    switch (ourTest.result)
-                    {
-                        case "Cancelled":
-                            td.TestStatus = TestStatus.Cancelled;
-                            break;
-                        case "Error":
-                            td.TestStatus = TestStatus.Error;
-                            break;
-                        case "Failure":
-                            td.TestStatus = TestStatus.Failure;
-                            break;
-                        case "Ignored":
-                            td.TestStatus = TestStatus.Ignored;
-                            break;
-                        case "Inconclusive":
-                            td.TestStatus = TestStatus.Inconclusive;
-                            break;
-                        case "NotRunnable":
-                            td.TestStatus = TestStatus.NotRunnable;
-                            break;
-                        case "Skipped":
-                            td.TestStatus = TestStatus.Skipped;
-                            break;
-                        case "Success":
-                            td.TestStatus = TestStatus.Success;
-                            break;
-                    }
-
-                    if (ourTest.Item == null) continue;
-
-                    var failure = ourTest.Item as failureType;
-                    if (failure == null) return;
-
-                    System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke((Action)(() => 
-                        td.ResultData.Add(
-                            new ResultData()
-                            {
-                                StackTrace = failure.stacktrace,
-                                Message = ourTest.name + ":" + failure.message
-                            })));
-                }
-                
-            }
-        }
-
-        private resultType LoadResults(string resultsPath)
-        {
-            if (!File.Exists(resultsPath))
-            {
-                return null;
-            }
-
-            resultType results = null;
-
-            //write to the file
-            var x = new XmlSerializer(typeof(resultType));
-            using (var reader = new StreamReader(resultsPath))
-            {
-                results = (resultType)x.Deserialize(reader);
-            }
-
-            return results;
         }
 
         #endregion
@@ -642,7 +565,6 @@ namespace Runner
         }
 
         #endregion
-
     }
 
     public class AssemblyData : IAssemblyData

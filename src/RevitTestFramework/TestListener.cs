@@ -1,6 +1,5 @@
 ﻿using System;
 using NUnit.Core;
-using NUnit.Core.Filters;
 
 namespace Dynamo.Tests
 {

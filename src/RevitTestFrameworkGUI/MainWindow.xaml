@@ -1,19 +1,19 @@
-﻿<Window x:Class="RevitTestFrameworkApp.View"
+﻿<Window x:Class="RevitTestFrameworkGUI.MainWindow"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:runner="clr-namespace:Runner;assembly=Runner"
-             xmlns:revitTestFrameworkApp="clr-namespace:RevitTestFrameworkApp"
+        xmlns:revitTestFrameworkGui="clr-namespace:RevitTestFrameworkGUI"
              mc:Ignorable="d" MinWidth="400" MinHeight="600" Width="700" Closing="View_Closing">
     <Window.Resources>
-        <revitTestFrameworkApp:AssemblyPathConverter x:Key="AssemblyPathConverter"></revitTestFrameworkApp:AssemblyPathConverter>
-        <revitTestFrameworkApp:WorkingPathConverter x:Key="WorkingPathConverter"></revitTestFrameworkApp:WorkingPathConverter>
-        <revitTestFrameworkApp:ResultsPathConverter x:Key="ResultsPathConverter"></revitTestFrameworkApp:ResultsPathConverter>
-        <revitTestFrameworkApp:StringToIntConverter x:Key="StringToIntConverter"></revitTestFrameworkApp:StringToIntConverter>
-        <revitTestFrameworkApp:TestStatusToColorConverter x:Key="TestStatusToColorConverter"></revitTestFrameworkApp:TestStatusToColorConverter>
-        <revitTestFrameworkApp:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></revitTestFrameworkApp:FixtureStatusToColorConverter>
-        <revitTestFrameworkApp:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></revitTestFrameworkApp:EmptyStringToCollapsedConverter>
+        <revitTestFrameworkGui:AssemblyPathConverter x:Key="AssemblyPathConverter"></revitTestFrameworkGui:AssemblyPathConverter>
+        <revitTestFrameworkGui:WorkingPathConverter x:Key="WorkingPathConverter"></revitTestFrameworkGui:WorkingPathConverter>
+        <revitTestFrameworkGui:ResultsPathConverter x:Key="ResultsPathConverter"></revitTestFrameworkGui:ResultsPathConverter>
+        <revitTestFrameworkGui:StringToIntConverter x:Key="StringToIntConverter"></revitTestFrameworkGui:StringToIntConverter>
+        <revitTestFrameworkGui:TestStatusToColorConverter x:Key="TestStatusToColorConverter"></revitTestFrameworkGui:TestStatusToColorConverter>
+        <revitTestFrameworkGui:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></revitTestFrameworkGui:FixtureStatusToColorConverter>
+        <revitTestFrameworkGui:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></revitTestFrameworkGui:EmptyStringToCollapsedConverter>
 
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
                                   DataType="{x:Type runner:ResultData}">

@@ -5,7 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using Runner;
 
-namespace RevitTestFrameworkApp
+namespace RevitTestFrameworkGUI
 {
     public class WorkingPathConverter : IValueConverter
     {
