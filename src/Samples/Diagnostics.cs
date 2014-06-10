@@ -8,7 +8,7 @@ namespace RevitTestFrameworkRunner
     class Diagnostics
     {
         [Test]
-        [TestModel(@".\empty.rfa")]
+        [TestModel(@".\empty_2015.rfa")]
         public void WillShutdownBeforeProcessFinishes()
         {
             System.Threading.Thread.Sleep(300000);
