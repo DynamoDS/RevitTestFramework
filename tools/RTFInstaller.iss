@@ -17,7 +17,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}\2014
 DefaultGroupName={#MyAppName}
-OutputBaseFilename=RevitTestFrameworkInstaller
+OutputBaseFilename=RevitTestFrameworkInstaller2014
 Compression=lzma
 SolidCompression=yes
 
