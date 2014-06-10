@@ -2,7 +2,6 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Revit Test Framework"
-<<<<<<< HEAD
 #define MyAppVersion "2015"
 #define MyAppPublisher "Dynamo"
 #define MyAppExeName "RevitTestFrameworkGUI.exe"
@@ -18,7 +17,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}\2015
 DefaultGroupName={#MyAppName}
-OutputBaseFilename=RevitTestFrameworkInstaller
+OutputBaseFilename=RevitTestFrameworkInstaller\2015
 Compression=lzma
 SolidCompression=yes
 
