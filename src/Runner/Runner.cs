@@ -536,7 +536,9 @@ namespace Runner
 
         public static IList<RevitProduct> FindRevit()
         {
-            var products = RevitProductUtility.GetAllInstalledRevitProducts();
+            var products = RevitProductUtility.GetAllInstalledRevitProducts()
+                .Where(x => x.Version == RevitVersion.Revit2014).ToList();
+
             if (!products.Any())
             {
                 Console.WriteLine("No versions of revit could be found");
