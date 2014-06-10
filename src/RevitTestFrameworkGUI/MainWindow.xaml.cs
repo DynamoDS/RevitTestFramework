@@ -1,11 +1,9 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Xml.Serialization;
 using Dynamo.NUnit.Tests;
-using Dynamo.Utilities;
 using Microsoft.Practices.Prism;
 using Runner;
 
@@ -21,8 +19,6 @@ namespace RevitTestFrameworkGUI
         public MainWindow()
         {
             InitializeComponent();
-
-            AppDomain.CurrentDomain.AssemblyResolve += AssemblyHelper.CurrentDomain_AssemblyResolve;
 
             var runner = new Runner.Runner {Gui = true};
             runner.Products.AddRange(Runner.Runner.FindRevit());

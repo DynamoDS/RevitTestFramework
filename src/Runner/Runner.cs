@@ -7,13 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Windows.Threading;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
-using NUnit.Framework;
 using RevitTestFramework;
 
 namespace Runner
@@ -208,8 +206,77 @@ namespace Runner
 
         public Runner()
         {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RevitTestFramework.dll");
+        }
+
+        Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            var name = new AssemblyName(args.Name);
+
+            // Check the assembly location
+            var asmToCheck = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check same directory as assembly
+            asmToCheck = Path.GetDirectoryName(TestAssembly) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check several levels above directory
+            for (int i = 0; i < 3; i++)
+            {
+                var prevFolder = Path.GetDirectoryName(asmToCheck);
+                var folder = Path.GetFullPath(Path.Combine(prevFolder, @"..\" ));
+                asmToCheck = folder + "\\" + name.Name + ".dll";
+                if (File.Exists(asmToCheck))
+                {
+                    return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+                }
+
+                // If we can't find it in this directory, search
+                // all sub-directories that aren't the previous folder
+                var di = new DirectoryInfo(folder);
+                foreach (var d in di.GetDirectories("*",SearchOption.AllDirectories) .Where(d => d.FullName != folder))
+                {
+                    var subfolderCheck = d.FullName + "\\" + name.Name + ".dll";
+                    if (File.Exists(subfolderCheck))
+                    {
+                        return Assembly.ReflectionOnlyLoadFrom(subfolderCheck);
+                    }
+                }
+            }
+
+            // Finally, check the runtime directory
+            var runtime = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
+            var systemCheck = runtime + "\\" + name.Name + ".dll";
+            if (File.Exists(systemCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(systemCheck);
+            }
+
+            // Check WPF
+            var wpfCheck = runtime + "\\WPF\\" + name.Name + ".dll";
+            if (File.Exists(wpfCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(wpfCheck);
+            }
+
+            // Check the Revit API
+            var revitCheck = Path.GetDirectoryName(Products[SelectedProduct].InstallLocation) + "\\" + name.Name + ".dll";
+            if (File.Exists(revitCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(revitCheck);
+            }
+
+            return null;
         }
 
         public static Runner BySetupPaths(string workingDirectory, string testAssembly,
@@ -485,11 +552,11 @@ namespace Runner
 
             try
             {
-                var assembly = Assembly.LoadFrom(assemblyPath);
+                var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
 
                 var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
                 data.Add(assData);
-
+                
                 foreach (var fixtureType in assembly.GetTypes())
                 {
                     if (!ReadFixture(fixtureType, assData, workingDirectory))
@@ -504,14 +571,15 @@ namespace Runner
                 Console.WriteLine("The specified assembly could not be loaded for testing.");
                 return null;
             }
-
+       
             return data;
         }
 
         public static bool ReadFixture(Type fixtureType, IAssemblyData data, string workingDirectory)
         {
-            var fixtureAttribs = fixtureType.GetCustomAttributes(typeof(TestFixtureAttribute), true);
-            if (!fixtureAttribs.Any())
+            var fixtureAttribs = CustomAttributeData.GetCustomAttributes(fixtureType);
+
+            if (!fixtureAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestFixtureAttribute"))
             {
                 //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
                 return false;
@@ -522,8 +590,9 @@ namespace Runner
 
             foreach (var test in fixtureType.GetMethods())
             {
-                var testAttribs = test.GetCustomAttributes(typeof(TestAttribute), false);
-                if (!testAttribs.Any())
+                var testAttribs = CustomAttributeData.GetCustomAttributes(test);
+
+                if (!testAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestAttribute"))
                 {
                     // skip this method
                     continue;
@@ -544,19 +613,27 @@ namespace Runner
             //set the default modelPath to the empty.rfa file that will live in the build directory
             string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
 
-            var testModelAttribs = test.GetCustomAttributes(typeof(TestModelAttribute), false);
-            if (testModelAttribs.Any())
+            var testAttribs = CustomAttributeData.GetCustomAttributes(test);
+
+            var testModelAttrib =
+                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "TestModelAttribute");
+
+            if (testModelAttrib != null)
             {
+                
                 //overwrite the model path with the one
                 //specified in the test model attribute
-                modelPath = Path.GetFullPath(Path.Combine(workingDirectory, ((TestModelAttribute)testModelAttribs[0]).Path));
+                var relModelPath = testModelAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+                modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
             }
 
-            var runDynamoAttribs = test.GetCustomAttributes(typeof(RunDynamoAttribute), false);
+            var runDynamoAttrib = 
+                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
+
             var runDynamo = false;
-            if (runDynamoAttribs.Any())
+            if (runDynamoAttrib != null)
             {
-                runDynamo = ((RunDynamoAttribute)runDynamoAttribs[0]).RunDynamo;
+                runDynamo = bool.Parse(runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value.ToString());
             }
 
             var testData = new TestData(data, test.Name, modelPath, runDynamo);

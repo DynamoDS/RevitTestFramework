@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
 using Autodesk.Revit.ApplicationServices;
@@ -16,8 +15,6 @@ using Dynamo.NUnit.Tests;
 using NUnit.Core;
 using NUnit.Core.Filters;
 using RevitServices.Persistence;
-using RevitServices.Threading;
-using RevitServices.Transactions;
 
 namespace Dynamo.Tests
 {
@@ -102,8 +99,6 @@ namespace Dynamo.Tests
 
         public Result Execute(ExternalCommandData revit, ref string message, ElementSet elements)
         {
-            AppDomain.CurrentDomain.AssemblyResolve += Dynamo.Utilities.AssemblyHelper.CurrentDomain_AssemblyResolve;
-
             try
             {
                 CommandData = revit;
