@@ -17,7 +17,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}\2015
 DefaultGroupName={#MyAppName}
-OutputBaseFilename=RevitTestFrameworkInstaller\2015
+OutputBaseFilename=RevitTestFrameworkInstaller2015
 Compression=lzma
 SolidCompression=yes
 
@@ -28,7 +28,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\bin\AnyCPU\Debug\*.*"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\AnyCPU\Release\*.*"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
