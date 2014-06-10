@@ -68,10 +68,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="bricks_2014.rfa">
+    <None Include="bricks.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="empty_2014.rfa">
+    <None Include="empty.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
