@@ -52,7 +52,7 @@ namespace Samples
         }
 
         [Test]
-        [TestModel(@"./bricks_2015.rfa")]
+        [TestModel(@"./bricks.rfa")]
         public void ModelHasTheCorrectNumberOfBricks()
         {
             var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
