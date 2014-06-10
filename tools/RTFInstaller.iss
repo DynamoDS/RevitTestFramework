@@ -2,6 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Revit Test Framework"
+<<<<<<< HEAD
 #define MyAppVersion "2015"
 #define MyAppPublisher "Dynamo"
 #define MyAppExeName "RevitTestFrameworkGUI.exe"
