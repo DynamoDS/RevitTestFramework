@@ -37,10 +37,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DynamoUtilities, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\DynamoUtilities.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Practices.Prism">
       <HintPath>..\..\lib\Microsoft.Practices.Prism.dll</HintPath>
     </Reference>
@@ -109,10 +105,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RevitTestFramework\RevitTestFramework.csproj">
-      <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
-      <Name>RevitTestFramework</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Runner\Runner.csproj">
       <Project>{4a25bb46-081a-4acd-9c38-297cd800550f}</Project>
       <Name>Runner</Name>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Dynamo.Utilities;
 using Microsoft.Practices.Prism;
 using NDesk.Options;
 
@@ -16,8 +15,6 @@ namespace RevitTestFrameworkApp
         [STAThread]
         static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.AssemblyResolve += AssemblyHelper.CurrentDomain_AssemblyResolve;
-
             try
             {
                 runner = new Runner.Runner();

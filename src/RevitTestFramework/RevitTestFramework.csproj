@@ -42,9 +42,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DynamoUtilities">
-      <HintPath>..\..\lib\DynamoUtilities.dll</HintPath>
-    </Reference>
     <Reference Include="nunit.core">
       <HintPath>..\..\lib\NUnit\nunit.core.dll</HintPath>
     </Reference>
