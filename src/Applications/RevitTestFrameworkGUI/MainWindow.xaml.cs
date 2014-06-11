@@ -5,9 +5,9 @@ using System.Windows;
 using System.Xml.Serialization;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
-using Runner;
+using RTF.Framework;
 
-namespace RevitTestFrameworkGUI
+namespace RTF.Applications
 {
     /// <summary>
     /// Interaction logic for View.xaml
@@ -20,8 +20,8 @@ namespace RevitTestFrameworkGUI
         {
             InitializeComponent();
 
-            var runner = new Runner.Runner {Gui = true};
-            runner.Products.AddRange(Runner.Runner.FindRevit());
+            var runner = new Runner {Gui = true};
+            runner.Products.AddRange(Framework.Runner.FindRevit());
             runner.TestComplete += GetTestResultStatus;
 
             vm = new RunnerViewModel(runner);

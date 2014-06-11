@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Core;
 
-namespace Dynamo.Tests
+namespace RTF.Framework
 {
     public class TestListener : EventListener
     {

@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using Runner;
+using RTF.Framework;
 
-namespace RevitTestFrameworkGUI
+namespace RTF.Applications
 {
     public class WorkingPathConverter : IValueConverter
     {

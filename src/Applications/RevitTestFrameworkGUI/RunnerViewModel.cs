@@ -8,13 +8,13 @@ using System.Windows.Forms;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
-using RevitTestFrameworkApp.Properties;
-using Runner;
+using RTF.Applications.Properties;
+using RTF.Framework;
 using MessageBox = System.Windows.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
-namespace RevitTestFrameworkGUI
+namespace RTF.Applications
 {
     /// <summary>
     /// The Runner's view model.
@@ -24,7 +24,7 @@ namespace RevitTestFrameworkGUI
         #region private members
 
         private object selectedItem;
-        private readonly Runner.Runner runner;
+        private readonly Runner runner;
         private bool isRunning = false;
         private object isRunningLock = new object();
 
@@ -183,7 +183,7 @@ namespace RevitTestFrameworkGUI
 
         #region constructors
 
-        internal RunnerViewModel(Runner.Runner runner)
+        internal RunnerViewModel(Runner runner)
         {
             this.runner = runner;
             

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RevitTestFramework
+namespace RTF.Framework
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class TestModelAttribute : Attribute

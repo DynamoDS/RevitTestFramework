@@ -11,7 +11,7 @@
     <ProjectGuid>{745CCA0F-549E-4756-A31E-41BF7F905B8A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RevitTestFramework</RootNamespace>
+    <RootNamespace>RTF.Framework</RootNamespace>
     <AssemblyName>RevitTestFramework</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -43,10 +43,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="nunit.core">
-      <HintPath>..\..\lib\NUnit\nunit.core.dll</HintPath>
+      <HintPath>..\..\..\lib\NUnit\nunit.core.dll</HintPath>
     </Reference>
     <Reference Include="nunit.core.interfaces">
-      <HintPath>..\..\lib\NUnit\nunit.core.interfaces.dll</HintPath>
+      <HintPath>..\..\..\lib\NUnit\nunit.core.interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\lib\NUnit\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPI">
       <HintPath>$(REVITAPI)\RevitAPI.dll</HintPath>
@@ -57,7 +61,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitServices">
-      <HintPath>..\..\lib\RevitServices.dll</HintPath>
+      <HintPath>..\..\..\lib\RevitServices.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.XML" />

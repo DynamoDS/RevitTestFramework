@@ -7,14 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
-using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
-using RevitTestFramework;
 
-namespace Runner
+namespace RTF.Framework
 {
     public delegate void TestCompleteHandler(ITestData data, string resultsPath);
 
