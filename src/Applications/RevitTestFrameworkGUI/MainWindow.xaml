@@ -1,23 +1,23 @@
-﻿<Window x:Class="RevitTestFrameworkGUI.MainWindow"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:runner="clr-namespace:Runner;assembly=Runner"
-        xmlns:revitTestFrameworkGui="clr-namespace:RevitTestFrameworkGUI"
-             mc:Ignorable="d" MinWidth="400" MinHeight="600" Width="700" Closing="View_Closing">
+﻿<Window x:Class="RTF.Applications.MainWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:applications="clr-namespace:RTF.Applications"
+                xmlns:runners="clr-namespace:RTF.Framework;assembly=Runner"
+                mc:Ignorable="d" MinWidth="400" MinHeight="600" Width="700" Closing="View_Closing">
     <Window.Resources>
-        <revitTestFrameworkGui:AssemblyPathConverter x:Key="AssemblyPathConverter"></revitTestFrameworkGui:AssemblyPathConverter>
-        <revitTestFrameworkGui:WorkingPathConverter x:Key="WorkingPathConverter"></revitTestFrameworkGui:WorkingPathConverter>
-        <revitTestFrameworkGui:ResultsPathConverter x:Key="ResultsPathConverter"></revitTestFrameworkGui:ResultsPathConverter>
-        <revitTestFrameworkGui:StringToIntConverter x:Key="StringToIntConverter"></revitTestFrameworkGui:StringToIntConverter>
-        <revitTestFrameworkGui:TestStatusToColorConverter x:Key="TestStatusToColorConverter"></revitTestFrameworkGui:TestStatusToColorConverter>
-        <revitTestFrameworkGui:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></revitTestFrameworkGui:FixtureStatusToColorConverter>
-        <revitTestFrameworkGui:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></revitTestFrameworkGui:EmptyStringToCollapsedConverter>
-        <revitTestFrameworkGui:BoolInverseConverter x:Key="BoolInverseConverter"></revitTestFrameworkGui:BoolInverseConverter>
+        <applications:AssemblyPathConverter x:Key="AssemblyPathConverter"></applications:AssemblyPathConverter>
+        <applications:WorkingPathConverter x:Key="WorkingPathConverter"></applications:WorkingPathConverter>
+        <applications:ResultsPathConverter x:Key="ResultsPathConverter"></applications:ResultsPathConverter>
+        <applications:StringToIntConverter x:Key="StringToIntConverter"></applications:StringToIntConverter>
+        <applications:TestStatusToColorConverter x:Key="TestStatusToColorConverter"></applications:TestStatusToColorConverter>
+        <applications:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></applications:FixtureStatusToColorConverter>
+        <applications:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></applications:EmptyStringToCollapsedConverter>
+        <applications:BoolInverseConverter x:Key="BoolInverseConverter"></applications:BoolInverseConverter>
 
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
-                                  DataType="{x:Type runner:ResultData}">
+                                  DataType="{x:Type runners:ResultData}">
             <StackPanel Orientation="Vertical" Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
                 <TextBlock Text="{Binding Message}" HorizontalAlignment="Left"></TextBlock>
                 <TextBlock Text="{Binding StackTrace}" HorizontalAlignment="Left"></TextBlock>
@@ -25,7 +25,7 @@
         </HierarchicalDataTemplate>
         
         <HierarchicalDataTemplate x:Key="TestTemplate" 
-                                  DataType="{x:Type runner:TestData}"
+                                  DataType="{x:Type runners:TestData}"
                                   ItemsSource="{Binding ResultData}"
                                   ItemTemplate="{StaticResource ResultTemplate}">
             <StackPanel Orientation="Vertical">
@@ -41,7 +41,7 @@
         
         <HierarchicalDataTemplate x:Key="FixtureTemplate" 
                                   ItemsSource="{Binding Tests}" 
-                                  DataType="{x:Type runner:FixtureData}"
+                                  DataType="{x:Type runners:FixtureData}"
                                   ItemTemplate="{StaticResource TestTemplate}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" 
@@ -55,7 +55,7 @@
 
         <HierarchicalDataTemplate x:Key="AssemblyTemplate" 
                                   ItemsSource="{Binding Fixtures}" 
-                                  DataType="{x:Type runner:AssemblyData}"
+                                  DataType="{x:Type runners:AssemblyData}"
                                   ItemTemplate="{StaticResource FixtureTemplate}">
             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">

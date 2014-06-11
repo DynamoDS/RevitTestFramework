@@ -1,8 +1,7 @@
-﻿using Dynamo.Tests;
-using NUnit.Framework;
-using RevitTestFramework;
+﻿using NUnit.Framework;
+using RTF.Framework;
 
-namespace RevitTestFrameworkRunner
+namespace RTF.Tests
 {
     [TestFixture]
     class Diagnostics

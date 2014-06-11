@@ -1,15 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFramework", "RevitTestFramework\RevitTestFramework.csproj", "{745CCA0F-549E-4756-A31E-41BF7F905B8A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Applications", "Applications", "{72627E9C-00D7-42F7-B004-2E427B67E4C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleTests", "Samples\SampleTests.csproj", "{BE4EB3BC-1593-4404-8402-FB831F3FEE42}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{54065D85-938B-4AAE-B98F-74994F717347}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runner", "Runner\Runner.csproj", "{4A25BB46-081A-4ACD-9C38-297CD800550F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkConsole", "Applications\RevitTestFrameworkApp\RevitTestFrameworkConsole.csproj", "{D21140F7-D29A-4265-A679-BA76770B7257}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkConsole", "RevitTestFrameworkApp\RevitTestFrameworkConsole.csproj", "{D21140F7-D29A-4265-A679-BA76770B7257}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkGUI", "Applications\RevitTestFrameworkGUI\RevitTestFrameworkGUI.csproj", "{D1D93A41-6635-48ED-8220-D372A24EC581}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFrameworkGUI", "RevitTestFrameworkGUI\RevitTestFrameworkGUI.csproj", "{D1D93A41-6635-48ED-8220-D372A24EC581}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunnerTests", "Tests\RunnerTests\RunnerTests.csproj", "{C379B8FE-C170-442C-8038-206859A023D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleTests", "Tests\Samples\SampleTests.csproj", "{BE4EB3BC-1593-4404-8402-FB831F3FEE42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Framework", "Framework", "{1D1602E5-004F-4D18-8AB9-90D746921E60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitTestFramework", "Framework\RevitTestFramework\RevitTestFramework.csproj", "{745CCA0F-549E-4756-A31E-41BF7F905B8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runner", "Framework\Runner\Runner.csproj", "{4A25BB46-081A-4ACD-9C38-297CD800550F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,18 +25,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D21140F7-D29A-4265-A679-BA76770B7257}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D21140F7-D29A-4265-A679-BA76770B7257}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,8 +33,32 @@ Global
 		{D1D93A41-6635-48ED-8220-D372A24EC581}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1D93A41-6635-48ED-8220-D372A24EC581}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1D93A41-6635-48ED-8220-D372A24EC581}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C379B8FE-C170-442C-8038-206859A023D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C379B8FE-C170-442C-8038-206859A023D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C379B8FE-C170-442C-8038-206859A023D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C379B8FE-C170-442C-8038-206859A023D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE4EB3BC-1593-4404-8402-FB831F3FEE42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A25BB46-081A-4ACD-9C38-297CD800550F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D21140F7-D29A-4265-A679-BA76770B7257} = {72627E9C-00D7-42F7-B004-2E427B67E4C9}
+		{D1D93A41-6635-48ED-8220-D372A24EC581} = {72627E9C-00D7-42F7-B004-2E427B67E4C9}
+		{C379B8FE-C170-442C-8038-206859A023D4} = {54065D85-938B-4AAE-B98F-74994F717347}
+		{BE4EB3BC-1593-4404-8402-FB831F3FEE42} = {54065D85-938B-4AAE-B98F-74994F717347}
+		{745CCA0F-549E-4756-A31E-41BF7F905B8A} = {1D1602E5-004F-4D18-8AB9-90D746921E60}
+		{4A25BB46-081A-4ACD-9C38-297CD800550F} = {1D1602E5-004F-4D18-8AB9-90D746921E60}
 	EndGlobalSection
 EndGlobal

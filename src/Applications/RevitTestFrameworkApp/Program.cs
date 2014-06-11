@@ -5,26 +5,27 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Practices.Prism;
 using NDesk.Options;
+using RTF.Framework;
 
-namespace RevitTestFrameworkApp
+namespace RTF.Applications
 {
     class Program
     {
-        private static Runner.Runner runner;
+        private static Runner runner;
         
         [STAThread]
         static void Main(string[] args)
         {
             try
             {
-                runner = new Runner.Runner();
+                runner = new Runner();
 
                 if (!ParseArguments(args))
                 {
                     return;
                 }
 
-                var products = Runner.Runner.FindRevit();
+                var products = Runner.FindRevit();
                 if (products == null)
                 {
                     return;
@@ -61,7 +62,7 @@ namespace RevitTestFrameworkApp
                 return;
             }
 
-            var assemblyDatas = Runner.Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory);
+            var assemblyDatas = Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory);
             if (assemblyDatas == null)
             {
                 return;

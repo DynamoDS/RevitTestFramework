@@ -10,7 +10,7 @@
     <ProjectGuid>{D1D93A41-6635-48ED-8220-D372A24EC581}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RevitTestFrameworkGUI</RootNamespace>
+    <RootNamespace>RTF.Applications</RootNamespace>
     <AssemblyName>RevitTestFrameworkGUI</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -38,7 +38,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Practices.Prism">
-      <HintPath>..\..\lib\Microsoft.Practices.Prism.dll</HintPath>
+      <HintPath>..\..\..\lib\Microsoft.Practices.Prism.dll</HintPath>
     </Reference>
     <Reference Include="RevitAddInUtility">
       <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
@@ -105,7 +105,11 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Runner\Runner.csproj">
+    <ProjectReference Include="..\..\Framework\RevitTestFramework\RevitTestFramework.csproj">
+      <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
+      <Name>RevitTestFramework</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Framework\Runner\Runner.csproj">
       <Project>{4a25bb46-081a-4acd-9c38-297cd800550f}</Project>
       <Name>Runner</Name>
     </ProjectReference>

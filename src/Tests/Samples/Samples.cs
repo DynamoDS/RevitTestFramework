@@ -4,9 +4,9 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using NUnit.Framework;
 using RevitServices.Persistence;
-using RevitTestFramework;
+using RTF.Framework;
 
-namespace Samples
+namespace RTF.Tests
 {
     [TestFixture]
     public class FixtureOne
