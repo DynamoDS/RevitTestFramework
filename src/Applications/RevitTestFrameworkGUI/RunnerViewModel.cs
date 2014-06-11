@@ -117,6 +117,7 @@ namespace RTF.Applications
             set
             {
                 runner.WorkingDirectory = value;
+                runner.Refresh();
                 RaisePropertyChanged("WorkingPath");
             }
         }

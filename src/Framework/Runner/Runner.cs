@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
@@ -324,69 +325,82 @@ namespace RTF.Framework
 
         public void RunTest(ITestData td)
         {
-            CreateAddin(AddinPath, AssemblyPath);
-
-            var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
-            CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
-
-            var startInfo = new ProcessStartInfo()
+            try
             {
-                FileName = RevitPath,
-                WorkingDirectory = WorkingDirectory,
-                Arguments = journalPath,
-                UseShellExecute = false
-            };
+                CreateAddin(AddinPath, AssemblyPath);
 
-            Console.WriteLine("Running {0}", journalPath);
-            var process = new Process { StartInfo = startInfo };
-            process.Start();
+                var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
+                CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
 
-            var timedOut = false;
-
-            if (IsDebug)
-            {
-                process.WaitForExit();
-            }
-            else
-            {
-                var time = 0;
-                while (!process.WaitForExit(1000))
+                var startInfo = new ProcessStartInfo()
                 {
-                    Console.Write(".");
-                    time += 1000;
-                    if (time > Timeout)
+                    FileName = RevitPath,
+                    WorkingDirectory = WorkingDirectory,
+                    Arguments = journalPath,
+                    UseShellExecute = false
+                };
+
+                Console.WriteLine("Running {0}", journalPath);
+                var process = new Process { StartInfo = startInfo };
+                process.Start();
+
+                var timedOut = false;
+
+                if (IsDebug)
+                {
+                    process.WaitForExit();
+                }
+                else
+                {
+                    var time = 0;
+                    while (!process.WaitForExit(1000))
                     {
-                        Console.WriteLine("Test timed out.");
-                        td.TestStatus = TestStatus.TimedOut;
-                        timedOut = true;
-                        break;
+                        Console.Write(".");
+                        time += 1000;
+                        if (time > Timeout)
+                        {
+                            Console.WriteLine("Test timed out.");
+                            td.TestStatus = TestStatus.TimedOut;
+                            timedOut = true;
+                            break;
+                        }
+                    }
+                    if (timedOut)
+                    {
+                        if (!process.HasExited)
+                            process.Kill();
                     }
                 }
-                if (timedOut)
+
+                if (!timedOut && Gui)
                 {
-                    if (!process.HasExited)
-                        process.Kill();
+                    OnTestComplete(td);
+                    //GetTestResultStatus(td);
+                }
+
+                RunCount--;
+                if (RunCount == 0)
+                {
+                    OnTestRunsComplete();
                 }
             }
-
-            if (!timedOut && Gui)
+            catch (Exception ex)
             {
-                OnTestComplete(td);
-                //GetTestResultStatus(td);
-            }
-
-            RunCount--;
-            if (RunCount == 0)
-            {
-                OnTestRunsComplete();
+                if (td != null)
+                {
+                    td.TestStatus = TestStatus.Failure;
+                }
             }
         }
 
         public void Refresh()
         {
             Assemblies.Clear();
-            Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
-
+            if (File.Exists(TestAssembly))
+            {
+                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
+            }
+           
             Console.WriteLine(ToString());
         }
 
@@ -616,7 +630,6 @@ namespace RTF.Framework
 
             if (testModelAttrib != null)
             {
-                
                 //overwrite the model path with the one
                 //specified in the test model attribute
                 var relModelPath = testModelAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
@@ -744,6 +757,21 @@ namespace RTF.Framework
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
 
+        public bool ModelExists
+        {
+            get { return ModelPath != null &&  File.Exists(ModelPath); }
+        }
+
+        public string ModelPathMessage
+        {
+            get
+            {
+                return ModelExists ? 
+                    "The selected test model exists." : 
+                    "The selected test model does not exist. Check your working directory.";
+            }
+        }
+
         public string ShortModelPath
         {
             get
@@ -754,7 +782,8 @@ namespace RTF.Framework
                 }
 
                 var info = new FileInfo(ModelPath);
-                return string.Format("[{0}]", info.Name);
+                //return string.Format("[{0}]", info.Name);
+                return string.Format("[{0}]", info.FullName);
             }
         }
 
