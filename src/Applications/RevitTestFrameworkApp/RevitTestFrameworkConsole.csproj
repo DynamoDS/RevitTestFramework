@@ -58,9 +58,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\Framework\Runner\Runner.csproj">
       <Project>{4a25bb46-081a-4acd-9c38-297cd800550f}</Project>
       <Name>Runner</Name>
