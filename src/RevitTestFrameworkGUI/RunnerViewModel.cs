@@ -288,6 +288,8 @@ namespace RevitTestFrameworkGUI
             {
                 WorkingPath = dirs.SelectedPath;
             }
+
+            SaveSettings();
         }
 
         private bool CanSetResultsPath()
@@ -311,6 +313,8 @@ namespace RevitTestFrameworkGUI
             {
                 ResultsPath = files.FileName;
             }
+
+            SaveSettings();
         }
 
         private bool CanSetAssemblyPath()
@@ -334,6 +338,8 @@ namespace RevitTestFrameworkGUI
             {
                 AssemblyPath = files.FileName;
             }
+
+            SaveSettings();
         }
 
         internal void SaveSettings()
