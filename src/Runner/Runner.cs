@@ -168,17 +168,14 @@ namespace Runner
             get { return _workingDirectory; }
             set
             {
-                if (value != _workingDirectory)
-                {
-                    _workingDirectory = value;
+                _workingDirectory = value;
 
-                    // Delete any existing addins before resetting the addins path.
-                    if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                    {
-                        File.Delete(AddinPath);
-                    }
-                    AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
+                // Delete any existing addins before resetting the addins path.
+                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
+                {
+                    File.Delete(AddinPath);
                 }
+                AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
             }
         }
 
