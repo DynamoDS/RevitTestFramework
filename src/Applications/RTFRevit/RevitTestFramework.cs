@@ -15,8 +15,9 @@ using Dynamo.NUnit.Tests;
 using NUnit.Core;
 using NUnit.Core.Filters;
 using RevitServices.Persistence;
+using RTF.Framework;
 
-namespace RTF.Framework
+namespace RTF.Applications
 {
     [Transaction(Autodesk.Revit.Attributes.TransactionMode.Automatic)]
     [Regeneration(RegenerationOption.Manual)]

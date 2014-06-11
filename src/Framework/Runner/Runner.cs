@@ -35,9 +35,9 @@ namespace RTF.Framework
         private bool _isDebug;
         private string _results;
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
-        private const string _pluginClass = "Dynamo.Tests.RevitTestFramework";
+        private const string _pluginClass = "RTF.Applications.RevitTestFramework";
         private const string _appGuid = "c950020f-3da0-4e48-ab82-5e30c3f4b345";
-        private const string _appClass = "Dynamo.Tests.RevitTestFrameworkExternalApp";
+        private const string _appClass = "RTF.Applications.RevitTestFrameworkExternalApp";
         private string _workingDirectory;
         private bool _gui = true;
         private string _revitPath;
