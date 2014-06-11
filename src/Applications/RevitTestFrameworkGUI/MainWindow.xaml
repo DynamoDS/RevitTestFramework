@@ -15,6 +15,7 @@
         <applications:FixtureStatusToColorConverter x:Key="FixtureStatusToColorConverter"></applications:FixtureStatusToColorConverter>
         <applications:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></applications:EmptyStringToCollapsedConverter>
         <applications:BoolInverseConverter x:Key="BoolInverseConverter"></applications:BoolInverseConverter>
+        <applications:BoolExistsConverter x:Key="BoolExistsConverter"></applications:BoolExistsConverter>
 
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
                                   DataType="{x:Type runners:ResultData}">
@@ -34,7 +35,12 @@
                                HorizontalAlignment="Left" 
                                Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}">
                     </TextBlock>
-                    <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" Foreground="DarkGray"></TextBlock>
+                    <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" 
+                               Foreground="{Binding ModelExists, Converter={StaticResource BoolExistsConverter}}">
+                        <TextBlock.ToolTip>
+                            <TextBlock Text="{Binding ModelPathMessage}"></TextBlock>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                 </StackPanel>
             </StackPanel>
         </HierarchicalDataTemplate>

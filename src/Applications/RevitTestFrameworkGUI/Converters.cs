@@ -164,4 +164,22 @@ namespace RTF.Applications
             return null;
         }
     }
+
+    public class BoolExistsConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if ((bool) value)
+            {
+                return new SolidColorBrush(Colors.LightGreen);
+            }
+
+            return new SolidColorBrush(Colors.LightPink);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return null;
+        }
+    }
 }
