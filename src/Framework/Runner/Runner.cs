@@ -207,8 +207,7 @@ namespace RTF.Framework
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
-            AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "RTFRevit.dll");
+            AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
         }
 
         Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
@@ -334,6 +333,18 @@ namespace RTF.Framework
                 if (!File.Exists(td.ModelPath))
                 {
                     throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                }
+
+                if (!File.Exists(td.Fixture.Assembly.Path))
+                {
+                    throw new Exception(string.Format("The specified assembly: {0} does not exist.",
+                        td.Fixture.Assembly.Path));
+                }
+
+                if (!File.Exists(AssemblyPath))
+                {
+                    throw new Exception(string.Format("The specified revit app assembly does not exist: {0} does not exist.",
+                        td.Fixture.Assembly.Path));
                 }
 
                 CreateAddin(AddinPath, AssemblyPath);
