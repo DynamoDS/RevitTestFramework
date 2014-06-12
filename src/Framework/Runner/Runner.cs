@@ -15,6 +15,8 @@ using Microsoft.Practices.Prism.ViewModel;
 namespace RTF.Framework
 {
     public delegate void TestCompleteHandler(ITestData data, string resultsPath);
+    public delegate void TestTimedOutHandler(ITestData data);
+    public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
 
     /// <summary>
     /// The Runner model.
@@ -25,6 +27,8 @@ namespace RTF.Framework
 
         public event EventHandler TestRunsComplete;
         public event TestCompleteHandler TestComplete;
+        public event TestTimedOutHandler TestTimedOut;
+        public event TestFailedHandler TestFailed;
 
         #endregion
 
@@ -327,6 +331,11 @@ namespace RTF.Framework
         {
             try
             {
+                if (!File.Exists(td.ModelPath))
+                {
+                    throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                }
+
                 CreateAddin(AddinPath, AssemblyPath);
 
                 var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
@@ -341,7 +350,7 @@ namespace RTF.Framework
                 };
 
                 Console.WriteLine("Running {0}", journalPath);
-                var process = new Process { StartInfo = startInfo };
+                var process = new Process {StartInfo = startInfo};
                 process.Start();
 
                 var timedOut = false;
@@ -359,8 +368,9 @@ namespace RTF.Framework
                         time += 1000;
                         if (time > Timeout)
                         {
-                            Console.WriteLine("Test timed out.");
-                            td.TestStatus = TestStatus.TimedOut;
+                            td.TestStatus = TestStatus.Failure;
+                            OnTestTimedOut(td);
+
                             timedOut = true;
                             break;
                         }
@@ -375,7 +385,6 @@ namespace RTF.Framework
                 if (!timedOut && Gui)
                 {
                     OnTestComplete(td);
-                    //GetTestResultStatus(td);
                 }
 
                 RunCount--;
@@ -389,6 +398,7 @@ namespace RTF.Framework
                 if (td != null)
                 {
                     td.TestStatus = TestStatus.Failure;
+                    OnTestFailed(td, ex.Message, ex.StackTrace);
                 }
             }
         }
@@ -469,6 +479,22 @@ namespace RTF.Framework
             if (TestComplete != null)
             {
                 TestComplete(data, Results);
+            }
+        }
+
+        private void OnTestTimedOut(ITestData data)
+        {
+            if (TestTimedOut != null)
+            {
+                TestTimedOut(data);
+            }
+        }
+
+        private void OnTestFailed(ITestData data, string message, string stackTrace)
+        {
+            if (TestFailed != null)
+            {
+                TestFailed(data, message, stackTrace);
             }
         }
 
@@ -844,5 +870,4 @@ namespace RTF.Framework
             }
         }
     }
-
 }

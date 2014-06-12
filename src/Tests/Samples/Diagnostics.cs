@@ -16,9 +16,9 @@ namespace RTF.Tests
 
         [Test]
         [TestModel(@".\AModelThatDoesNotExist.rfa")]
-        public void WillShutdownIfJournalCompletionFails()
+        public void FailsWithBadModelPath()
         {
-            Assert.Fail("If you've made it here, the timeout was not honored.");
+            Assert.Fail("If you've made it here, a bad model path was passed. ");
         }
     }
 }
