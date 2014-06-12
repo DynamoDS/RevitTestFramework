@@ -167,6 +167,12 @@ namespace RTF.Applications
             }
         }
 
+        public bool Concatenate
+        {
+            get { return runner.Concat; }
+            set { runner.Concat = value; }
+        }
+
         #endregion
 
         #region commands
