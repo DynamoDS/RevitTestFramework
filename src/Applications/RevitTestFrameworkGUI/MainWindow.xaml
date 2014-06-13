@@ -146,6 +146,11 @@
                </TextBlock.ToolTip>
             </TextBlock>
             <TextBox Width ="100" Margin="5,0,0,0" Text="{Binding Timeout, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}"></TextBox>
+            <CheckBox Content="Concatenate Results" IsChecked="{Binding Concatenate, Mode=TwoWay}" Margin="20,0,0,0">
+                <CheckBox.ToolTip>
+                    <TextBlock Text="Add the results of the current test to an existing results file if one exists at the path specified."></TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>
             <StackPanel.ToolTip>
                 <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
             </StackPanel.ToolTip>

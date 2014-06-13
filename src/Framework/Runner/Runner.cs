@@ -15,6 +15,8 @@ using Microsoft.Practices.Prism.ViewModel;
 namespace RTF.Framework
 {
     public delegate void TestCompleteHandler(ITestData data, string resultsPath);
+    public delegate void TestTimedOutHandler(ITestData data);
+    public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
 
     /// <summary>
     /// The Runner model.
@@ -25,6 +27,8 @@ namespace RTF.Framework
 
         public event EventHandler TestRunsComplete;
         public event TestCompleteHandler TestComplete;
+        public event TestTimedOutHandler TestTimedOut;
+        public event TestFailedHandler TestFailed;
 
         #endregion
 
@@ -203,8 +207,7 @@ namespace RTF.Framework
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
-            AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "RTFRevit.dll");
+            AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
         }
 
         Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
@@ -327,6 +330,24 @@ namespace RTF.Framework
         {
             try
             {
+                if (!File.Exists(td.ModelPath))
+                {
+                    throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                }
+
+                if (!File.Exists(td.Fixture.Assembly.Path))
+                {
+                    throw new Exception(string.Format("The specified assembly: {0} does not exist.",
+                        td.Fixture.Assembly.Path));
+                }
+
+                if (!File.Exists(AssemblyPath))
+                {
+                    throw new Exception(
+                        string.Format("The specified revit app assembly does not exist: {0} does not exist.",
+                            td.Fixture.Assembly.Path));
+                }
+
                 // Kill any senddmp.exe processes thrown off
                 // by previous failed revit sessions
                 var sendDmps = Process.GetProcessesByName("senddmp");
@@ -349,7 +370,7 @@ namespace RTF.Framework
                 };
 
                 Console.WriteLine("Running {0}", journalPath);
-                var process = new Process { StartInfo = startInfo };
+                var process = new Process {StartInfo = startInfo};
                 process.Start();
 
                 var timedOut = false;
@@ -367,8 +388,9 @@ namespace RTF.Framework
                         time += 1000;
                         if (time > Timeout)
                         {
-                            Console.WriteLine("Test timed out.");
-                            td.TestStatus = TestStatus.TimedOut;
+                            td.TestStatus = TestStatus.Failure;
+                            OnTestTimedOut(td);
+
                             timedOut = true;
                             break;
                         }
@@ -383,7 +405,6 @@ namespace RTF.Framework
                 if (!timedOut && Gui)
                 {
                     OnTestComplete(td);
-                    //GetTestResultStatus(td);
                 }
 
                 RunCount--;
@@ -397,6 +418,7 @@ namespace RTF.Framework
                 if (td != null)
                 {
                     td.TestStatus = TestStatus.Failure;
+                    OnTestFailed(td, ex.Message, ex.StackTrace);
                 }
             }
         }
@@ -477,6 +499,22 @@ namespace RTF.Framework
             if (TestComplete != null)
             {
                 TestComplete(data, Results);
+            }
+        }
+
+        private void OnTestTimedOut(ITestData data)
+        {
+            if (TestTimedOut != null)
+            {
+                TestTimedOut(data);
+            }
+        }
+
+        private void OnTestFailed(ITestData data, string message, string stackTrace)
+        {
+            if (TestFailed != null)
+            {
+                TestFailed(data, message, stackTrace);
             }
         }
 
@@ -852,5 +890,4 @@ namespace RTF.Framework
             }
         }
     }
-
 }

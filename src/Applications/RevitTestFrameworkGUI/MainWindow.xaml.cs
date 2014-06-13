@@ -22,7 +22,10 @@ namespace RTF.Applications
 
             var runner = new Runner {Gui = true};
             runner.Products.AddRange(Framework.Runner.FindRevit());
+
             runner.TestComplete += GetTestResultStatus;
+            runner.TestFailed += runner_TestFailed;
+            runner.TestTimedOut += runner_TestTimedOut;
 
             vm = new RunnerViewModel(runner);
 
@@ -30,6 +33,24 @@ namespace RTF.Applications
 
             Closing += View_Closing;
             Loaded += View_Loaded;
+        }
+
+        void runner_TestTimedOut(ITestData data)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                data.ResultData.Clear();
+                data.ResultData.Add(new ResultData(){Message = "Test timed out."});
+            });
+        }
+
+        void runner_TestFailed(ITestData data, string message, string stackTrace)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                data.ResultData.Clear();
+                data.ResultData.Add(new ResultData() { Message = message, StackTrace = stackTrace});
+            });
         }
 
         void View_Loaded(object sender, RoutedEventArgs e)
