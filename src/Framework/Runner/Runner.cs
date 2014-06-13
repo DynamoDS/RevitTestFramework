@@ -343,8 +343,17 @@ namespace RTF.Framework
 
                 if (!File.Exists(AssemblyPath))
                 {
-                    throw new Exception(string.Format("The specified revit app assembly does not exist: {0} does not exist.",
-                        td.Fixture.Assembly.Path));
+                    throw new Exception(
+                        string.Format("The specified revit app assembly does not exist: {0} does not exist.",
+                            td.Fixture.Assembly.Path));
+                }
+
+                // Kill any senddmp.exe processes thrown off
+                // by previous failed revit sessions
+                var sendDmps = Process.GetProcessesByName("senddmp");
+                if (sendDmps.Any())
+                {
+                    sendDmps.ToList().ForEach(sd=>sd.Kill());
                 }
 
                 CreateAddin(AddinPath, AssemblyPath);
