@@ -327,6 +327,14 @@ namespace RTF.Framework
         {
             try
             {
+                // Kill any senddmp.exe processes thrown off
+                // by previous failed revit sessions
+                var sendDmps = Process.GetProcessesByName("senddmp");
+                if (sendDmps.Any())
+                {
+                    sendDmps.ToList().ForEach(sd=>sd.Kill());
+                }
+
                 CreateAddin(AddinPath, AssemblyPath);
 
                 var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
