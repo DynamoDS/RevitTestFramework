@@ -32,7 +32,7 @@ namespace RTF.Applications
             var frameworkPath = Path.Combine(GetNUnitRootDirectory(), "bin", "framework", "nunit.framework.dll");
             if (!File.Exists(frameworkPath))
             {
-                throw new FileNotFoundException("Could not find the nunit.framework dll, required for the Revit Test Framework.");
+                throw new FileNotFoundException("It looks like NUnit is installed but could not find a needed assembly.  Have you installed NUnit correctly?");
             }
 
             return frameworkPath;
@@ -67,7 +67,7 @@ namespace RTF.Applications
             // Fail early if we can't find the program files directory
             if (!Directory.Exists(progFilesPath))
             {
-                throw new FileLoadException("Could not find the Program Files x86 directory");
+                throw new FileLoadException("Could not find the Program Files x86 directory!  Have you installed NUnit 2.6.2 or greater?");
             }
 
             return progFilesPath;

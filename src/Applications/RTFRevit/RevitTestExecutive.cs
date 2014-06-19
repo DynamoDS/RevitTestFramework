@@ -71,7 +71,7 @@ namespace RTF.Applications
 
         public Result Execute(ExternalCommandData revit, ref string message, ElementSet elements)
         {
-   
+
             try
             {
                 CommandData = revit;
@@ -104,14 +104,25 @@ namespace RTF.Applications
                 //testThread.Join();
 
                 TestThread(canReadData);
-            } 
+            }
             catch (Exception ex)
             {
-                // TODO (peter): These exceptions need to make their way to the remote UI
+                try
+                {
+                    // Write the exception to the result path
+                    using (var writer = File.CreateText(resultsPath))
+                    {
+                        writer.WriteLine(ex.ToString());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("RevitTestExecutive encountered an exception trying to write the file to disk!");
+                }
 
                 Debug.WriteLine(ex.ToString());
                 Console.WriteLine(ex.ToString());
-                Console.WriteLine(ex.StackTrace);
+
                 return Result.Failed;
             }
 
