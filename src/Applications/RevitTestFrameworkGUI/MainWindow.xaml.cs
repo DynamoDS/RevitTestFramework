@@ -98,7 +98,6 @@ namespace RTF.Applications
             if (results != null)
             {
                 //find our results in the results
-                var mainSuite = results.testsuite;
                 var ourSuite =
                     results.testsuite.results.Items
                         .Cast<testsuiteType>()
