@@ -644,7 +644,7 @@ namespace RTF.Framework
                 return false;
             }
 
-            var fixData = new FixtureData(data, fixtureType.FullName);
+            var fixData = new FixtureData(data, fixtureType.Name);
             data.Fixtures.Add(fixData);
 
             foreach (var test in fixtureType.GetMethods())
