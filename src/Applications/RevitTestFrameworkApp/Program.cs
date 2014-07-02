@@ -120,6 +120,7 @@ namespace RTF.Applications
                 {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
+                {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
                 {"d|debug", "Run in debug mode.", v=>runner.IsDebug = v != null},
                 {"h|help", "Show this message and exit.", v=> showHelp = v != null}
             };
