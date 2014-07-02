@@ -116,7 +116,7 @@
         </StackPanel>
 
         <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" >
-            <TextBlock Text="Working Directory (Location of empty.rfa):">
+            <TextBlock Text="Working Directory:">
                 <TextBlock.ToolTip>
                     <TextBlock Text="The directory where the RTF addin file is located and relative to which all test models will be sourced."></TextBlock>
                 </TextBlock.ToolTip>

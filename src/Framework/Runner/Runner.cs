@@ -105,6 +105,7 @@ namespace RTF.Framework
             set
             {
                 _assemblies = value;
+
                 RaisePropertyChanged("Assemblies");
             }
         }
@@ -620,6 +621,8 @@ namespace RTF.Framework
                         //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
                     }
                 }
+
+                assData.Fixtures = assData.Fixtures.Sorted(x => x.Name);
             }
             catch (Exception e)
             {
@@ -627,7 +630,7 @@ namespace RTF.Framework
                 Console.WriteLine("The specified assembly could not be loaded for testing.");
                 return null;
             }
-       
+
             return data;
         }
 
@@ -661,8 +664,12 @@ namespace RTF.Framework
                 }
             }
 
+            // sort the collection
+            fixData.Tests = fixData.Tests.Sorted(x => x.Name);
+
             return true;
         }
+
 
         public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
         {
