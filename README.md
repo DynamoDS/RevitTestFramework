@@ -16,8 +16,8 @@ If you'd like to learn more about the command line options for RTF, you can simp
       -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
       -t, --testName[=VALUE]        The name of a test to run
       -c, --concatenate[=VALUE]     Concatenate results with existing results file.
-      --gui[=VALUE]                 Show the revit test runner gui.
-      --revit[=VALUE]               The Revit executable.
+          --gui[=VALUE]                 Show the revit test runner gui.
+          --revit[=VALUE]               The Revit executable.
       -d, --debug                   Run in debug mode.
       -h, --help                    Show this message and exit.
 
@@ -45,7 +45,7 @@ Should the results from this run of RTF be added to an existing results file if 
 **--gui** (Optional)  
 Would you like to see a GUI to allow you to select tests? The default is to run with a gui.
 
-**--revit** (Optional)
+**--revit** (Optional)  
 Specify a Revit executable to use for testing.
 
 **--debug** (Optional)  
