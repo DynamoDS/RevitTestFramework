@@ -54,7 +54,7 @@ Should RTF attempt to attach to a debugger?
 **--help**  
 Help!
 
-##Licence
+##License
 
 Copyright 2014 Autodesk
 
