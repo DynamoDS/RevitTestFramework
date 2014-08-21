@@ -499,6 +499,9 @@ namespace RTF.Applications
         {
             //write to the file
             var x = new XmlSerializer(typeof(resultType));
+            var dir = Path.GetDirectoryName(resultsPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
             using (var tw = XmlWriter.Create(resultsPath, new XmlWriterSettings() { Indent = true }))
             {
                 tw.WriteComment("This file represents the results of running a test suite");
