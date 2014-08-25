@@ -46,13 +46,17 @@ Should the results from this run of RTF be added to an existing results file if 
 Would you like to see a GUI to allow you to select tests? The default is to run with a gui.
 
 **--revit** (Optional)  
-Specify a Revit executable to use for testing.
+Specify a Revit executable to use for testing. **You should ensure that you specify the correct version of Revit and are running the correct version of RTF (See "Revit Versions" below.)**
 
 **--debug** (Optional)  
 Should RTF attempt to attach to a debugger?
 
 **--help**  
 Help!
+
+##Revit Versions
+
+There are two branches in this repository which track two versions of Revit. The master branch tracks Revit 2014, while the Revit2015 branch tracks Revit 2015. This will, most likely, change in the future. When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
 
 ##License
 
