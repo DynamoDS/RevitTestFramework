@@ -343,6 +343,12 @@ namespace RTF.Framework
 
             foreach (var fix in ad.Fixtures)
             {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
                 RunFixture(fix);
             }
         }
@@ -356,6 +362,12 @@ namespace RTF.Framework
 
             foreach (var td in fd.Tests)
             {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
                 RunTest(td);
             }
         }
