@@ -56,6 +56,8 @@ namespace RTF.Framework
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
         private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
         private bool isRunning = false;
+        private bool cancelRequested = false;
+        private object cancelLock = new object();
 
         #endregion
 
@@ -200,6 +202,24 @@ namespace RTF.Framework
             set { _concat = value; }
         }
 
+        public bool CancelRequested
+        {
+            get
+            {
+                lock (cancelLock)
+                {
+                    return cancelRequested;
+                }
+            }
+            set
+            {
+                lock (cancelLock)
+                {
+                    cancelRequested = value;
+                }
+            }
+        }
+
         #endregion
 
         #region constructors
@@ -310,6 +330,12 @@ namespace RTF.Framework
 
             foreach (var fix in ad.Fixtures)
             {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
                 RunFixture(fix);
             }
         }
@@ -323,6 +349,12 @@ namespace RTF.Framework
 
             foreach (var td in fd.Tests)
             {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
                 RunTest(td);
             }
         }

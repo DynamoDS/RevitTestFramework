@@ -165,12 +165,23 @@
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
                   IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
         </TreeView>
-
-        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" 
+        
+        <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Grid.Row="0" Margin="5"
                 Content="{Binding RunText}" 
                 Command="{Binding RunCommand}" 
                 CommandParameter="{Binding SelectedItem}"
-                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"/>
+            <Button Grid.Column="1" Grid.Row="0" Margin="5"
+                Content="Cancel" 
+                Command="{Binding CancelCommand}">
+            </Button>
+        </Grid>
+
     </Grid>
 
 </Window>

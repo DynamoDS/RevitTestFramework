@@ -401,11 +401,16 @@ namespace RTF.Applications
 
         private bool CanCancel()
         {
-            return isRunning;
+            return true;
         }
 
         private void Cancel()
         {
+            if (runner != null && IsRunning)
+            {
+                runner.CancelRequested = true;
+            }
+
             IsRunning = false;
         }
 
