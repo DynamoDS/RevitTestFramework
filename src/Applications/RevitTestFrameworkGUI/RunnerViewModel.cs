@@ -251,35 +251,42 @@ namespace RTF.Applications
                 File.Delete(runner.Results);
             }
 
+            SetupTests(parameter);
+
             var worker = new BackgroundWorker();
 
             worker.DoWork += TestThread;
-            worker.RunWorkerAsync(parameter);   
+            worker.RunWorkerAsync();   
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)
         {
             IsRunning = true;
 
-            if (e.Argument is IAssemblyData)
-            {
-                var ad = e.Argument as IAssemblyData;
-                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                runner.RunAssembly(ad);
-            }
-            else if (e.Argument is IFixtureData)
-            {
-                var fd = e.Argument as IFixtureData;
-                runner.RunCount = fd.Tests.Count;
-                runner.RunFixture(fd);
-            }
-            else if (e.Argument is ITestData)
-            {
-                runner.RunCount = 1;
-                runner.RunTest(e.Argument as ITestData);
-            }
+            runner.RunAllTests();
 
             IsRunning = false;
+        }
+
+        private void SetupTests(object parameter)
+        {
+            if (parameter is IAssemblyData)
+            {
+                var ad = parameter as IAssemblyData;
+                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
+                runner.SetupAssemblyTests(ad);
+            }
+            else if (parameter is IFixtureData)
+            {
+                var fd = parameter as IFixtureData;
+                runner.RunCount = fd.Tests.Count;
+                runner.SetupFixtureTests(fd);
+            }
+            else if (parameter is ITestData)
+            {
+                runner.RunCount = 1;
+                runner.SetupIndividualTest(parameter as ITestData);
+            }
         }
 
         private bool CanSetWorkingPath()
