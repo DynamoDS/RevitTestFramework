@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
@@ -79,24 +78,37 @@ namespace RTF.Framework
             get { return _pluginClass; }
         }
 
+        /// <summary>
+        /// The path of the RTF addin file.
+        /// </summary>
         internal string AddinPath
         {
             get { return _addinPath; }
             set { _addinPath = value; }
         }
 
+        /// <summary>
+        /// A dictionary which stores a test data object
+        /// and a journal path.
+        /// </summary>
         internal Dictionary<ITestData, string> TestDictionary
         {
             get { return testDictionary; }
             set { testDictionary = value; }
         }
 
+        /// <summary>
+        /// A counter for the number of runs processed.
+        /// </summary>
         public int RunCount
         {
             get { return _runCount; }
             set { _runCount = value; }
         }
 
+        /// <summary>
+        /// The path of the selected assembly for testing.
+        /// </summary>
         internal string AssemblyPath
         {
             get { return _assemblyPath; }
@@ -118,6 +130,9 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// A collection of available Revit products for testing.
+        /// </summary>
         public ObservableCollection<RevitProduct> Products
         {
             get { return _products; }
@@ -128,12 +143,19 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// A flag which can be used to specifi
+        /// </summary>
         public bool Gui
         {
             get { return _gui; }
             set { _gui = value; }
         }
 
+        /// <summary>
+        /// The selected Revit application against which
+        /// to test.
+        /// </summary>
         public int SelectedProduct
         {
             get { return _selectedProduct; }
@@ -144,36 +166,55 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// The name of the test to run.
+        /// </summary>
         public string Test
         {
             get { return _test; }
             set { _test = value; }
         }
 
+        /// <summary>
+        /// The name of the assembly to run.
+        /// </summary>
         public string TestAssembly
         {
             get { return _testAssembly; }
             set { _testAssembly = value; }
         }
 
+        /// <summary>
+        /// The name of the fixture to run.
+        /// </summary>
         public string Fixture
         {
             get { return _fixture; }
             set { _fixture = value; }
         }
 
+        /// <summary>
+        /// A flag which, when set, allows you
+        /// to attach to the debugger.
+        /// </summary>
         public bool IsDebug
         {
             get { return _isDebug; }
             set { _isDebug = value; }
         }
 
+        /// <summary>
+        /// The path to the results file.
+        /// </summary>
         public string Results
         {
             get { return _results; }
             set { _results = value; }
         }
 
+        /// <summary>
+        /// The path to the working directory.
+        /// </summary>
         public string WorkingDirectory
         {
             get { return _workingDirectory; }
@@ -191,24 +232,40 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// The path to the version of Revit to be
+        /// used for testing.
+        /// </summary>
         public string RevitPath
         {
             get { return _revitPath; }
             set { _revitPath = value; }
         }
 
+        /// <summary>
+        /// A timeout value in milliseconds, after which
+        /// any running test will be killed.
+        /// </summary>
         public int Timeout
         {
             get { return _timeout; }
             set { _timeout = value; }
         }
 
+        /// <summary>
+        /// A flag to specify whether to concatenate test 
+        /// results with those from a previous run.
+        /// </summary>
         public bool Concat
         {
             get { return _concat; }
             set { _concat = value; }
         }
 
+        /// <summary>
+        /// A flag to allow cancellation. Cancellation will occur
+        /// after the running test is completed.
+        /// </summary>
         public bool CancelRequested
         {
             get
@@ -227,18 +284,30 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// A flag which allows the setup of tests and the creation
+        /// of an addin file without actually running the tests.
+        /// </summary>
         public bool DryRun
         {
             get{ return dryRun; }
             set { dryRun = value; }
         }
 
+        /// <summary>
+        /// A flag which controls whether journal files and addins
+        /// generated by RTF are cleaned up upon test completion.
+        /// </summary>
         public bool CleanUp
         {
             get { return cleanup; }
             set { cleanup = value; }
         }
 
+        /// <summary>
+        /// A flag which specifies whether all tests should be
+        /// run from the same journal file.
+        /// </summary>
         public bool Continuous
         {
             get { return continuous; }
@@ -492,6 +561,73 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
+        public void Refresh()
+        {
+            Assemblies.Clear();
+            if (File.Exists(TestAssembly))
+            {
+                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
+            }
+           
+            Console.WriteLine(ToString());
+        }
+
+        public void Cleanup()
+        {
+            if (!CleanUp)
+                return;
+
+            try
+            {
+                foreach (var kvp in TestDictionary)
+                {
+                    var path = kvp.Value;
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                }
+
+                TestDictionary.Clear();
+
+                var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
+                foreach (var journal in journals)
+                {
+                    File.Delete(journal);
+                }
+
+                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
+                {
+                    File.Delete(AddinPath);
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("One or more journal files could not be deleted.");
+            }
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
+            sb.AppendLine(string.Format("Fixture : {0}", Fixture));
+            sb.AppendLine(string.Format("Test : {0}", Test));
+            sb.AppendLine(string.Format("Results Path : {0}", Results));
+            sb.AppendLine(string.Format("Timeout : {0}", Timeout));
+            sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
+            sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
+            sb.AppendLine(string.Format("GUI : {0}", Gui ? "True" : "False"));
+            sb.AppendLine(string.Format("Revit : {0}", RevitPath));
+            sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
+            sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
+            return sb.ToString();
+        }
+
+        #endregion
+
+        #region private methods
+
         private void ProcessTest(ITestData td, string journalPath)
         {
             var startInfo = new ProcessStartInfo()
@@ -503,7 +639,7 @@ namespace RTF.Framework
             };
 
             Console.WriteLine("Running {0}", journalPath);
-            var process = new Process {StartInfo = startInfo};
+            var process = new Process { StartInfo = startInfo };
             process.Start();
 
             var timedOut = false;
@@ -581,73 +717,6 @@ namespace RTF.Framework
                 }
             }
         }
-
-        public void Refresh()
-        {
-            Assemblies.Clear();
-            if (File.Exists(TestAssembly))
-            {
-                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
-            }
-           
-            Console.WriteLine(ToString());
-        }
-
-        public void Cleanup()
-        {
-            if (!CleanUp)
-                return;
-
-            try
-            {
-                foreach (var kvp in TestDictionary)
-                {
-                    var path = kvp.Value;
-                    if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-                }
-
-                TestDictionary.Clear();
-
-                var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
-                foreach (var journal in journals)
-                {
-                    File.Delete(journal);
-                }
-
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine("One or more journal files could not be deleted.");
-            }
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
-            sb.AppendLine(string.Format("Fixture : {0}", Fixture));
-            sb.AppendLine(string.Format("Test : {0}", Test));
-            sb.AppendLine(string.Format("Results Path : {0}", Results));
-            sb.AppendLine(string.Format("Timeout : {0}", Timeout));
-            sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
-            sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
-            sb.AppendLine(string.Format("GUI : {0}", Gui ? "True" : "False"));
-            sb.AppendLine(string.Format("Revit : {0}", RevitPath));
-            sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
-            sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
-            return sb.ToString();
-        }
-
-        #endregion
-
-        #region private methods
 
         private void OnTestRunsComplete()
         {
