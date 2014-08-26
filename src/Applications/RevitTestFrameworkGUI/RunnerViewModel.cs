@@ -132,6 +132,16 @@ namespace RTF.Applications
             }
         }
 
+        public bool RunContinuously
+        {
+            get { return runner.Continuous; }
+            set
+            {
+                runner.Continuous = value;
+                RaisePropertyChanged("RunContinuously");
+            }
+        }
+
         public int Timeout
         {
             get { return runner.Timeout; }
@@ -274,18 +284,18 @@ namespace RTF.Applications
             {
                 var ad = parameter as IAssemblyData;
                 runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                runner.SetupAssemblyTests(ad);
+                runner.SetupAssemblyTests(ad, runner.Continuous);
             }
             else if (parameter is IFixtureData)
             {
                 var fd = parameter as IFixtureData;
                 runner.RunCount = fd.Tests.Count;
-                runner.SetupFixtureTests(fd);
+                runner.SetupFixtureTests(fd, runner.Continuous);
             }
             else if (parameter is ITestData)
             {
                 runner.RunCount = 1;
-                runner.SetupIndividualTest(parameter as ITestData);
+                runner.SetupIndividualTest(parameter as ITestData, runner.Continuous);
             }
         }
 
