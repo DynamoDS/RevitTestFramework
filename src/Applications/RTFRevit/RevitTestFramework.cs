@@ -1,22 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Xml;
-using System.Xml.Serialization;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Dynamo.NUnit.Tests;
-using NUnit.Core;
-using NUnit.Core.Filters;
-using RevitServices.Persistence;
-using RTF.Applications;
-using RTF.Framework;
 
 namespace RTF.Applications
 {
@@ -28,21 +15,8 @@ namespace RTF.Applications
 
         public Result OnStartup(UIControlledApplication application)
         {
-            
-
-            //try
-            //{
-            //    ControlledApplication = application.ControlledApplication;
-            //    IdlePromise.RegisterIdle(application);
-            //    TransactionManager.SetupManager(new AutomaticTransactionStrategy());
-                return Result.Succeeded;
-            //}
-            //catch
-            //{
-            //    return Result.Failed;
-            //}
+            return Result.Succeeded;
         }
-
 
         public Result OnShutdown(UIControlledApplication application)
         {
