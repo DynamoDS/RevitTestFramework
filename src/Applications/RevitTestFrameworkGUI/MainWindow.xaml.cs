@@ -21,7 +21,7 @@ namespace RTF.Applications
             InitializeComponent();
 
             var runner = new Runner {Gui = true};
-            runner.Products.AddRange(Framework.Runner.FindRevit());
+            runner.Products.AddRange(Runner.FindRevit());
 
             runner.TestComplete += GetTestResultStatus;
             runner.TestFailed += runner_TestFailed;
