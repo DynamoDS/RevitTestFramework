@@ -80,7 +80,6 @@ namespace RTF.Applications
 
             if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test))
             {
-                //runner.RunCount = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests)).Count();
                 foreach (var ad in runner.Assemblies)
                 {
                     runner.SetupAssemblyTests(ad, runner.Continuous);
@@ -91,7 +90,6 @@ namespace RTF.Applications
                 var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
                 if (fd != null)
                 {
-                    //runner.RunCount = fd.Tests.Count;
                     runner.SetupFixtureTests(fd, runner.Continuous);
                 }
             }
@@ -102,7 +100,6 @@ namespace RTF.Applications
                         .FirstOrDefault(t => t.Name == runner.Test);
                 if (td != null)
                 {
-                    //runner.RunCount = 1;
                     runner.SetupIndividualTest(td, runner.Continuous);
                 }
             }
