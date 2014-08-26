@@ -13,7 +13,7 @@ using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
 {
-    public delegate void TestCompleteHandler(ITestData data, string resultsPath);
+    public delegate void TestCompleteHandler(IList<ITestData> data, string resultsPath);
     public delegate void TestTimedOutHandler(ITestData data);
     public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
 
@@ -716,6 +716,11 @@ namespace RTF.Framework
                         process.Kill();
                 }
             }
+
+            if (!timedOut && Gui)
+            {
+                OnTestComplete(TestDictionary.Keys.ToList());
+            }
         }
 
         private void OnTestRunsComplete()
@@ -727,6 +732,14 @@ namespace RTF.Framework
         }
 
         private void OnTestComplete(ITestData data)
+        {
+            if (TestComplete != null)
+            {
+                TestComplete(new List<ITestData>(){data}, Results);
+            }
+        }
+
+        private void OnTestComplete(IList<ITestData> data)
         {
             if (TestComplete != null)
             {
