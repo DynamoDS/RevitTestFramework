@@ -139,7 +139,11 @@
         </ComboBox>
         
         <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Margin="5">
-            <CheckBox Content="Debug" IsChecked="{Binding IsDebug, Mode=TwoWay}"></CheckBox>
+            <CheckBox Content="Debug" IsChecked="{Binding IsDebug, Mode=TwoWay}">
+                <CheckBox.ToolTip>
+                    <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>
             <TextBlock Margin="20,0,0,0" Text="Timeout">
                <TextBlock.ToolTip>
                    <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
@@ -151,9 +155,11 @@
                     <TextBlock Text="Add the results of the current test to an existing results file if one exists at the path specified."></TextBlock>
                 </CheckBox.ToolTip>
             </CheckBox>
-            <StackPanel.ToolTip>
-                <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
-            </StackPanel.ToolTip>
+            <CheckBox Content="Continuous" IsChecked="{Binding RunContinuously, Mode=TwoWay}" Margin="20,0,0,0">
+                <CheckBox.ToolTip>
+                    <TextBlock Text="When selected, all tests will be run in the same Revit session."></TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>
         </StackPanel>
         
         <TreeView Margin="5" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
