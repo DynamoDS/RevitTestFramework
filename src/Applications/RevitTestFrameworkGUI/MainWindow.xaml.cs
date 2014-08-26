@@ -1,10 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Windows;
-using System.Xml.Serialization;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
 using RTF.Framework;
@@ -71,7 +69,7 @@ namespace RTF.Applications
             vm.SelectedItem = e.NewValue;
         }
 
-        private resultType TryParseResultsOrEmitError(ITestData td, string resultsPath)
+        private resultType TryParseResultsOrEmitError(string resultsPath)
         {
             try
             {
@@ -79,78 +77,81 @@ namespace RTF.Applications
             }
             catch (InvalidOperationException e) // xml parser failure
             {
-                td.TestStatus = TestStatus.Error;
-                runner_TestFailed(td, "RevitTestExecutive failed to complete the test!", TestResultDeserializer.TryGetFailureMessage(resultsPath));
+                //td.TestStatus = TestStatus.Error;
+                //runner_TestFailed(td, "RevitTestExecutive failed to complete the test!", TestResultDeserializer.TryGetFailureMessage(resultsPath));
                 return null;
             }
         }
 
-        private void GetTestResultStatus(ITestData td, string resultsPath)
+        private void GetTestResultStatus(IList<ITestData> data, string resultsPath)
         {
-            Application.Current.Dispatcher.Invoke((() =>
-                td.ResultData.Clear()));
-
             // Try to get the results, if fail, short-circuit
-            var results = TryParseResultsOrEmitError(td, resultsPath);
+            var results = TryParseResultsOrEmitError(resultsPath);
             if (results == null) return;
 
-            //find our results in the results
-            var ourSuite =
-                results.testsuite.results.Items
-                    .Cast<testsuiteType>()
-                    .FirstOrDefault(s => s.name == td.Fixture.Name);
-
-            // parameterized tests will have multiple results
-            var ourTests = ourSuite.results.Items
-                .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
-
-            if (!ourTests.Any())
+            foreach (var td in data)
             {
-                return;
-            }
+                Application.Current.Dispatcher.Invoke((() =>
+                    td.ResultData.Clear()));
 
-            foreach (var ourTest in ourTests)
-            {
-                switch (ourTest.result)
+                //find our results in the results
+                var ourSuite =
+                    results.testsuite.results.Items
+                        .Cast<testsuiteType>()
+                        .FirstOrDefault(s => s.name == td.Fixture.Name);
+
+                // parameterized tests will have multiple results
+                var ourTests = ourSuite.results.Items
+                    .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
+
+                if (!ourTests.Any())
                 {
-                    case "Cancelled":
-                        td.TestStatus = TestStatus.Cancelled;
-                        break;
-                    case "Error":
-                        td.TestStatus = TestStatus.Error;
-                        break;
-                    case "Failure":
-                        td.TestStatus = TestStatus.Failure;
-                        break;
-                    case "Ignored":
-                        td.TestStatus = TestStatus.Ignored;
-                        break;
-                    case "Inconclusive":
-                        td.TestStatus = TestStatus.Inconclusive;
-                        break;
-                    case "NotRunnable":
-                        td.TestStatus = TestStatus.NotRunnable;
-                        break;
-                    case "Skipped":
-                        td.TestStatus = TestStatus.Skipped;
-                        break;
-                    case "Success":
-                        td.TestStatus = TestStatus.Success;
-                        break;
+                    return;
                 }
 
-                if (ourTest.Item == null) continue;
+                foreach (var ourTest in ourTests)
+                {
+                    switch (ourTest.result)
+                    {
+                        case "Cancelled":
+                            td.TestStatus = TestStatus.Cancelled;
+                            break;
+                        case "Error":
+                            td.TestStatus = TestStatus.Error;
+                            break;
+                        case "Failure":
+                            td.TestStatus = TestStatus.Failure;
+                            break;
+                        case "Ignored":
+                            td.TestStatus = TestStatus.Ignored;
+                            break;
+                        case "Inconclusive":
+                            td.TestStatus = TestStatus.Inconclusive;
+                            break;
+                        case "NotRunnable":
+                            td.TestStatus = TestStatus.NotRunnable;
+                            break;
+                        case "Skipped":
+                            td.TestStatus = TestStatus.Skipped;
+                            break;
+                        case "Success":
+                            td.TestStatus = TestStatus.Success;
+                            break;
+                    }
 
-                var failure = ourTest.Item as failureType;
-                if (failure == null) return;
+                    if (ourTest.Item == null) continue;
 
-                Application.Current.Dispatcher.Invoke((() =>
-                    td.ResultData.Add(
-                        new ResultData()
-                        {
-                            StackTrace = failure.stacktrace,
-                            Message = ourTest.name + ":" + failure.message
-                        })));
+                    var failure = ourTest.Item as failureType;
+                    if (failure == null) return;
+
+                    Application.Current.Dispatcher.Invoke((() =>
+                        td.ResultData.Add(
+                            new ResultData()
+                            {
+                                StackTrace = failure.stacktrace,
+                                Message = ourTest.name + ":" + failure.message
+                            })));
+                }
             }
 
         }
