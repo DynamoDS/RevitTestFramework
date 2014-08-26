@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
@@ -56,6 +55,10 @@ namespace RTF.Framework
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
         private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
         private bool isRunning = false;
+        private bool cancelRequested = false;
+        private object cancelLock = new object();
+        private bool dryRun = false;
+        private bool cleanup = true;
 
         #endregion
 
@@ -198,6 +201,36 @@ namespace RTF.Framework
         {
             get { return _concat; }
             set { _concat = value; }
+        }
+
+        public bool CancelRequested
+        {
+            get
+            {
+                lock (cancelLock)
+                {
+                    return cancelRequested;
+                }
+            }
+            set
+            {
+                lock (cancelLock)
+                {
+                    cancelRequested = value;
+                }
+            }
+        }
+
+        public bool DryRun
+        {
+            get{ return dryRun; }
+            set { dryRun = value; }
+        }
+
+        public bool CleanUp
+        {
+            get { return cleanup; }
+            set { cleanup = value; }
         }
 
         #endregion
@@ -362,50 +395,53 @@ namespace RTF.Framework
                 var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
                 CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
 
-                var startInfo = new ProcessStartInfo()
+                if (!dryRun)
                 {
-                    FileName = RevitPath,
-                    WorkingDirectory = WorkingDirectory,
-                    Arguments = journalPath,
-                    UseShellExecute = false
-                };
-
-                Console.WriteLine("Running {0}", journalPath);
-                var process = new Process {StartInfo = startInfo};
-                process.Start();
-
-                var timedOut = false;
-
-                if (IsDebug)
-                {
-                    process.WaitForExit();
-                }
-                else
-                {
-                    var time = 0;
-                    while (!process.WaitForExit(1000))
+                    var startInfo = new ProcessStartInfo()
                     {
-                        Console.Write(".");
-                        time += 1000;
-                        if (time > Timeout)
-                        {
-                            td.TestStatus = TestStatus.Failure;
-                            OnTestTimedOut(td);
+                        FileName = RevitPath,
+                        WorkingDirectory = WorkingDirectory,
+                        Arguments = journalPath,
+                        UseShellExecute = false
+                    };
 
-                            timedOut = true;
-                            break;
+                    Console.WriteLine("Running {0}", journalPath);
+                    var process = new Process { StartInfo = startInfo };
+                    process.Start();
+
+                    var timedOut = false;
+
+                    if (IsDebug)
+                    {
+                        process.WaitForExit();
+                    }
+                    else
+                    {
+                        var time = 0;
+                        while (!process.WaitForExit(1000))
+                        {
+                            Console.Write(".");
+                            time += 1000;
+                            if (time > Timeout)
+                            {
+                                td.TestStatus = TestStatus.Failure;
+                                OnTestTimedOut(td);
+
+                                timedOut = true;
+                                break;
+                            }
+                        }
+                        if (timedOut)
+                        {
+                            if (!process.HasExited)
+                                process.Kill();
                         }
                     }
-                    if (timedOut)
-                    {
-                        if (!process.HasExited)
-                            process.Kill();
-                    }
-                }
 
-                if (!timedOut && Gui)
-                {
-                    OnTestComplete(td);
+                    if (!timedOut && Gui)
+                    {
+                        OnTestComplete(td);
+                    }
                 }
 
                 RunCount--;
@@ -437,6 +473,9 @@ namespace RTF.Framework
 
         public void Cleanup()
         {
+            if (!CleanUp)
+                return;
+
             try
             {
                 foreach (var path in JournalPaths)

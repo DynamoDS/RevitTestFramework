@@ -121,6 +121,8 @@ namespace RTF.Applications
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
+                {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
+                {"x:|clean:", "Cleanup journal files after test completion", v=> runner.CleanUp = v != null},
                 {"d|debug", "Run in debug mode.", v=>runner.IsDebug = v != null},
                 {"h|help", "Show this message and exit.", v=> showHelp = v != null}
             };
