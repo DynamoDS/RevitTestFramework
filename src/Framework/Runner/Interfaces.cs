@@ -4,12 +4,15 @@ namespace RTF.Framework
 {
     public enum TestStatus{None,Cancelled, Error, Failure, Ignored, Inconclusive, NotRunnable, Skipped, Success,TimedOut}
     public enum FixtureStatus{None, Success, Failure, Mixed}
+    public enum GroupingType{Fixture, Category}
 
     public interface IAssemblyData
     {
+        GroupingType GroupingType { get; set; }
         string Path { get; set; }
         string Name { get; set; }
         ObservableCollection<IFixtureData> Fixtures { get; set; } 
+        ObservableCollection<ICategoryData> Categories { get; set; } 
     }
 
     public interface IFixtureData
@@ -24,7 +27,6 @@ namespace RTF.Framework
     {
         IFixtureData Fixture { get; set; }
         string Name { get; set; }
-        string Category { get; set; }
         bool RunDynamo { get; set; }
         string ModelPath { get; set; }
         string ShortModelPath { get; }
@@ -36,5 +38,11 @@ namespace RTF.Framework
     {
         string Message { get; set; }
         string StackTrace { get; set; }
+    }
+
+    public interface ICategoryData
+    {
+        string Name { get; set; }
+        ObservableCollection<ITestData> Tests { get; set; } 
     }
 }

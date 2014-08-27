@@ -65,7 +65,7 @@ namespace RTF.Applications
             {
                 if (SelectedItem is IAssemblyData)
                 {
-                    return "Run All Tests in Selected Assembly.";
+                    return "Run All Tests in Selected Assembly";
                 }
                 
                 if (SelectedItem is IFixtureData)
@@ -76,6 +76,11 @@ namespace RTF.Applications
                 if(SelectedItem is ITestData)
                 {
                     return "Run Selected Test";
+                }
+
+                if (SelectedItem is ICategoryData)
+                {
+                    return "Run All Tests in Selected Category";
                 }
 
                 return "Nothing Selected";
@@ -183,6 +188,24 @@ namespace RTF.Applications
             set { runner.Concat = value; }
         }
 
+        public GroupingType SortBy
+        {
+            get
+            {
+                // All assembly datas will have the same
+                // grouping type for now.
+                var asmData = runner.Assemblies.FirstOrDefault();
+                return asmData != null ? asmData.GroupingType : GroupingType.Fixture;
+            }
+            set
+            {
+                foreach (var asm in runner.Assemblies)
+                {
+                    asm.GroupingType = value;
+                }
+                RaisePropertyChanged("SortBy");
+            }
+        }
         #endregion
 
         #region commands
@@ -296,6 +319,12 @@ namespace RTF.Applications
             {
                 runner.RunCount = 1;
                 runner.SetupIndividualTest(parameter as ITestData, runner.Continuous);
+            }
+            else if (parameter is ICategoryData)
+            {
+                var catData = parameter as ICategoryData;
+                runner.RunCount = catData.Tests.Count;
+                catData.Tests.ToList().ForEach(x=>runner.SetupIndividualTest(x, runner.Continuous));
             }
         }
 

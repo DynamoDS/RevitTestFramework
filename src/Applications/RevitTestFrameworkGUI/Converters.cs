@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using RTF.Framework;
@@ -179,6 +184,30 @@ namespace RTF.Applications
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            return null;
+        }
+    }
+
+    public class GroupingTemplateSelector : DataTemplateSelector
+    {
+        public override DataTemplate
+            SelectTemplate(object item, DependencyObject container)
+        {
+            var element = container as FrameworkElement;
+
+            var asmData = item as AssemblyData;
+            if (element != null && item != null)
+            {
+                if (asmData.GroupingType == GroupingType.Fixture)
+                {
+                    return element.FindResource("AssemblyTemplate_ByFixture") as DataTemplate;
+                }
+                else if (asmData.GroupingType == GroupingType.Category)
+                {
+                    return element.FindResource("AssemblyTemplate_ByCategory") as DataTemplate;
+                } 
+            }
+            
             return null;
         }
     }

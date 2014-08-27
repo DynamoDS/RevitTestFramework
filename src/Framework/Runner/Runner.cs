@@ -987,8 +987,23 @@ namespace RTF.Framework
                 runDynamo = bool.Parse(runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value.ToString());
             }
 
-            var testData = new TestData(data, test.Name, category, modelPath, runDynamo);
+            var testData = new TestData(data, test.Name, modelPath, runDynamo);
             data.Tests.Add(testData);
+
+            if (!string.IsNullOrEmpty(category))
+            {
+                var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
+                if (cat != null)
+                {
+                    cat.Tests.Add(testData);
+                }
+                else
+                {
+                    var catData = new CategoryData(category);
+                    catData.Tests.Add(testData);
+                    data.Assembly.Categories.Add(catData);
+                }
+            }
 
             return true;
         }
@@ -1001,10 +1016,14 @@ namespace RTF.Framework
         public string Path { get; set; }
         public string Name { get; set; }
         public ObservableCollection<IFixtureData> Fixtures { get; set; }
+        public ObservableCollection<ICategoryData> Categories { get; set; }
+        public GroupingType GroupingType { get; set; }
 
         public AssemblyData(string path, string name)
         {
+            GroupingType = GroupingType.Fixture;
             Fixtures = new ObservableCollection<IFixtureData>();
+            Categories = new ObservableCollection<ICategoryData>();
             Path = path;
             Name = name;
         }
@@ -1096,7 +1115,6 @@ namespace RTF.Framework
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
         public string Name { get; set; }
-        public string Category { get; set; }
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
 
@@ -1144,17 +1162,10 @@ namespace RTF.Framework
 
         public IFixtureData Fixture { get; set; }
 
-        public TestData(IFixtureData fixture, string name, string category, string modelPath, bool runDynamo)
+        public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
         {
-            if (!string.IsNullOrEmpty(category))
-            {
-                //do something
-                Debug.WriteLine(category);
-            }
-
             Fixture = fixture;
             Name = name;
-            Category = category;
             ModelPath = modelPath;
             RunDynamo = runDynamo;
             _testStatus = TestStatus.None;
@@ -1166,6 +1177,18 @@ namespace RTF.Framework
         private void ResultDataOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
         {
             RaisePropertyChanged("ResultData");
+        }
+    }
+
+    public class CategoryData : NotificationObject, ICategoryData
+    {
+        public string Name { get; set; }
+        public ObservableCollection<ITestData> Tests { get; set; }
+
+        public CategoryData(string name)
+        {
+            Name = name;
+            Tests = new ObservableCollection<ITestData>();
         }
     }
 
