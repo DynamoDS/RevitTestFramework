@@ -24,6 +24,7 @@ namespace RTF.Framework
     {
         IFixtureData Fixture { get; set; }
         string Name { get; set; }
+        string Category { get; set; }
         bool RunDynamo { get; set; }
         string ModelPath { get; set; }
         string ShortModelPath { get; }

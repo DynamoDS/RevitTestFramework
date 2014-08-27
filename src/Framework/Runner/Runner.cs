@@ -951,7 +951,6 @@ namespace RTF.Framework
             return true;
         }
 
-
         public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
         {
             //set the default modelPath to the empty.rfa file that will live in the build directory
@@ -970,6 +969,15 @@ namespace RTF.Framework
                 modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
             }
 
+            var category = "";
+            var categoryAttrib =
+                testAttribs.FirstOrDefault(
+                    x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
+            if (categoryAttrib != null)
+            {
+                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+            }
+
             var runDynamoAttrib = 
                 testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
 
@@ -979,7 +987,7 @@ namespace RTF.Framework
                 runDynamo = bool.Parse(runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value.ToString());
             }
 
-            var testData = new TestData(data, test.Name, modelPath, runDynamo);
+            var testData = new TestData(data, test.Name, category, modelPath, runDynamo);
             data.Tests.Add(testData);
 
             return true;
@@ -1088,6 +1096,7 @@ namespace RTF.Framework
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
         public string Name { get; set; }
+        public string Category { get; set; }
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
 
@@ -1135,10 +1144,17 @@ namespace RTF.Framework
 
         public IFixtureData Fixture { get; set; }
 
-        public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
+        public TestData(IFixtureData fixture, string name, string category, string modelPath, bool runDynamo)
         {
+            if (!string.IsNullOrEmpty(category))
+            {
+                //do something
+                Debug.WriteLine(category);
+            }
+
             Fixture = fixture;
             Name = name;
+            Category = category;
             ModelPath = modelPath;
             RunDynamo = runDynamo;
             _testStatus = TestStatus.None;

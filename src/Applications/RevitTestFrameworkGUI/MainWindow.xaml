@@ -35,6 +35,9 @@
                                HorizontalAlignment="Left" 
                                Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}">
                     </TextBlock>
+                    <TextBlock Text="{Binding Category}" 
+                               HorizontalAlignment="Left">
+                    </TextBlock>
                     <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" 
                                Foreground="{Binding ModelExists, Converter={StaticResource BoolExistsConverter}}">
                         <TextBlock.ToolTip>
