@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
@@ -63,6 +64,7 @@ namespace RTF.Framework
         private bool continuous;
         private bool journalInitialized = false;
         private bool journalFinished;
+        private GroupingType groupingType;
 
         #endregion
 
@@ -314,12 +316,37 @@ namespace RTF.Framework
             set { continuous = value; }
         }
 
+        public GroupingType GroupingType
+        {
+            get { return groupingType; }
+            set
+            {
+                groupingType = value;
+                if (value == GroupingType.Category)
+                {
+                    foreach (var asm in Assemblies)
+                    {
+                        asm.SortingGroup = asm.Categories;
+                    }
+                }
+                else if (value == GroupingType.Fixture)
+                {
+                    foreach (var asm in Assemblies)
+                    {
+                        asm.SortingGroup = asm.Fixtures;
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region constructors
 
         public Runner()
         {
+            GroupingType = GroupingType.Fixture;
+            
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
@@ -425,7 +452,7 @@ namespace RTF.Framework
                     break;
                 }
 
-                SetupFixtureTests(fix);
+                SetupFixtureTests(fix as IFixtureData);
             }
         }
 
@@ -566,7 +593,7 @@ namespace RTF.Framework
             Assemblies.Clear();
             if (File.Exists(TestAssembly))
             {
-                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
+                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory, groupingType));
             }
            
             Console.WriteLine(ToString());
@@ -815,6 +842,7 @@ namespace RTF.Framework
                 tw.Write(journal);
                 tw.Flush();
             }
+
         }
 
         private void FinishJournal(string path)
@@ -884,7 +912,7 @@ namespace RTF.Framework
             return products;
         }
 
-        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory)
+        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
         {
             IList<IAssemblyData> data = new List<IAssemblyData>();
 
@@ -892,7 +920,7 @@ namespace RTF.Framework
             {
                 var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
 
-                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
+                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
                 data.Add(assData);
                 
                 foreach (var fixtureType in assembly.GetTypes())
@@ -951,7 +979,6 @@ namespace RTF.Framework
             return true;
         }
 
-
         public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
         {
             //set the default modelPath to the empty.rfa file that will live in the build directory
@@ -970,6 +997,15 @@ namespace RTF.Framework
                 modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
             }
 
+            var category = "";
+            var categoryAttrib =
+                testAttribs.FirstOrDefault(
+                    x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
+            if (categoryAttrib != null)
+            {
+                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+            }
+
             var runDynamoAttrib = 
                 testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
 
@@ -982,6 +1018,21 @@ namespace RTF.Framework
             var testData = new TestData(data, test.Name, modelPath, runDynamo);
             data.Tests.Add(testData);
 
+            if (!string.IsNullOrEmpty(category))
+            {
+                var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
+                if (cat != null)
+                {
+                    cat.Tests.Add(testData);
+                }
+                else
+                {
+                    var catData = new CategoryData(category);
+                    catData.Tests.Add(testData);
+                    data.Assembly.Categories.Add(catData);
+                }
+            }
+
             return true;
         }
 
@@ -992,11 +1043,25 @@ namespace RTF.Framework
     {
         public string Path { get; set; }
         public string Name { get; set; }
-        public ObservableCollection<IFixtureData> Fixtures { get; set; }
+        public ObservableCollection<IGroupable> SortingGroup { get; set; }
+        public ObservableCollection<IGroupable> Fixtures { get; set; }
+        public ObservableCollection<IGroupable> Categories { get; set; }
 
-        public AssemblyData(string path, string name)
+        public AssemblyData(string path, string name, GroupingType groupType)
         {
-            Fixtures = new ObservableCollection<IFixtureData>();
+            Fixtures = new ObservableCollection<IGroupable>();
+            Categories = new ObservableCollection<IGroupable>();
+
+            switch (groupType)
+            {
+                case GroupingType.Category:
+                    SortingGroup = Categories;
+                    break;
+                case GroupingType.Fixture:
+                    SortingGroup = Fixtures;
+                    break;
+            }
+
             Path = path;
             Name = name;
         }
@@ -1150,6 +1215,18 @@ namespace RTF.Framework
         private void ResultDataOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
         {
             RaisePropertyChanged("ResultData");
+        }
+    }
+
+    public class CategoryData : NotificationObject, ICategoryData
+    {
+        public string Name { get; set; }
+        public ObservableCollection<ITestData> Tests { get; set; }
+
+        public CategoryData(string name)
+        {
+            Name = name;
+            Tests = new ObservableCollection<ITestData>();
         }
     }
 
