@@ -188,27 +188,4 @@ namespace RTF.Applications
         }
     }
 
-    public class GroupingTemplateSelector : DataTemplateSelector
-    {
-        public override DataTemplate
-            SelectTemplate(object item, DependencyObject container)
-        {
-            var element = container as FrameworkElement;
-
-            var asmData = item as AssemblyData;
-            if (element != null && item != null)
-            {
-                if (asmData.GroupingType == GroupingType.Fixture)
-                {
-                    return element.FindResource("AssemblyTemplate_ByFixture") as DataTemplate;
-                }
-                else if (asmData.GroupingType == GroupingType.Category)
-                {
-                    return element.FindResource("AssemblyTemplate_ByCategory") as DataTemplate;
-                } 
-            }
-            
-            return null;
-        }
-    }
 }

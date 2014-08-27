@@ -90,7 +90,7 @@ namespace RTF.Applications
                 var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
                 if (fd != null)
                 {
-                    runner.SetupFixtureTests(fd, runner.Continuous);
+                    runner.SetupFixtureTests(fd as IFixtureData, runner.Continuous);
                 }
             }
             else if (string.IsNullOrEmpty(runner.Fixture) && !string.IsNullOrEmpty(runner.Test))

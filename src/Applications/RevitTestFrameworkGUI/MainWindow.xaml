@@ -17,7 +17,6 @@
         <applications:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></applications:EmptyStringToCollapsedConverter>
         <applications:BoolInverseConverter x:Key="BoolInverseConverter"></applications:BoolInverseConverter>
         <applications:BoolExistsConverter x:Key="BoolExistsConverter"></applications:BoolExistsConverter>
-        <applications:GroupingTemplateSelector x:Key="GroupingTemplateSelector"></applications:GroupingTemplateSelector>
 
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
                                   DataType="{x:Type runners:ResultData}">
@@ -72,18 +71,9 @@
                 </TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
-
-        <HierarchicalDataTemplate x:Key="AssemblyTemplate_ByFixture" 
-                                  ItemsSource="{Binding Fixtures}" 
-                                  DataType="{x:Type runners:AssemblyData}"
-                                  ItemTemplate="{StaticResource FixtureTemplate}">
-            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
-                       Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
-            </TextBlock>
-        </HierarchicalDataTemplate>
-
-        <HierarchicalDataTemplate x:Key="AssemblyTemplate_ByCategory" 
-                                  ItemsSource="{Binding Categories}" 
+        
+        <HierarchicalDataTemplate x:Key="AssemblyTemplate" 
+                                  ItemsSource="{Binding SortingGroup}" 
                                   DataType="{x:Type runners:AssemblyData}"
                                   ItemTemplate="{StaticResource CategoryTemplate}">
             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
@@ -196,7 +186,7 @@
         
         <TreeView Margin="5" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
                   ItemsSource="{Binding Assemblies}"
-                  ItemTemplate="{StaticResource AssemblyTemplate_ByCategory}"
+                  ItemTemplate="{StaticResource AssemblyTemplate}"
                   VirtualizingStackPanel.IsVirtualizing="True"
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 

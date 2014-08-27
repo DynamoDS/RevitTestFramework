@@ -8,18 +8,22 @@ namespace RTF.Framework
 
     public interface IAssemblyData
     {
-        GroupingType GroupingType { get; set; }
         string Path { get; set; }
         string Name { get; set; }
-        ObservableCollection<IFixtureData> Fixtures { get; set; } 
-        ObservableCollection<ICategoryData> Categories { get; set; } 
+        ObservableCollection<IGroupable> SortingGroup { get; set; }
+        ObservableCollection<IGroupable> Fixtures { get; set; } 
+        ObservableCollection<IGroupable> Categories { get; set; } 
     }
 
-    public interface IFixtureData
+    public interface IGroupable
     {
-        IAssemblyData Assembly { get; set; }
         string Name { get; set; }
         ObservableCollection<ITestData> Tests { get; set; } 
+    }
+
+    public interface IFixtureData:IGroupable
+    {
+        IAssemblyData Assembly { get; set; }
         FixtureStatus FixtureStatus { get; set; }
     }
 
@@ -40,9 +44,6 @@ namespace RTF.Framework
         string StackTrace { get; set; }
     }
 
-    public interface ICategoryData
-    {
-        string Name { get; set; }
-        ObservableCollection<ITestData> Tests { get; set; } 
-    }
+    public interface ICategoryData : IGroupable{}
+
 }

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
@@ -63,6 +64,7 @@ namespace RTF.Framework
         private bool continuous;
         private bool journalInitialized = false;
         private bool journalFinished;
+        private GroupingType groupingType;
 
         #endregion
 
@@ -314,12 +316,37 @@ namespace RTF.Framework
             set { continuous = value; }
         }
 
+        public GroupingType GroupingType
+        {
+            get { return groupingType; }
+            set
+            {
+                groupingType = value;
+                if (value == GroupingType.Category)
+                {
+                    foreach (var asm in Assemblies)
+                    {
+                        asm.SortingGroup = asm.Categories;
+                    }
+                }
+                else if (value == GroupingType.Fixture)
+                {
+                    foreach (var asm in Assemblies)
+                    {
+                        asm.SortingGroup = asm.Fixtures;
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region constructors
 
         public Runner()
         {
+            GroupingType = GroupingType.Fixture;
+            
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
@@ -425,7 +452,7 @@ namespace RTF.Framework
                     break;
                 }
 
-                SetupFixtureTests(fix);
+                SetupFixtureTests(fix as IFixtureData);
             }
         }
 
@@ -566,7 +593,7 @@ namespace RTF.Framework
             Assemblies.Clear();
             if (File.Exists(TestAssembly))
             {
-                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory));
+                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory, groupingType));
             }
            
             Console.WriteLine(ToString());
@@ -884,7 +911,7 @@ namespace RTF.Framework
             return products;
         }
 
-        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory)
+        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
         {
             IList<IAssemblyData> data = new List<IAssemblyData>();
 
@@ -892,7 +919,7 @@ namespace RTF.Framework
             {
                 var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
 
-                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name);
+                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
                 data.Add(assData);
                 
                 foreach (var fixtureType in assembly.GetTypes())
@@ -1015,15 +1042,25 @@ namespace RTF.Framework
     {
         public string Path { get; set; }
         public string Name { get; set; }
-        public ObservableCollection<IFixtureData> Fixtures { get; set; }
-        public ObservableCollection<ICategoryData> Categories { get; set; }
-        public GroupingType GroupingType { get; set; }
+        public ObservableCollection<IGroupable> SortingGroup { get; set; }
+        public ObservableCollection<IGroupable> Fixtures { get; set; }
+        public ObservableCollection<IGroupable> Categories { get; set; }
 
-        public AssemblyData(string path, string name)
+        public AssemblyData(string path, string name, GroupingType groupType)
         {
-            GroupingType = GroupingType.Fixture;
-            Fixtures = new ObservableCollection<IFixtureData>();
-            Categories = new ObservableCollection<ICategoryData>();
+            Fixtures = new ObservableCollection<IGroupable>();
+            Categories = new ObservableCollection<IGroupable>();
+
+            switch (groupType)
+            {
+                case GroupingType.Category:
+                    SortingGroup = Categories;
+                    break;
+                case GroupingType.Fixture:
+                    SortingGroup = Fixtures;
+                    break;
+            }
+
             Path = path;
             Name = name;
         }

@@ -194,15 +194,12 @@ namespace RTF.Applications
             {
                 // All assembly datas will have the same
                 // grouping type for now.
-                var asmData = runner.Assemblies.FirstOrDefault();
-                return asmData != null ? asmData.GroupingType : GroupingType.Fixture;
+                return runner.GroupingType;
             }
             set
             {
-                foreach (var asm in runner.Assemblies)
-                {
-                    asm.GroupingType = value;
-                }
+                runner.GroupingType = value;
+                runner.Refresh();
                 RaisePropertyChanged("SortBy");
             }
         }
