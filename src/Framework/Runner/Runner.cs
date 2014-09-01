@@ -21,7 +21,7 @@ namespace RTF.Framework
     /// <summary>
     /// The Runner model.
     /// </summary>
-    public class Runner : NotificationObject
+    public class Runner : NotificationObject, IRunner
     {
         #region events
 
@@ -34,24 +34,14 @@ namespace RTF.Framework
 
         #region private members
 
-        private string _testAssembly;
-        private string _test;
-        private string _fixture;
-        private bool _isDebug;
-        private string _results;
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
         private const string _pluginClass = "RTF.Applications.RevitTestFramework";
         private const string _appGuid = "c950020f-3da0-4e48-ab82-5e30c3f4b345";
         private const string _appClass = "RTF.Applications.RevitTestFrameworkExternalApp";
         private string _workingDirectory;
         private bool _gui = true;
-        private string _revitPath;
         private Dictionary<ITestData, string> testDictionary = new Dictionary<ITestData, string>();
-        private int _runCount = 0;
         private int _timeout = 120000;
-        private bool _concat;
-        private string _addinPath;
-        private string _assemblyPath;
         private int _selectedProduct;
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
         private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
@@ -64,7 +54,7 @@ namespace RTF.Framework
         private bool continuous;
         private bool journalInitialized = false;
         private bool journalFinished;
-        private GroupingType groupingType;
+        private GroupingType groupingType = GroupingType.Fixture;
 
         #endregion
 
@@ -80,47 +70,28 @@ namespace RTF.Framework
             get { return _pluginClass; }
         }
 
-        /// <summary>
-        /// The path of the RTF addin file.
-        /// </summary>
-        internal string AddinPath
-        {
-            get { return _addinPath; }
-            set { _addinPath = value; }
-        }
-
-        /// <summary>
-        /// A dictionary which stores a test data object
-        /// and a journal path.
-        /// </summary>
-        internal Dictionary<ITestData, string> TestDictionary
-        {
-            get { return testDictionary; }
-            set { testDictionary = value; }
-        }
-
-        /// <summary>
-        /// A counter for the number of runs processed.
-        /// </summary>
-        public int RunCount
-        {
-            get { return _runCount; }
-            set { _runCount = value; }
-        }
-
-        /// <summary>
-        /// The path of the selected assembly for testing.
-        /// </summary>
-        internal string AssemblyPath
-        {
-            get { return _assemblyPath; }
-            set { _assemblyPath = value; }
-        }
-
         #endregion
 
         #region public properties
 
+        /// <summary>
+        /// The path of the RTF addin file.
+        /// </summary>
+        public string AddinPath { get; set; }
+
+        /// <summary>
+        /// A counter for the number of runs processed.
+        /// </summary>
+        public int RunCount { get; set; }
+
+        /// <summary>
+        /// The path of the selected assembly for testing.
+        /// </summary>
+        public string AssemblyPath { get; set; }
+
+        /// <summary>
+        /// A collection of assemblies available for testing.
+        /// </summary>
         public ObservableCollection<IAssemblyData> Assemblies
         {
             get { return _assemblies; }
@@ -171,48 +142,33 @@ namespace RTF.Framework
         /// <summary>
         /// The name of the test to run.
         /// </summary>
-        public string Test
-        {
-            get { return _test; }
-            set { _test = value; }
-        }
+        public string Test { get; set; }
 
         /// <summary>
         /// The name of the assembly to run.
         /// </summary>
-        public string TestAssembly
-        {
-            get { return _testAssembly; }
-            set { _testAssembly = value; }
-        }
+        public string TestAssembly { get; set; }
 
         /// <summary>
         /// The name of the fixture to run.
         /// </summary>
-        public string Fixture
-        {
-            get { return _fixture; }
-            set { _fixture = value; }
-        }
+        public string Fixture { get; set; }
+
+        /// <summary>
+        /// The name of the category to run
+        /// </summary>
+        public string Category { get; set; }
 
         /// <summary>
         /// A flag which, when set, allows you
         /// to attach to the debugger.
         /// </summary>
-        public bool IsDebug
-        {
-            get { return _isDebug; }
-            set { _isDebug = value; }
-        }
+        public bool IsDebug { get; set; }
 
         /// <summary>
         /// The path to the results file.
         /// </summary>
-        public string Results
-        {
-            get { return _results; }
-            set { _results = value; }
-        }
+        public string Results { get; set; }
 
         /// <summary>
         /// The path to the working directory.
@@ -238,11 +194,7 @@ namespace RTF.Framework
         /// The path to the version of Revit to be
         /// used for testing.
         /// </summary>
-        public string RevitPath
-        {
-            get { return _revitPath; }
-            set { _revitPath = value; }
-        }
+        public string RevitPath { get; set; }
 
         /// <summary>
         /// A timeout value in milliseconds, after which
@@ -258,11 +210,7 @@ namespace RTF.Framework
         /// A flag to specify whether to concatenate test 
         /// results with those from a previous run.
         /// </summary>
-        public bool Concat
-        {
-            get { return _concat; }
-            set { _concat = value; }
-        }
+        public bool Concat { get; set; }
 
         /// <summary>
         /// A flag to allow cancellation. Cancellation will occur
@@ -345,10 +293,8 @@ namespace RTF.Framework
 
         public Runner()
         {
-            GroupingType = GroupingType.Fixture;
-            
+            RunCount = 0;
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-
             AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
         }
 
@@ -419,29 +365,44 @@ namespace RTF.Framework
             return null;
         }
 
-        public static Runner BySetupPaths(string workingDirectory, string testAssembly,
-            string resultsPath,string testName="", string fixtureName="")
-        {
-            var products = FindRevit();
-
-            var runner = new Runner
-            {
-                WorkingDirectory = workingDirectory,
-                TestAssembly = testAssembly,
-                Test = testName,
-                Fixture = fixtureName,
-                Results = resultsPath,
-                Gui = false,
-                RevitPath = Path.Combine(products.First().InstallLocation, "revit.exe")
-            };
-
-            return runner;
-        }
-
         #endregion
 
         #region public methods
 
+        public void Run(object parameter)
+        {
+            if (parameter is IAssemblyData)
+            {
+                var ad = parameter as IAssemblyData;
+                RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
+                SetupAssemblyTests(ad, Continuous);
+            }
+            else if (parameter is IFixtureData)
+            {
+                var fd = parameter as IFixtureData;
+                RunCount = fd.Tests.Count;
+                SetupFixtureTests(fd, Continuous);
+            }
+            else if (parameter is ITestData)
+            {
+                RunCount = 1;
+                SetupIndividualTest(parameter as ITestData, Continuous);
+            }
+            else if (parameter is ICategoryData)
+            {
+                var catData = parameter as ICategoryData;
+                RunCount = catData.Tests.Count;
+                catData.Tests.ToList().ForEach(x => SetupIndividualTest(x, Continuous));
+            }
+
+            RunAllTests();
+        }
+
+        /// <summary>
+        /// Setup all tests in a selected assembly.
+        /// </summary>
+        /// <param name="ad"></param>
+        /// <param name="continuous"></param>
         public void SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
         {
             foreach (var fix in ad.Fixtures)
@@ -456,20 +417,31 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// Setup all tests in a selected fixture.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="continuous"></param>
         public void SetupFixtureTests(IFixtureData fd, bool continuous = false)
         {
-            foreach (var td in fd.Tests)
-            {
-                if (cancelRequested)
-                {
-                    cancelRequested = false;
-                    break;
-                }
-
-                SetupIndividualTest(td, continuous);
-            }
+            SetupTests(fd.Tests.ToList(), continuous);
         }
 
+        /// <summary>
+        /// Setup all tests in a selected category.
+        /// </summary>
+        /// <param name="cd">The category</param>
+        /// <param name="continuous">Run continously</param>
+        public void SetupCategoryTests(ICategoryData cd, bool continuous = false)
+        {
+            SetupTests(cd.Tests, continuous);
+        }
+
+        /// <summary>
+        /// Setup the selected test.
+        /// </summary>
+        /// <param name="td"></param>
+        /// <param name="continuous"></param>
         public void SetupIndividualTest(ITestData td, bool continuous = false)
         {
             try
@@ -523,17 +495,20 @@ namespace RTF.Framework
 
                 // Write a null journal path to the dictionary
                 // for failed tests.
-                if (TestDictionary.ContainsKey(td))
+                if (testDictionary.ContainsKey(td))
                 {
-                    TestDictionary[td] = null;
+                    testDictionary[td] = null;
                 }
                 else
                 {
-                    TestDictionary.Add(td, null);
+                    testDictionary.Add(td, null);
                 }
             }
         }
-
+        
+        /// <summary>
+        /// Run all tests that have been set up.
+        /// </summary>
         public void RunAllTests()
         {
             if (continuous && !journalFinished)
@@ -566,7 +541,7 @@ namespace RTF.Framework
             }
             else
             {
-                foreach (var kvp in TestDictionary)
+                foreach (var kvp in testDictionary)
                 {
                     if (kvp.Value == null) continue;
 
@@ -588,6 +563,9 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
+        /// <summary>
+        /// Re-read the selected assembly to find available tests.
+        /// </summary>
         public void Refresh()
         {
             Assemblies.Clear();
@@ -599,6 +577,9 @@ namespace RTF.Framework
             Console.WriteLine(ToString());
         }
 
+        /// <summary>
+        /// Remove journal and addin files generated by the tests.
+        /// </summary>
         public void Cleanup()
         {
             if (!CleanUp)
@@ -606,7 +587,7 @@ namespace RTF.Framework
 
             try
             {
-                foreach (var kvp in TestDictionary)
+                foreach (var kvp in testDictionary)
                 {
                     var path = kvp.Value;
                     if (File.Exists(path))
@@ -615,7 +596,7 @@ namespace RTF.Framework
                     }
                 }
 
-                TestDictionary.Clear();
+                testDictionary.Clear();
 
                 var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
                 foreach (var journal in journals)
@@ -654,6 +635,20 @@ namespace RTF.Framework
         #endregion
 
         #region private methods
+
+        private void SetupTests(IEnumerable<ITestData> data, bool continuous)
+        {
+            foreach (var td in data)
+            {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
+                SetupIndividualTest(td, continuous);
+            }
+        }
 
         private void ProcessTest(ITestData td, string journalPath)
         {
@@ -746,7 +741,7 @@ namespace RTF.Framework
 
             if (!timedOut && Gui)
             {
-                OnTestComplete(TestDictionary.Keys.ToList());
+                OnTestComplete(testDictionary.Keys.ToList());
             }
         }
 

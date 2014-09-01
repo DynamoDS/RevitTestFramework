@@ -78,33 +78,40 @@ namespace RTF.Applications
 
             Console.WriteLine(runner.ToString());
 
-            if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test))
+            object data = null;
+
+            // If the no fixture, test, or category is specified, run the whole assembly.
+            if (string.IsNullOrEmpty(runner.Fixture) && 
+                string.IsNullOrEmpty(runner.Test) && 
+                string.IsNullOrEmpty(runner.Category))
             {
-                foreach (var ad in runner.Assemblies)
-                {
-                    runner.SetupAssemblyTests(ad, runner.Continuous);
-                }
+                // Only support one assembly for right now.
+                data = runner.Assemblies.FirstOrDefault();
             }
-            else if (string.IsNullOrEmpty(runner.Test) && !string.IsNullOrEmpty(runner.Fixture))
+            // Run by Category
+            if (!string.IsNullOrEmpty(runner.Category))
             {
-                var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
-                if (fd != null)
-                {
-                    runner.SetupFixtureTests(fd as IFixtureData, runner.Continuous);
-                }
+                data = runner.Category;
             }
-            else if (string.IsNullOrEmpty(runner.Fixture) && !string.IsNullOrEmpty(runner.Test))
+            // Run by Fixture
+            else if (!string.IsNullOrEmpty(runner.Fixture))
             {
-                var td =
-                    runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
+                data = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
+            }
+            // Run by test.
+            else if (!string.IsNullOrEmpty(runner.Test))
+            {
+                data = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
                         .FirstOrDefault(t => t.Name == runner.Test);
-                if (td != null)
-                {
-                    runner.SetupIndividualTest(td, runner.Continuous);
-                }
             }
 
-            runner.RunAllTests();
+            if (data == null)
+            {
+                Console.WriteLine("Running mode could not be determined from the inputs provided.");
+                return;
+            }
+
+            runner.Run(data);
         }
 
         private static bool ParseArguments(IEnumerable<string> args)
@@ -118,6 +125,7 @@ namespace RTF.Applications
                 {"r:|results:", "The path to the results file.", v=>runner.Results = Path.GetFullPath(v)},
                 {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
+                {"cat:","The category of tests you wish to run.",v=>runner.Category = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
                 {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
@@ -164,6 +172,11 @@ namespace RTF.Applications
             {
                 Console.Write("The specified working directory does not exist.");
                 return false;
+            }
+
+            if (!string.IsNullOrEmpty(runner.Category))
+            {
+                runner.GroupingType = GroupingType.Category;
             }
 
             return true;
