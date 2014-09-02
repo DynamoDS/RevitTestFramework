@@ -78,7 +78,8 @@ namespace RTF.Applications
 
             Console.WriteLine(runner.ToString());
 
-            if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test))
+            if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test)
+                && string.IsNullOrEmpty(runner.Category))
             {
                 foreach (var ad in runner.Assemblies)
                 {
@@ -103,6 +104,15 @@ namespace RTF.Applications
                     runner.SetupIndividualTest(td, runner.Continuous);
                 }
             }
+            else if (!string.IsNullOrEmpty(runner.Category))
+            {
+                var cd = runner.Assemblies.SelectMany(a => a.Categories).
+                    FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
+                if (null != cd)
+                {
+                    runner.SetupCategoryTests(cd, runner.Continuous);
+                }
+            }
 
             runner.RunAllTests();
         }
@@ -118,8 +128,11 @@ namespace RTF.Applications
                 {"r:|results:", "The path to the results file.", v=>runner.Results = Path.GetFullPath(v)},
                 {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
+                {"category:", "The name of a test category to run.", v=> runner.Category = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
+                {"copyAddins:", "Specify whether to copy the addins from the Revit folder to the current working directory",
+                    v=> runner.CopyAddins = v != null},
                 {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
                 {"x:|clean:", "Cleanup journal files after test completion", v=> runner.CleanUp = v != null},
                 {"continuous:", "Run all selected tests in one Revit session.", v=> runner.Continuous = v != null},
