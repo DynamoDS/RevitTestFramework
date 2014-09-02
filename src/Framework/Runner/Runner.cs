@@ -37,6 +37,7 @@ namespace RTF.Framework
         private string _testAssembly;
         private string _test;
         private string _fixture;
+        private string _category;
         private bool _isDebug;
         private string _results;
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
@@ -193,6 +194,15 @@ namespace RTF.Framework
         {
             get { return _fixture; }
             set { _fixture = value; }
+        }
+
+        /// <summary>
+        /// The name of the category to run.
+        /// </summary>
+        public string Category
+        {
+            get { return _category; }
+            set { _category = value; }
         }
 
         /// <summary>
@@ -459,6 +469,20 @@ namespace RTF.Framework
         public void SetupFixtureTests(IFixtureData fd, bool continuous = false)
         {
             foreach (var td in fd.Tests)
+            {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
+                SetupIndividualTest(td, continuous);
+            }
+        }
+
+        public void SetupCategoryTests(ICategoryData cd, bool continuous = false)
+        {
+            foreach (var td in cd.Tests)
             {
                 if (cancelRequested)
                 {
