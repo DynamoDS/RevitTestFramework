@@ -19,6 +19,7 @@ RevitTestFrameworkConsole.exe is a console application which allows running RTF 
       -t, --testName[=VALUE]        The name of a test to run
       -c, --concatenate[=VALUE]     Concatenate results with existing results file.
           --revit[=VALUE]           The Revit executable.
+          --copyAddins[=VALUE]      Copy addins from the Revit addins folder.
       -d, --debug                   Run in debug mode.
       -h, --help                    Show this message and exit.
 
@@ -49,6 +50,9 @@ Should the results from this run of RTF be added to an existing results file if 
 
 **--revit** (Optional)  
 Specify a Revit executable to use for testing. **You should ensure that you specify the correct version of Revit and are running the correct version of RTF (See "Revit Versions" below.)**
+
+**--copyAddins** (Optional)  
+Specified whether to copy addins from the Revit addins folder to the current working directory.
 
 **--debug** (Optional)  
 Should RTF attempt to attach to a debugger?

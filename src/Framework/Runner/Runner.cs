@@ -46,6 +46,7 @@ namespace RTF.Framework
         private string _workingDirectory;
         private bool _gui = true;
         private string _revitPath;
+        private bool _copyAddins = false;
         private Dictionary<ITestData, string> testDictionary = new Dictionary<ITestData, string>();
         private int _runCount = 0;
         private int _timeout = 120000;
@@ -225,10 +226,8 @@ namespace RTF.Framework
                 _workingDirectory = value;
 
                 // Delete any existing addins before resetting the addins path.
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
+                DeleteAddins();
+
                 AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
                 batchJournalPath = Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt");
             }
@@ -242,6 +241,16 @@ namespace RTF.Framework
         {
             get { return _revitPath; }
             set { _revitPath = value; }
+        }
+
+        /// <summary>
+        /// Specified whether to copy addins from the 
+        /// Revit addin folder to the current working directory
+        /// </summary>
+        public bool CopyAddins
+        {
+            get { return _copyAddins; }
+            set { _copyAddins = value; }
         }
 
         /// <summary>
@@ -554,6 +563,20 @@ namespace RTF.Framework
                 CreateAddin(AddinPath, AssemblyPath);
             }
 
+            // Copy addins from the Revit addin folder to the current working directory
+            // so that they can be loaded.
+            if (CopyAddins)
+            {
+                var files = Directory.GetFiles(GetRevitAddinFolder());
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(file, Path.Combine(WorkingDirectory, Path.GetFileName(file)), true);
+                    }
+                }
+            }
+
             if (dryRun) return;
 
             RunCount = continuous ? 1 : testDictionary.Count;
@@ -623,10 +646,7 @@ namespace RTF.Framework
                     File.Delete(journal);
                 }
 
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
+                DeleteAddins();
             }
             catch (IOException ex)
             {
@@ -910,6 +930,31 @@ namespace RTF.Framework
             }
 
             return products;
+        }
+
+        /// <summary>
+        /// This function returns the current Revit addin folder
+        /// </summary>
+        /// <returns></returns>
+        private string GetRevitAddinFolder()
+        {
+            string programDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            return Path.Combine(programDataFolder, @".\Autodesk\Revit\Addins\2015");
+        }
+
+        /// <summary>
+        /// This function deletes the addin files in the current working directory
+        /// </summary>
+        private void DeleteAddins()
+        {
+            var files = Directory.GetFiles(WorkingDirectory);
+            foreach (var file in files)
+            {
+                if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(file);
+                }
+            }
         }
 
         public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
