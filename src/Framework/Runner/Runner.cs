@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using Autodesk.RevitAddIns;
+using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.ViewModel;
 
@@ -17,6 +17,44 @@ namespace RTF.Framework
     public delegate void TestCompleteHandler(IList<ITestData> data, string resultsPath);
     public delegate void TestTimedOutHandler(ITestData data);
     public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
+
+    public class RunnerSetupData : IRunnerSetupData
+    {
+        public string WorkingDirectory { get; set; }
+        public string AssemblyPath { get; set; }
+        public string TestAssembly { get; set; }
+        public string Results { get; set; }
+        public string Fixture { get; set; }
+        public string Category { get; set; }
+        public string Test { get; set; }
+        public bool Concat { get; set; }
+        public bool DryRun { get; set; }
+        public string RevitPath { get; set; }
+        public bool CleanUp { get; set; }
+        public bool Continuous { get; set; }
+        public bool IsDebug { get; set; }
+        public bool Gui { get; set; }
+        public GroupingType GroupingType { get; set; }
+        public IList<RevitProduct> Products { get; set; }
+        public int Timeout { get; set; }
+
+        public RunnerSetupData()
+        {
+            Products = FindRevit();
+        }
+
+        public static IList<RevitProduct> FindRevit()
+        {
+            var products = RevitProductUtility.GetAllInstalledRevitProducts();
+
+            if (products.Any())
+            {
+                products = products.Where(x => x.Version == RevitVersion.Revit2014).ToList();
+            }
+
+            return products;
+        }
+    }
 
     /// <summary>
     /// The Runner model.
@@ -289,13 +327,102 @@ namespace RTF.Framework
 
         #endregion
 
-        #region constructors
+        #region private constructors
 
-        public Runner()
+        private Runner(IRunnerSetupData setupData)
         {
             RunCount = 0;
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-            AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"RTFRevit.dll");
+
+            WorkingDirectory = setupData.WorkingDirectory;
+            AssemblyPath = setupData.AssemblyPath;
+            TestAssembly = setupData.TestAssembly;
+            Results = setupData.Results;
+            Fixture = setupData.Fixture;
+            Category = setupData.Category;
+            Test = setupData.Test;
+            Concat = setupData.Concat;
+            DryRun = setupData.DryRun;
+            RevitPath = setupData.RevitPath;
+            CleanUp = setupData.CleanUp;
+            Continuous = setupData.Continuous;
+            IsDebug = setupData.IsDebug;
+            GroupingType = setupData.GroupingType;
+            Gui = setupData.Gui;
+
+            var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
+            if (assemblyDatas == null)
+            {
+                return;
+            }
+
+            Assemblies.Clear();
+            Assemblies.AddRange(assemblyDatas);
+
+            if (File.Exists(Results) && !Concat)
+            {
+                File.Delete(Results);
+            }
+
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+
+            if (Gui)
+            {
+                TestComplete += GetTestResultStatus;
+                TestFailed += Runner_TestFailed;
+                TestTimedOut += Runner_TestTimedOut; 
+            }
+        }
+
+        #endregion
+
+        #region public static constructors
+
+        public static Runner Initialize(IRunnerSetupData setupData)
+        {
+            if (!String.IsNullOrEmpty(setupData.TestAssembly) && !File.Exists(setupData.TestAssembly))
+            {
+                throw new ArgumentException("The specified test assembly does not exist.");
+            }
+
+            if (string.IsNullOrEmpty(setupData.TestAssembly))
+            {
+                setupData.TestAssembly = Assembly.GetExecutingAssembly().Location;
+            }
+
+            if (string.IsNullOrEmpty(setupData.AssemblyPath) || !File.Exists(setupData.AssemblyPath))
+            {
+                setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    "RTFRevit.dll");
+            }
+
+            if (!String.IsNullOrEmpty(setupData.WorkingDirectory) && !Directory.Exists(setupData.WorkingDirectory))
+            {
+                throw new ArgumentException("The specified working directory does not exist.");
+            }
+
+            if (string.IsNullOrEmpty(setupData.WorkingDirectory) || !Directory.Exists(setupData.WorkingDirectory))
+            {
+                setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            }
+
+            if (!string.IsNullOrEmpty(setupData.Category))
+            {
+                setupData.GroupingType = GroupingType.Category;
+            }
+
+            if (setupData.Products == null || !setupData.Products.Any())
+            {
+                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
+            }
+
+            if (string.IsNullOrEmpty(setupData.RevitPath))
+            {
+                setupData.RevitPath = Path.Combine(setupData.Products.First().InstallLocation, "revit.exe");
+            }
+
+            return new Runner(setupData);
         }
 
         Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
@@ -853,7 +980,11 @@ namespace RTF.Framework
             journalFinished = true;
         }
 
-        private void CreateAddin(string addinPath, string assemblyPath)
+        #endregion
+
+        #region private static methods
+
+        private static void CreateAddin(string addinPath, string assemblyPath)
         {
             using (var tw = new StreamWriter(addinPath, false))
             {
@@ -880,7 +1011,7 @@ namespace RTF.Framework
                     "</AddIn>\n" +
 
                     "</RevitAddIns>",
-                    assemblyPath,_appGuid, _appClass, _pluginGuid, _pluginClass
+                    assemblyPath, _appGuid, _appClass, _pluginGuid, _pluginClass
                     );
 
                 tw.Write(addin);
@@ -888,23 +1019,122 @@ namespace RTF.Framework
             }
         }
 
+        private static void Runner_TestTimedOut(ITestData data)
+        {
+            //Application.Current.Dispatcher.Invoke(() =>
+            //{
+            data.ResultData.Clear();
+            data.ResultData.Add(new ResultData() { Message = "Test timed out." });
+            //});
+        }
+
+        private static void Runner_TestFailed(ITestData data, string message, string stackTrace)
+        {
+            //Application.Current.Dispatcher.Invoke(() =>
+            //{
+            data.ResultData.Clear();
+            data.ResultData.Add(new ResultData() { Message = message, StackTrace = stackTrace });
+            //});
+        }
+
+        private static resultType TryParseResultsOrEmitError(string resultsPath)
+        {
+            try
+            {
+                return TestResultDeserializer.DeserializeResults(resultsPath);
+            }
+            catch (InvalidOperationException e) // xml parser failure
+            {
+                //td.TestStatus = TestStatus.Error;
+                //runner_TestFailed(td, "RevitTestExecutive failed to complete the test!", TestResultDeserializer.TryGetFailureMessage(resultsPath));
+                return null;
+            }
+        }
+
+        private static void GetTestResultStatus(IEnumerable<ITestData> data, string resultsPath)
+        {
+            // Try to get the results, if fail, short-circuit
+            var results = TryParseResultsOrEmitError(resultsPath);
+            if (results == null) return;
+
+            foreach (var td in data)
+            {
+                //System.Windows.Application.Current.Dispatcher.Invoke((() =>
+                //td.ResultData.Clear()));
+                td.ResultData.Clear();
+
+                //find our results in the results
+                var ourSuite =
+                    results.testsuite.results.Items
+                        .Cast<testsuiteType>()
+                        .FirstOrDefault(s => s.name == td.Fixture.Name);
+
+                // parameterized tests will have multiple results
+                var ourTests = ourSuite.results.Items
+                    .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
+
+                if (!ourTests.Any())
+                {
+                    return;
+                }
+
+                foreach (var ourTest in ourTests)
+                {
+                    switch (ourTest.result)
+                    {
+                        case "Cancelled":
+                            td.TestStatus = TestStatus.Cancelled;
+                            break;
+                        case "Error":
+                            td.TestStatus = TestStatus.Error;
+                            break;
+                        case "Failure":
+                            td.TestStatus = TestStatus.Failure;
+                            break;
+                        case "Ignored":
+                            td.TestStatus = TestStatus.Ignored;
+                            break;
+                        case "Inconclusive":
+                            td.TestStatus = TestStatus.Inconclusive;
+                            break;
+                        case "NotRunnable":
+                            td.TestStatus = TestStatus.NotRunnable;
+                            break;
+                        case "Skipped":
+                            td.TestStatus = TestStatus.Skipped;
+                            break;
+                        case "Success":
+                            td.TestStatus = TestStatus.Success;
+                            break;
+                    }
+
+                    if (ourTest.Item == null) continue;
+
+                    var failure = ourTest.Item as failureType;
+                    if (failure == null) return;
+
+                    //System.Windows.Application.Current.Dispatcher.Invoke((() =>
+                    //    td.ResultData.Add(
+                    //        new ResultData()
+                    //        {
+                    //            StackTrace = failure.stacktrace,
+                    //            Message = ourTest.name + ":" + failure.message
+                    //        })));
+
+                    td.ResultData.Add(
+                            new ResultData()
+                            {
+                                StackTrace = failure.stacktrace,
+                                Message = ourTest.name + ":" + failure.message
+                            });
+                }
+            }
+
+        }
+
         #endregion
 
         #region public static methods
-
-        public static IList<RevitProduct> FindRevit()
-        {
-            var products = RevitProductUtility.GetAllInstalledRevitProducts()
-                .Where(x => x.Version == RevitVersion.Revit2014).ToList();
-
-            if (!products.Any())
-            {
-                Console.WriteLine("No versions of revit could be found");
-                return null;
-            }
-
-            return products;
-        }
 
         public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
         {

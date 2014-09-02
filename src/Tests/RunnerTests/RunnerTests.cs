@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Autodesk.RevitAddIns;
 using Moq;
 using NUnit.Framework;
 using RTF.Framework;
@@ -18,34 +20,65 @@ namespace RTF.Tests
         }
 
         [Test]
-        public void RunCategory()
+        public void CanConstructDefaultRunner()
         {
-            var runnerMock = new Mock<IRunner>();
-            runnerMock.Setup(x => x.AddinPath).Returns(@"C:\MyAddin.addin");
-            runnerMock.Setup(x => x.AssemblyPath).Returns(@"C:\TestAssembly.dll");
-            runnerMock.Setup(x => x.Assemblies).Returns(new ObservableCollection<IAssemblyData>() {data});
-            runnerMock.Setup(x => x.Category).Returns("Smoke");
-            var cat = MockCategory("Smoke");
-            runnerMock.Verify(x => x.SetupCategoryTests(cat.Object, false), Times.Once);
+            var setupData = new RunnerSetupData();
+            Assert.DoesNotThrow(()=>Runner.Initialize(setupData));
         }
 
         [Test]
-        public void RunAssembly()
+        public void CannotConstructRunnerWithoutRevit()
         {
-            
+            var mockSetup = new Mock<IRunnerSetupData>();
+            mockSetup.Setup(x => x.Products).Returns(new List<RevitProduct>{});
+            Assert.Throws(typeof(ArgumentException), () => Runner.Initialize(mockSetup.Object));
         }
 
         [Test]
-        public void RunFixture()
+        public void CannotConstructRunnerWithBadWorkingDirectory()
         {
-            
+            var mockSetup = new Mock<IRunnerSetupData>();
+            mockSetup.Setup(x => x.WorkingDirectory).Returns("foo");
+            Assert.Throws(typeof(ArgumentException), () => Runner.Initialize(mockSetup.Object));
         }
 
         [Test]
-        public void RunTest()
+        public void CannotConstructRunnerWithBadTestAssembly()
         {
-            
+            var mockSetup = new Mock<IRunnerSetupData>();
+            mockSetup.Setup(x => x.TestAssembly).Returns("foo");
+            Assert.Throws(typeof(ArgumentException), () => Runner.Initialize(mockSetup.Object));
         }
+
+        //[Test]
+        //public void RunCategory()
+        //{
+        //    var runnerMock = new Mock<IRunner>();
+        //    runnerMock.Setup(x => x.AddinPath).Returns(@"C:\MyAddin.addin");
+        //    runnerMock.Setup(x => x.AssemblyPath).Returns(@"C:\TestAssembly.dll");
+        //    runnerMock.Setup(x => x.Assemblies).Returns(new ObservableCollection<IAssemblyData>() {data});
+        //    runnerMock.Setup(x => x.Category).Returns("Smoke");
+        //    var cat = MockCategory("Smoke");
+        //    runnerMock.Verify(x => x.SetupCategoryTests(cat.Object, false), Times.Once);
+        //}
+
+        //[Test]
+        //public void RunAssembly()
+        //{
+            
+        //}
+
+        //[Test]
+        //public void RunFixture()
+        //{
+            
+        //}
+
+        //[Test]
+        //public void RunTest()
+        //{
+            
+        //}
 
         private Mock<IAssemblyData> MockAssemblyData()
         {

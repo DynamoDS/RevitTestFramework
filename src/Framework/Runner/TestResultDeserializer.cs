@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Dynamo.NUnit.Tests;
-using RTF.Framework;
 
-namespace RTF.Applications
+namespace RTF.Framework
 {
     public static class TestResultDeserializer
     {

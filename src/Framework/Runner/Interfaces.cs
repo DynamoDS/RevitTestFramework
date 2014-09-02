@@ -48,6 +48,27 @@ namespace RTF.Framework
 
     public interface ICategoryData : IGroupable{}
 
+    public interface IRunnerSetupData
+    {
+        string WorkingDirectory { get; set; }
+        string AssemblyPath { get; set; }
+        string TestAssembly { get; set; }
+        string Results { get; set; }
+        string Fixture { get; set; }
+        string Category { get; set; }
+        string Test { get; set; }
+        bool Concat { get; set; }
+        bool DryRun { get; set; }
+        string RevitPath { get; set; }
+        bool CleanUp { get; set; }
+        bool Continuous { get; set; }
+        bool IsDebug { get; set; }
+        bool Gui { get; set; }
+        GroupingType GroupingType { get; set; }
+        IList<RevitProduct> Products { get; set; }
+        int Timeout { get; set; }
+    }
+
     public interface IRunner
     {
         /// <summary>

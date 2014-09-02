@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using Autodesk.RevitAddIns;
@@ -203,6 +202,7 @@ namespace RTF.Applications
                 RaisePropertyChanged("SortBy");
             }
         }
+        
         #endregion
 
         #region commands
@@ -212,7 +212,6 @@ namespace RTF.Applications
         public DelegateCommand SetWorkingPathCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
         public DelegateCommand SaveSettingsCommand { get; set; }
-        public DelegateCommand LoadSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
 
@@ -220,15 +219,41 @@ namespace RTF.Applications
 
         #region constructors
 
-        internal RunnerViewModel(Runner runner)
+        internal RunnerViewModel()
         {
-            this.runner = runner;
-            
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory) &&
+                                   Directory.Exists(Settings.Default.workingDirectory)
+                    ? Settings.Default.workingDirectory
+                    : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                TestAssembly = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
+                               File.Exists(Settings.Default.assemblyPath)
+                    ? Settings.Default.assemblyPath
+                    : null,
+                Results = !String.IsNullOrEmpty(Settings.Default.resultsPath)
+                    ? Settings.Default.resultsPath
+                    : null,
+                Timeout = Settings.Default.timeout,
+                IsDebug = Settings.Default.isDebug,
+                Gui = true
+            };
+
+            runner = Runner.Initialize(setupData);
+
+            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
+            {
+                SelectedProductIndex = -1;
+            }
+            else
+            {
+                SelectedProductIndex = Settings.Default.selectedProduct;
+            }
+
             SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
             SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
             SetWorkingPathCommand = new DelegateCommand(SetWorkingPath, CanSetWorkingPath);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
-            LoadSettingsCommand = new DelegateCommand(LoadSettings, CanLoadSettings);
             SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
@@ -374,41 +399,7 @@ namespace RTF.Applications
             Settings.Default.Save();
         }
 
-        internal void LoadSettings()
-        {
-            WorkingPath = !String.IsNullOrEmpty(Settings.Default.workingDirectory) && 
-                Directory.Exists(Settings.Default.workingDirectory)
-                ? Settings.Default.workingDirectory
-                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            AssemblyPath = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
-                File.Exists(Settings.Default.assemblyPath)
-                ? Settings.Default.assemblyPath
-                : null;
-
-            ResultsPath = !String.IsNullOrEmpty(Settings.Default.resultsPath)
-                ? Settings.Default.resultsPath
-                : null;
-
-            Timeout = Settings.Default.timeout;
-            IsDebug = Settings.Default.isDebug;
-
-            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
-            {
-                SelectedProductIndex = -1;
-            }
-            else
-            {
-                SelectedProductIndex = Settings.Default.selectedProduct;
-            }
-        }
-
         private bool CanSaveSettings()
-        {
-            return true;
-        }
-
-        private bool CanLoadSettings()
         {
             return true;
         }
