@@ -16,9 +16,11 @@ RevitTestFrameworkConsole.exe is a console application which allows running RTF 
       -a, --assembly[=VALUE]        The path to the test assembly.
       -r, --results[=VALUE]         The path to the results file.
       -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
+          --category[=VALUE]        The name of the test category.
       -t, --testName[=VALUE]        The name of a test to run
       -c, --concatenate[=VALUE]     Concatenate results with existing results file.
           --revit[=VALUE]           The Revit executable.
+          --copyAddins[=VALUE]      Copy addins from the Revit addins folder.
       -d, --debug                   Run in debug mode.
       -h, --help                    Show this message and exit.
 
@@ -39,16 +41,22 @@ This is the full path to the assembly that contains your tests.
 This is the full path to an .xml file that will contain the results.
 
 **--fixture** (Optional)  
-The name of a test fixture to run. If no fixture and no test names are specified, RTF will run all tests in the assembly.
+The name of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
+
+**--category** (Optional)  
+The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
 
 **--testName** (Optional)  
-The name of a test to run. If no test and no fixture names are specified, RTF will run all tests in the assembly.
+The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
 
 **--concatenate** (Optional)  
 Should the results from this run of RTF be added to an existing results file if one exists at the path specified. The default behavior is to replace the existing results file.
 
 **--revit** (Optional)  
 Specify a Revit executable to use for testing. **You should ensure that you specify the correct version of Revit and are running the correct version of RTF (See "Revit Versions" below.)**
+
+**--copyAddins** (Optional)  
+Specified whether to copy addins from the Revit addins folder to the current working directory.
 
 **--debug** (Optional)  
 Should RTF attempt to attach to a debugger?
