@@ -5,6 +5,7 @@
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:applications="clr-namespace:RTF.Applications"
                 xmlns:runners="clr-namespace:RTF.Framework;assembly=Runner"
+                xmlns:System="clr-namespace:System;assembly=mscorlib"
                 mc:Ignorable="d" MinWidth="400" MinHeight="600" Width="700" Closing="View_Closing">
     <Window.Resources>
         <applications:AssemblyPathConverter x:Key="AssemblyPathConverter"></applications:AssemblyPathConverter>
@@ -59,15 +60,34 @@
             </StackPanel>
         </HierarchicalDataTemplate>
 
+        <HierarchicalDataTemplate x:Key="CategoryTemplate" 
+                                  ItemsSource="{Binding Tests}" 
+                                  DataType="{x:Type runners:CategoryData}"
+                                  ItemTemplate="{StaticResource TestTemplate}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Name}" 
+                       VerticalAlignment="Center" 
+                       Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
+                </TextBlock>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+        
         <HierarchicalDataTemplate x:Key="AssemblyTemplate" 
-                                  ItemsSource="{Binding Fixtures}" 
+                                  ItemsSource="{Binding SortingGroup}" 
                                   DataType="{x:Type runners:AssemblyData}"
-                                  ItemTemplate="{StaticResource FixtureTemplate}">
+                                  ItemTemplate="{StaticResource CategoryTemplate}">
             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
             </TextBlock>
         </HierarchicalDataTemplate>
-       
+
+        <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues"
+                            ObjectType="{x:Type System:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="runners:GroupingType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        
     </Window.Resources>
     
     <Grid>
@@ -139,25 +159,33 @@
         </ComboBox>
         
         <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Margin="5">
-            <CheckBox Content="Debug" IsChecked="{Binding IsDebug, Mode=TwoWay}"></CheckBox>
-            <TextBlock Margin="20,0,0,0" Text="Timeout">
+            <CheckBox Content="Debug" IsChecked="{Binding IsDebug, Mode=TwoWay}" VerticalAlignment="Center">
+                <CheckBox.ToolTip>
+                    <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>
+            <TextBlock Margin="20,0,0,0" Text="Timeout" VerticalAlignment="Center">
                <TextBlock.ToolTip>
                    <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
                </TextBlock.ToolTip>
             </TextBlock>
             <TextBox Width ="100" Margin="5,0,0,0" Text="{Binding Timeout, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}"></TextBox>
-            <CheckBox Content="Concatenate Results" IsChecked="{Binding Concatenate, Mode=TwoWay}" Margin="20,0,0,0">
+            <CheckBox Content="Concatenate Results" IsChecked="{Binding Concatenate, Mode=TwoWay}" Margin="20,0,0,0" VerticalAlignment="Center">
                 <CheckBox.ToolTip>
                     <TextBlock Text="Add the results of the current test to an existing results file if one exists at the path specified."></TextBlock>
                 </CheckBox.ToolTip>
             </CheckBox>
-            <StackPanel.ToolTip>
-                <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
-            </StackPanel.ToolTip>
+            <CheckBox Content="Continuous" IsChecked="{Binding RunContinuously, Mode=TwoWay}" VerticalAlignment="Center" Margin="20,0,0,0">
+                <CheckBox.ToolTip>
+                    <TextBlock Text="When selected, all tests will be run in the same Revit session."></TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>
+            <TextBlock Text="Sort By:" Margin="20,0,0,0" VerticalAlignment="Center"></TextBlock>
+            <ComboBox Margin="5,0,0,0" VerticalAlignment="Center" ItemsSource="{Binding Source={StaticResource dataFromEnum}}" SelectedItem="{Binding Path=SortBy}" />
         </StackPanel>
         
         <TreeView Margin="5" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
-                  ItemsSource="{Binding Assemblies}" 
+                  ItemsSource="{Binding Assemblies}"
                   ItemTemplate="{StaticResource AssemblyTemplate}"
                   VirtualizingStackPanel.IsVirtualizing="True"
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
@@ -165,12 +193,23 @@
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
                   IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
         </TreeView>
-
-        <Button Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" Margin="5" 
+        
+        <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Grid.Row="0" Margin="5"
                 Content="{Binding RunText}" 
                 Command="{Binding RunCommand}" 
                 CommandParameter="{Binding SelectedItem}"
-                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
+                IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"/>
+            <Button Grid.Column="1" Grid.Row="0" Margin="5"
+                Content="Cancel" 
+                Command="{Binding CancelCommand}">
+            </Button>
+        </Grid>
+
     </Grid>
 
 </Window>

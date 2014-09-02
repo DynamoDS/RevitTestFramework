@@ -62,7 +62,7 @@ namespace RTF.Applications
                 return;
             }
 
-            var assemblyDatas = Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory);
+            var assemblyDatas = Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory, runner.GroupingType);
             if (assemblyDatas == null)
             {
                 return;
@@ -80,10 +80,9 @@ namespace RTF.Applications
 
             if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test))
             {
-                runner.RunCount = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests)).Count();
                 foreach (var ad in runner.Assemblies)
                 {
-                    runner.RunAssembly(ad);
+                    runner.SetupAssemblyTests(ad, runner.Continuous);
                 }
             }
             else if (string.IsNullOrEmpty(runner.Test) && !string.IsNullOrEmpty(runner.Fixture))
@@ -91,8 +90,7 @@ namespace RTF.Applications
                 var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
                 if (fd != null)
                 {
-                    runner.RunCount = fd.Tests.Count;
-                    runner.RunFixture(fd);
+                    runner.SetupFixtureTests(fd as IFixtureData, runner.Continuous);
                 }
             }
             else if (string.IsNullOrEmpty(runner.Fixture) && !string.IsNullOrEmpty(runner.Test))
@@ -102,10 +100,11 @@ namespace RTF.Applications
                         .FirstOrDefault(t => t.Name == runner.Test);
                 if (td != null)
                 {
-                    runner.RunCount = 1;
-                    runner.RunTest(td);
+                    runner.SetupIndividualTest(td, runner.Continuous);
                 }
             }
+
+            runner.RunAllTests();
         }
 
         private static bool ParseArguments(IEnumerable<string> args)
@@ -121,6 +120,11 @@ namespace RTF.Applications
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
+                {"copyAddins:", "Specify whether to copy the addins from the Revit folder to the current working directory",
+                    v=> runner.CopyAddins = v != null},
+                {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
+                {"x:|clean:", "Cleanup journal files after test completion", v=> runner.CleanUp = v != null},
+                {"continuous:", "Run all selected tests in one Revit session.", v=> runner.Continuous = v != null},
                 {"d|debug", "Run in debug mode.", v=>runner.IsDebug = v != null},
                 {"h|help", "Show this message and exit.", v=> showHelp = v != null}
             };

@@ -4,19 +4,26 @@ namespace RTF.Framework
 {
     public enum TestStatus{None,Cancelled, Error, Failure, Ignored, Inconclusive, NotRunnable, Skipped, Success,TimedOut}
     public enum FixtureStatus{None, Success, Failure, Mixed}
+    public enum GroupingType{Fixture, Category}
 
     public interface IAssemblyData
     {
         string Path { get; set; }
         string Name { get; set; }
-        ObservableCollection<IFixtureData> Fixtures { get; set; } 
+        ObservableCollection<IGroupable> SortingGroup { get; set; }
+        ObservableCollection<IGroupable> Fixtures { get; set; } 
+        ObservableCollection<IGroupable> Categories { get; set; } 
     }
 
-    public interface IFixtureData
+    public interface IGroupable
     {
-        IAssemblyData Assembly { get; set; }
         string Name { get; set; }
         ObservableCollection<ITestData> Tests { get; set; } 
+    }
+
+    public interface IFixtureData:IGroupable
+    {
+        IAssemblyData Assembly { get; set; }
         FixtureStatus FixtureStatus { get; set; }
     }
 
@@ -36,4 +43,7 @@ namespace RTF.Framework
         string Message { get; set; }
         string StackTrace { get; set; }
     }
+
+    public interface ICategoryData : IGroupable{}
+
 }

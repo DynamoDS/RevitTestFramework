@@ -65,7 +65,7 @@ namespace RTF.Applications
             {
                 if (SelectedItem is IAssemblyData)
                 {
-                    return "Run All Tests in Selected Assembly.";
+                    return "Run All Tests in Selected Assembly";
                 }
                 
                 if (SelectedItem is IFixtureData)
@@ -76,6 +76,11 @@ namespace RTF.Applications
                 if(SelectedItem is ITestData)
                 {
                     return "Run Selected Test";
+                }
+
+                if (SelectedItem is ICategoryData)
+                {
+                    return "Run All Tests in Selected Category";
                 }
 
                 return "Nothing Selected";
@@ -132,6 +137,16 @@ namespace RTF.Applications
             }
         }
 
+        public bool RunContinuously
+        {
+            get { return runner.Continuous; }
+            set
+            {
+                runner.Continuous = value;
+                RaisePropertyChanged("RunContinuously");
+            }
+        }
+
         public int Timeout
         {
             get { return runner.Timeout; }
@@ -173,6 +188,21 @@ namespace RTF.Applications
             set { runner.Concat = value; }
         }
 
+        public GroupingType SortBy
+        {
+            get
+            {
+                // All assembly datas will have the same
+                // grouping type for now.
+                return runner.GroupingType;
+            }
+            set
+            {
+                runner.GroupingType = value;
+                runner.Refresh();
+                RaisePropertyChanged("SortBy");
+            }
+        }
         #endregion
 
         #region commands
@@ -251,35 +281,48 @@ namespace RTF.Applications
                 File.Delete(runner.Results);
             }
 
+            SetupTests(parameter);
+
             var worker = new BackgroundWorker();
 
             worker.DoWork += TestThread;
-            worker.RunWorkerAsync(parameter);   
+            worker.RunWorkerAsync();   
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)
         {
             IsRunning = true;
 
-            if (e.Argument is IAssemblyData)
-            {
-                var ad = e.Argument as IAssemblyData;
-                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                runner.RunAssembly(ad);
-            }
-            else if (e.Argument is IFixtureData)
-            {
-                var fd = e.Argument as IFixtureData;
-                runner.RunCount = fd.Tests.Count;
-                runner.RunFixture(fd);
-            }
-            else if (e.Argument is ITestData)
-            {
-                runner.RunCount = 1;
-                runner.RunTest(e.Argument as ITestData);
-            }
+            runner.RunAllTests();
 
             IsRunning = false;
+        }
+
+        private void SetupTests(object parameter)
+        {
+            if (parameter is IAssemblyData)
+            {
+                var ad = parameter as IAssemblyData;
+                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
+                runner.SetupAssemblyTests(ad, runner.Continuous);
+            }
+            else if (parameter is IFixtureData)
+            {
+                var fd = parameter as IFixtureData;
+                runner.RunCount = fd.Tests.Count;
+                runner.SetupFixtureTests(fd, runner.Continuous);
+            }
+            else if (parameter is ITestData)
+            {
+                runner.RunCount = 1;
+                runner.SetupIndividualTest(parameter as ITestData, runner.Continuous);
+            }
+            else if (parameter is ICategoryData)
+            {
+                var catData = parameter as ICategoryData;
+                runner.RunCount = catData.Tests.Count;
+                catData.Tests.ToList().ForEach(x=>runner.SetupIndividualTest(x, runner.Continuous));
+            }
         }
 
         private bool CanSetWorkingPath()
@@ -401,11 +444,16 @@ namespace RTF.Applications
 
         private bool CanCancel()
         {
-            return isRunning;
+            return true;
         }
 
         private void Cancel()
         {
+            if (runner != null && IsRunning)
+            {
+                runner.CancelRequested = true;
+            }
+
             IsRunning = false;
         }
 

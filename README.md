@@ -2,11 +2,13 @@
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
-RTF's gui allows you to choose tests from a treeview and to visualize the results of the tests as they are run. RTF can also be run as a command line process. In either case, the output file from a test run is an nunit results file compatible with many CI systems.
+RTF has two executables. 
 
-If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkRunner -h" and you'll get something like this:
+RevitTestFrameworkGUI.exe allows you to choose tests from a treeview and to visualize the results of the tests as they are run.
 
-    Usage: DynamoTestFrameworkRunner [OPTIONS]
+RevitTestFrameworkConsole.exe is a console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
+
+    Usage: RevitTestFrameworkConsole [OPTIONS]
     Run a test or a fixture of tests from an assembly.
 
     Options:
@@ -16,10 +18,14 @@ If you'd like to learn more about the command line options for RTF, you can simp
       -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
       -t, --testName[=VALUE]        The name of a test to run
       -c, --concatenate[=VALUE]     Concatenate results with existing results file.
-          --gui[=VALUE]                 Show the revit test runner gui.
-          --revit[=VALUE]               The Revit executable.
+          --revit[=VALUE]           The Revit executable.
+          --copyAddins[=VALUE]      Copy addins from the Revit addins folder.
       -d, --debug                   Run in debug mode.
       -h, --help                    Show this message and exit.
+
+##Results  
+
+The output file from a test run is an nunit-formatted results file compatible with many CI systems.
 
 ##Command Line Parameters
 
@@ -42,17 +48,21 @@ The name of a test to run. If no test and no fixture names are specified, RTF wi
 **--concatenate** (Optional)  
 Should the results from this run of RTF be added to an existing results file if one exists at the path specified. The default behavior is to replace the existing results file.
 
-**--gui** (Optional)  
-Would you like to see a GUI to allow you to select tests? The default is to run with a gui.
-
 **--revit** (Optional)  
-Specify a Revit executable to use for testing.
+Specify a Revit executable to use for testing. **You should ensure that you specify the correct version of Revit and are running the correct version of RTF (See "Revit Versions" below.)**
+
+**--copyAddins** (Optional)  
+Specified whether to copy addins from the Revit addins folder to the current working directory.
 
 **--debug** (Optional)  
 Should RTF attempt to attach to a debugger?
 
 **--help**  
 Help!
+
+##Revit Versions
+
+There are two branches in this repository which track two versions of Revit. The master branch tracks Revit 2014, while the Revit2015 branch tracks Revit 2015. This will, most likely, change in the future. When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
 
 ##License
 
