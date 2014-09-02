@@ -104,6 +104,15 @@ namespace RTF.Applications
                 data = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
                         .FirstOrDefault(t => t.Name == runner.Test);
             }
+            else if (!string.IsNullOrEmpty(runner.Category))
+            {
+                var cd = runner.Assemblies.SelectMany(a => a.Categories).
+                    FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
+                if (null != cd)
+                {
+                    runner.SetupCategoryTests(cd, runner.Continuous);
+                }
+            }
 
             if (data == null)
             {
@@ -125,7 +134,7 @@ namespace RTF.Applications
                 {"r:|results:", "The path to the results file.", v=>runner.Results = Path.GetFullPath(v)},
                 {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
-                {"cat:","The category of tests you wish to run.",v=>runner.Category = v},
+                {"category:", "The name of a test category to run.", v=> runner.Category = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
                 {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
