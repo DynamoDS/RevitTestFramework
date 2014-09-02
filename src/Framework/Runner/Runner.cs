@@ -46,11 +46,13 @@ namespace RTF.Framework
         private string _workingDirectory;
         private bool _gui = true;
         private string _revitPath;
+        private bool _copyAddins = false;
         private Dictionary<ITestData, string> testDictionary = new Dictionary<ITestData, string>();
         private int _runCount = 0;
         private int _timeout = 120000;
         private bool _concat;
         private string _addinPath;
+        private List<string> _copiedAddins = new List<string>();
         private string _assemblyPath;
         private int _selectedProduct;
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
@@ -97,6 +99,15 @@ namespace RTF.Framework
         {
             get { return testDictionary; }
             set { testDictionary = value; }
+        }
+
+        /// <summary>
+        /// This one records all the addins that are copied
+        /// </summary>
+        private List<string> CopiedAddins
+        {
+            get { return _copiedAddins; }
+            set { _copiedAddins = value; }
         }
 
         /// <summary>
@@ -225,10 +236,8 @@ namespace RTF.Framework
                 _workingDirectory = value;
 
                 // Delete any existing addins before resetting the addins path.
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
+                DeleteAddins();
+
                 AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
                 batchJournalPath = Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt");
             }
@@ -242,6 +251,16 @@ namespace RTF.Framework
         {
             get { return _revitPath; }
             set { _revitPath = value; }
+        }
+
+        /// <summary>
+        /// Specified whether to copy addins from the 
+        /// Revit addin folder to the current working directory
+        /// </summary>
+        public bool CopyAddins
+        {
+            get { return _copyAddins; }
+            set { _copyAddins = value; }
         }
 
         /// <summary>
@@ -554,6 +573,22 @@ namespace RTF.Framework
                 CreateAddin(AddinPath, AssemblyPath);
             }
 
+            // Copy addins from the Revit addin folder to the current working directory
+            // so that they can be loaded.
+            if (CopyAddins)
+            {
+                var files = Directory.GetFiles(GetRevitAddinFolder());
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var fileName = Path.GetFileName(file);
+                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                        CopiedAddins.Add(fileName);
+                    }
+                }
+            }
+
             if (dryRun) return;
 
             RunCount = continuous ? 1 : testDictionary.Count;
@@ -623,10 +658,7 @@ namespace RTF.Framework
                     File.Delete(journal);
                 }
 
-                if (!string.IsNullOrEmpty(AddinPath) && File.Exists(AddinPath))
-                {
-                    File.Delete(AddinPath);
-                }
+                DeleteAddins();
             }
             catch (IOException ex)
             {
@@ -909,6 +941,28 @@ namespace RTF.Framework
             }
 
             return products;
+        }
+
+        /// <summary>
+        /// This function returns the current Revit addin folder
+        /// </summary>
+        /// <returns></returns>
+        private string GetRevitAddinFolder()
+        {
+            return Products[SelectedProduct].AllUsersAddInFolder;
+        }
+
+        /// <summary>
+        /// This function deletes the addin files in the current working directory
+        /// </summary>
+        private void DeleteAddins()
+        {
+            foreach (var addin in CopiedAddins)
+            {
+                var file = Path.Combine(WorkingDirectory, addin);
+                File.Delete(file);
+            }
+            CopiedAddins.Clear();
         }
 
         public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
