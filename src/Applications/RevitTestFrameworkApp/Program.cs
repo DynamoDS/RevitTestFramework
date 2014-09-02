@@ -131,6 +131,8 @@ namespace RTF.Applications
                 {"category:", "The name of a test category to run.", v=> runner.Category = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
+                {"copyAddins:", "Specify whether to copy the addins from the Revit folder to the current working directory",
+                    v=> runner.CopyAddins = v != null},
                 {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
                 {"x:|clean:", "Cleanup journal files after test completion", v=> runner.CleanUp = v != null},
                 {"continuous:", "Run all selected tests in one Revit session.", v=> runner.Continuous = v != null},
