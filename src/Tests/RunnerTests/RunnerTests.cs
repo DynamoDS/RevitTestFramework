@@ -50,17 +50,16 @@ namespace RTF.Tests
             Assert.Throws(typeof(ArgumentException), () => Runner.Initialize(mockSetup.Object));
         }
 
-        //[Test]
-        //public void RunCategory()
-        //{
-        //    var runnerMock = new Mock<IRunner>();
-        //    runnerMock.Setup(x => x.AddinPath).Returns(@"C:\MyAddin.addin");
-        //    runnerMock.Setup(x => x.AssemblyPath).Returns(@"C:\TestAssembly.dll");
-        //    runnerMock.Setup(x => x.Assemblies).Returns(new ObservableCollection<IAssemblyData>() {data});
-        //    runnerMock.Setup(x => x.Category).Returns("Smoke");
-        //    var cat = MockCategory("Smoke");
-        //    runnerMock.Verify(x => x.SetupCategoryTests(cat.Object, false), Times.Once);
-        //}
+        [Test]
+        public void RunCategory()
+        {
+            var runnerMock = new Mock<IRunner>();
+            
+            var cat = MockCategory("Smoke");
+            runnerMock.Setup(x => x.SetupCategoryTests(cat.Object, false));
+            runnerMock.Object.Run(cat.Object);
+            runnerMock.Verify(x=>x.SetupCategoryTests(cat.Object,false), Times.Once); 
+        }
 
         //[Test]
         //public void RunAssembly()
