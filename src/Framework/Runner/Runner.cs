@@ -381,7 +381,6 @@ namespace RTF.Framework
             Continuous = setupData.Continuous;
             IsDebug = setupData.IsDebug;
             GroupingType = setupData.GroupingType;
-            Gui = setupData.Gui;
 
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)
@@ -672,7 +671,6 @@ namespace RTF.Framework
             sb.AppendLine(string.Format("Timeout : {0}", Timeout));
             sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
             sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
-            sb.AppendLine(string.Format("GUI : {0}", Gui ? "True" : "False"));
             sb.AppendLine(string.Format("Revit : {0}", RevitPath));
             sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
             sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
@@ -740,7 +738,7 @@ namespace RTF.Framework
                 }
             }
 
-            if (!timedOut && Gui)
+            if (!timedOut)
             {
                 OnTestComplete(td);
             }
@@ -786,7 +784,7 @@ namespace RTF.Framework
                 }
             }
 
-            if (!timedOut && Gui)
+            if (!timedOut)
             {
                 OnTestComplete(testDictionary.Keys.ToList());
             }

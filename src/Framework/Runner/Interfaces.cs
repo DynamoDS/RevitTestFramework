@@ -63,7 +63,6 @@ namespace RTF.Framework
         bool CleanUp { get; set; }
         bool Continuous { get; set; }
         bool IsDebug { get; set; }
-        bool Gui { get; set; }
         GroupingType GroupingType { get; set; }
         IList<RevitProduct> Products { get; set; }
         int Timeout { get; set; }
@@ -97,11 +96,6 @@ namespace RTF.Framework
         ObservableCollection<RevitProduct> Products { get; set; }
 
         Dictionary<ITestData, string> TestDictionary { get; }
-
-        /// <summary>
-        /// A flag which can be used to specifi
-        /// </summary>
-        bool Gui { get; set; }
 
         /// <summary>
         /// The selected Revit application against which
