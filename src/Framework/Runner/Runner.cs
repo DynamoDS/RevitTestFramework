@@ -45,6 +45,9 @@ namespace RTF.Framework
         public RunnerSetupData()
         {
             Products = FindRevit();
+            CleanUp = true;
+            GroupingType = GroupingType.Fixture;
+            Timeout = 120000;
         }
 
         public static IList<RevitProduct> FindRevit()
@@ -381,6 +384,7 @@ namespace RTF.Framework
             Continuous = setupData.Continuous;
             IsDebug = setupData.IsDebug;
             GroupingType = setupData.GroupingType;
+            Timeout = setupData.Timeout;
 
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)
