@@ -73,7 +73,9 @@ namespace RTF.Tests
         public void RunByCategorySetup_Smoke()
         {
             var catData = assemblyData.Categories.First(c => c.Name == "Smoke");
-            var runner = SetupToRun(catData);
+            var runner = SetupToRun();
+            runner.SetupTests(catData);
+            Assert.AreEqual(runner.RunCount, 2);
             Assert.AreEqual(runner.TestDictionary.Count, 2);
         }
 
@@ -81,7 +83,9 @@ namespace RTF.Tests
         public void RunByCategorySetup_Integration()
         {
             var catData = assemblyData.Categories.First(c => c.Name == "Integration");
-            var runner = SetupToRun(catData);
+            var runner = SetupToRun();
+            runner.SetupTests(catData);
+            Assert.AreEqual(runner.RunCount, 1);
             Assert.AreEqual(runner.TestDictionary.Count, 1);
         }
 
@@ -89,7 +93,9 @@ namespace RTF.Tests
         public void RunByFixtureSetup_FixtureA()
         {
             var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureA");
-            var runner = SetupToRun(fixData);
+            var runner = SetupToRun();
+            runner.SetupTests(fixData);
+            Assert.AreEqual(runner.RunCount, 3);
             Assert.AreEqual(runner.TestDictionary.Count, 3);
         }
 
@@ -97,22 +103,39 @@ namespace RTF.Tests
         public void RunByFixtureSetup_FixtureB()
         {
             var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureB");
-            var runner = SetupToRun(fixData);
+            var runner = SetupToRun();
+            runner.SetupTests(fixData);
+            Assert.AreEqual(runner.RunCount, 2);
             Assert.AreEqual(runner.TestDictionary.Count, 2);
         }
 
         [Test]
         public void RunByAssemblySetup()
         {
-            var runner = SetupToRun(assemblyData);
+            var runner = SetupToRun();
+            runner.SetupTests(assemblyData);
+            Assert.AreEqual(runner.RunCount, 5);
             Assert.AreEqual(runner.TestDictionary.Count, 5);
         }
 
         [Test]
         public void RunByTestSetup()
         {
-
+            var runner = SetupToRun();
+            runner.SetupTests(assemblyData.Fixtures.First().Tests.First());
+            Assert.AreEqual(runner.RunCount, 1);
+            Assert.AreEqual(runner.TestDictionary.Count, 1);  
         }
+
+        [Test]
+        public void BadModelPathReturnsNullJournal()
+        {
+            var testData = assemblyData.Fixtures.SelectMany(f=>f.Tests).First(t=>t.Name == "TestE");
+            var runner = SetupToRun();
+            runner.SetupTests(testData);
+            Assert.IsNull(runner.TestDictionary[testData]);
+        }
+
 
         #region private helper methods
 
@@ -139,7 +162,13 @@ namespace RTF.Tests
             var test2 = MockTest("TestB", testModelPath, fix1.Object);
             var test3 = MockTest("TestC", testModelPath, fix1.Object);
             var test4 = MockTest("TestD", testModelPath, fix2.Object);
-            var test5 = MockTest("TestE", testModelPath, fix2.Object);
+            var test5 = MockTest("TestE", @"C:\foo.rfa", fix2.Object);
+
+            test1.Object.TestStatus = Framework.TestStatus.Failure;
+            test2.Object.TestStatus = Framework.TestStatus.Failure;
+            test3.Object.TestStatus = Framework.TestStatus.Success;
+            test4.Object.TestStatus = Framework.TestStatus.Success;
+            test5.Object.TestStatus = Framework.TestStatus.Inconclusive;
 
             var catTests1 = new ObservableCollection<ITestData>() { test1.Object, test2.Object };
             var catTests2 = new ObservableCollection<ITestData>() { test3.Object };
@@ -194,7 +223,7 @@ namespace RTF.Tests
             return test1;
         }
 
-        private Runner SetupToRun(object parameter)
+        private Runner SetupToRun()
         {
             var setupData = new RunnerSetupData
             {
@@ -207,7 +236,6 @@ namespace RTF.Tests
             var runner = Runner.Initialize(setupData);
             runner.Assemblies.Clear();
             runner.Assemblies.Add(assemblyData);
-            runner.SetupTests(parameter);
             return runner;
         }
 
