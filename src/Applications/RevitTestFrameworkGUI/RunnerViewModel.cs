@@ -316,7 +316,8 @@ namespace RTF.Applications
         {
             IsRunning = true;
 
-            runner.Run(e.Argument);
+            runner.SetupTests(e.Argument);
+            runner.RunAllTests();
 
             IsRunning = false;
         }

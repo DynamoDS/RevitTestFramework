@@ -18,6 +18,10 @@ namespace RTF.Framework
     public delegate void TestTimedOutHandler(ITestData data);
     public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
 
+    /// <summary>
+    /// The RunnerSetupData class is used to convey
+    /// required setup information to the Runner constructor.
+    /// </summary>
     public class RunnerSetupData : IRunnerSetupData
     {
         public string WorkingDirectory { get; set; }
@@ -57,7 +61,8 @@ namespace RTF.Framework
     }
 
     /// <summary>
-    /// The Runner model.
+    /// The Runner is responsible for setting up tests, running
+    /// them, and interpreting the results.
     /// </summary>
     public class Runner : NotificationObject, IRunner
     {
@@ -167,6 +172,11 @@ namespace RTF.Framework
                 _products = value;
                 RaisePropertyChanged("Products");
             }
+        }
+
+        public Dictionary<ITestData, string> TestDictionary
+        {
+            get { return testDictionary; }
         }
 
         /// <summary>
@@ -519,7 +529,7 @@ namespace RTF.Framework
 
         #region public methods
 
-        public void Run(object parameter)
+        public void SetupTests(object parameter)
         {
             if (parameter is IAssemblyData)
             {
@@ -542,136 +552,12 @@ namespace RTF.Framework
             {
                 var catData = parameter as ICategoryData;
                 RunCount = catData.Tests.Count;
-                catData.Tests.ToList().ForEach(x => SetupIndividualTest(x, Continuous));
+                SetupCategoryTests(catData, Continuous);
             }
 
-            RunAllTests();
-        }
-
-        /// <summary>
-        /// Setup all tests in a selected assembly.
-        /// </summary>
-        /// <param name="ad"></param>
-        /// <param name="continuous"></param>
-        public void SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
-        {
-            foreach (var fix in ad.Fixtures)
-            {
-                if (cancelRequested)
-                {
-                    cancelRequested = false;
-                    break;
-                }
-
-                SetupFixtureTests(fix as IFixtureData);
-            }
-        }
-
-        /// <summary>
-        /// Setup all tests in a selected fixture.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="continuous"></param>
-        public void SetupFixtureTests(IFixtureData fd, bool continuous = false)
-        {
-            SetupTests(fd.Tests.ToList(), continuous);
-        }
-
-        /// <summary>
-        /// Setup all tests in a selected category.
-        /// </summary>
-        /// <param name="cd">The category</param>
-        /// <param name="continuous">Run continously</param>
-        public void SetupCategoryTests(ICategoryData cd, bool continuous = false)
-        {
-            SetupTests(cd.Tests, continuous);
-        }
-
-        /// <summary>
-        /// Setup the selected test.
-        /// </summary>
-        /// <param name="td"></param>
-        /// <param name="continuous"></param>
-        public void SetupIndividualTest(ITestData td, bool continuous = false)
-        {
-            try
-            {
-                if (!File.Exists(td.ModelPath))
-                {
-                    throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
-                }
-
-                if (!File.Exists(td.Fixture.Assembly.Path))
-                {
-                    throw new Exception(string.Format("The specified assembly: {0} does not exist.",
-                        td.Fixture.Assembly.Path));
-                }
-
-                if (!File.Exists(AssemblyPath))
-                {
-                    throw new Exception(
-                        string.Format("The specified revit app assembly does not exist: {0} does not exist.",
-                            td.Fixture.Assembly.Path));
-                }
-
-                var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
-                
-                // If we're running in continuous mode, then all tests will share
-                // the same journal path
-                if (continuous)
-                {
-                    journalPath = batchJournalPath;
-                }
-                testDictionary.Add(td, journalPath);
-
-                if (continuous)
-                {
-                    InitializeJournal(journalPath);
-                    //var resultsTmp = Path.GetFileNameWithoutExtension(Results);
-                    //var resultsDir = Path.GetDirectoryName(Results);
-                    //var resultsPath = Path.Combine(resultsDir, resultsTmp + "_" + Guid.NewGuid() + ".xml");
-                    AddToJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
-                }
-                else
-                {
-                    CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                if (td == null) return;
-                td.TestStatus = TestStatus.Failure;
-
-                // Write a null journal path to the dictionary
-                // for failed tests.
-                if (testDictionary.ContainsKey(td))
-                {
-                    testDictionary[td] = null;
-                }
-                else
-                {
-                    testDictionary.Add(td, null);
-                }
-            }
-        }
-        
-        /// <summary>
-        /// Run all tests that have been set up.
-        /// </summary>
-        public void RunAllTests()
-        {
             if (continuous && !journalFinished)
             {
                 FinishJournal(batchJournalPath);
-            }
-
-            // Kill any senddmp.exe processes thrown off
-            // by previous failed revit sessions
-            var sendDmps = Process.GetProcessesByName("senddmp");
-            if (sendDmps.Any())
-            {
-                sendDmps.ToList().ForEach(sd => sd.Kill());
             }
 
             if (!File.Exists(AddinPath))
@@ -694,8 +580,19 @@ namespace RTF.Framework
                     }
                 }
             }
+        }
 
+        public void RunAllTests()
+        {
             if (dryRun) return;
+
+            // Kill any senddmp.exe processes thrown off
+            // by previous failed revit sessions
+            var sendDmps = Process.GetProcessesByName("senddmp");
+            if (sendDmps.Any())
+            {
+                sendDmps.ToList().ForEach(sd => sd.Kill());
+            }
 
             RunCount = continuous ? 1 : testDictionary.Count;
 
@@ -729,9 +626,6 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
-        /// <summary>
-        /// Re-read the selected assembly to find available tests.
-        /// </summary>
         public void Refresh()
         {
             Assemblies.Clear();
@@ -743,9 +637,6 @@ namespace RTF.Framework
             Console.WriteLine(ToString());
         }
 
-        /// <summary>
-        /// Remove journal and addin files generated by the tests.
-        /// </summary>
         public void Cleanup()
         {
             if (!CleanUp)
@@ -799,7 +690,7 @@ namespace RTF.Framework
 
         #region private methods
 
-        private void SetupTests(IEnumerable<ITestData> data, bool continuous)
+        private void SetupIndividualTests(IEnumerable<ITestData> data, bool continuous)
         {
             foreach (var td in data)
             {
@@ -1014,6 +905,111 @@ namespace RTF.Framework
                 tw.Flush();
             }
             journalFinished = true;
+        }
+
+        /// <summary>
+        /// Setup all tests in a selected assembly.
+        /// </summary>
+        /// <param name="ad"></param>
+        /// <param name="continuous"></param>
+        private void SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
+        {
+            foreach (var fix in ad.Fixtures)
+            {
+                if (cancelRequested)
+                {
+                    cancelRequested = false;
+                    break;
+                }
+
+                SetupFixtureTests(fix as IFixtureData, continuous);
+            }
+        }
+
+        /// <summary>
+        /// Setup all tests in a selected fixture.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="continuous"></param>
+        private void SetupFixtureTests(IFixtureData fd, bool continuous = false)
+        {
+            SetupIndividualTests(fd.Tests.ToList(), continuous);
+        }
+
+        /// <summary>
+        /// Setup all tests in a selected category.
+        /// </summary>
+        /// <param name="cd">The category</param>
+        /// <param name="continuous">Run continously</param>
+        private void SetupCategoryTests(ICategoryData cd, bool continuous = false)
+        {
+            SetupIndividualTests(cd.Tests, continuous);
+        }
+
+        /// <summary>
+        /// Setup the selected test.
+        /// </summary>
+        /// <param name="td"></param>
+        /// <param name="continuous"></param>
+        private void SetupIndividualTest(ITestData td, bool continuous = false)
+        {
+            try
+            {
+                if (!File.Exists(td.ModelPath))
+                {
+                    throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                }
+
+                if (!File.Exists(td.Fixture.Assembly.Path))
+                {
+                    throw new Exception(string.Format("The specified assembly: {0} does not exist.",
+                        td.Fixture.Assembly.Path));
+                }
+
+                if (!File.Exists(AssemblyPath))
+                {
+                    throw new Exception(
+                        string.Format("The specified revit app assembly does not exist: {0} does not exist.",
+                            td.Fixture.Assembly.Path));
+                }
+
+                var journalPath = Path.Combine(WorkingDirectory, td.Name + ".txt");
+
+                // If we're running in continuous mode, then all tests will share
+                // the same journal path
+                if (continuous)
+                {
+                    journalPath = batchJournalPath;
+                }
+                testDictionary.Add(td, journalPath);
+
+                if (continuous)
+                {
+                    InitializeJournal(journalPath);
+                    AddToJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
+                }
+                else
+                {
+                    CreateJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (td == null) return;
+                td.TestStatus = TestStatus.Failure;
+
+                // Write a null journal path to the dictionary
+                // for failed tests.
+                if (testDictionary.ContainsKey(td))
+                {
+                    testDictionary[td] = null;
+                }
+                else
+                {
+                    testDictionary.Add(td, null);
+                }
+            }
         }
 
         /// <summary>

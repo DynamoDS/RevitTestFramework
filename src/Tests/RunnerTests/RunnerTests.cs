@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using Autodesk.RevitAddIns;
 using Moq;
 using NUnit.Framework;
@@ -11,12 +14,28 @@ namespace RTF.Tests
     [TestFixture]
     public class RunnerTests
     {
-        private IAssemblyData data;
+        private string workingDir;
+        private IAssemblyData assemblyData;
 
-        [TestFixtureSetUp]
-        public void Setup()
+        [SetUp]
+        protected void TestSetup()
         {
-            data = MockAssemblyData().Object;
+            workingDir = Path.Combine(Path.GetTempPath(), "RTFTests" + Guid.NewGuid());
+            if (!Directory.Exists(workingDir))
+            {
+                Directory.CreateDirectory(workingDir);
+            }
+            assemblyData = MockAssemblyData().Object;
+        }
+
+        [TearDown]
+        protected void TestTearDown()
+        {
+            if (Directory.Exists(workingDir))
+            {
+                Directory.Delete(workingDir, true);
+            }
+            assemblyData = null;
         }
 
         [Test]
@@ -51,33 +70,51 @@ namespace RTF.Tests
         }
 
         [Test]
-        public void RunCategory()
+        public void RunByCategorySetup_Smoke()
         {
-            var runnerMock = new Mock<IRunner>();
-            
-            var cat = MockCategory("Smoke");
-            runnerMock.Setup(x => x.SetupCategoryTests(cat.Object, false));
-            runnerMock.Object.Run(cat.Object);
-            runnerMock.Verify(x=>x.SetupCategoryTests(cat.Object,false), Times.Once); 
+            var catData = assemblyData.Categories.First(c => c.Name == "Smoke");
+            var runner = SetupToRun(catData);
+            Assert.AreEqual(runner.TestDictionary.Count, 2);
         }
 
-        //[Test]
-        //public void RunAssembly()
-        //{
-            
-        //}
+        [Test]
+        public void RunByCategorySetup_Integration()
+        {
+            var catData = assemblyData.Categories.First(c => c.Name == "Integration");
+            var runner = SetupToRun(catData);
+            Assert.AreEqual(runner.TestDictionary.Count, 1);
+        }
 
-        //[Test]
-        //public void RunFixture()
-        //{
-            
-        //}
+        [Test]
+        public void RunByFixtureSetup_FixtureA()
+        {
+            var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureA");
+            var runner = SetupToRun(fixData);
+            Assert.AreEqual(runner.TestDictionary.Count, 3);
+        }
 
-        //[Test]
-        //public void RunTest()
-        //{
-            
-        //}
+        [Test]
+        public void RunByFixtureSetup_FixtureB()
+        {
+            var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureB");
+            var runner = SetupToRun(fixData);
+            Assert.AreEqual(runner.TestDictionary.Count, 2);
+        }
+
+        [Test]
+        public void RunByAssemblySetup()
+        {
+            var runner = SetupToRun(assemblyData);
+            Assert.AreEqual(runner.TestDictionary.Count, 5);
+        }
+
+        [Test]
+        public void RunByTestSetup()
+        {
+
+        }
+
+        #region private helper methods
 
         private Mock<IAssemblyData> MockAssemblyData()
         {
@@ -95,11 +132,14 @@ namespace RTF.Tests
             var fixes = new ObservableCollection<IGroupable>() { fix1.Object, fix2.Object};
 
             // Setup some mock tests
-            var test1 = MockTest("TestA", @"C:\modelA.rfa", fix1.Object);
-            var test2 = MockTest("TestB", @"C:\modelB.rfa", fix1.Object);
-            var test3 = MockTest("TestC", @"C:\modelC.rfa", fix1.Object);
-            var test4 = MockTest("TestD", @"C:\modelC.rfa", fix2.Object);
-            var test5 = MockTest("TestE", @"C:\modelC.rfa", fix2.Object);
+            var testModelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "empty.rfa");
+
+            var test1 = MockTest("TestA", testModelPath, fix1.Object);
+            var test2 = MockTest("TestB", testModelPath, fix1.Object);
+            var test3 = MockTest("TestC", testModelPath, fix1.Object);
+            var test4 = MockTest("TestD", testModelPath, fix2.Object);
+            var test5 = MockTest("TestE", testModelPath, fix2.Object);
 
             var catTests1 = new ObservableCollection<ITestData>() { test1.Object, test2.Object };
             var catTests2 = new ObservableCollection<ITestData>() { test3.Object };
@@ -114,12 +154,19 @@ namespace RTF.Tests
             cat2.Setup(x => x.Tests).Returns(catTests2);
             cat3.Setup(x => x.Tests).Returns(catTests3);
 
+            var dummyTestPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "RunnerTests.dll");
+
             // Setup a mock assembly
             var mock = new Mock<IAssemblyData>();
             mock.Setup(x=>x.Name).Returns("RunnerTests");
             mock.Setup(x => x.Categories).Returns(cats);
             mock.Setup(x => x.Fixtures).Returns(fixes);
-            mock.Setup(x => x.Path).Returns(@"C:\RunnerTests.dll");
+            mock.Setup(x => x.Path).Returns(dummyTestPath);
+
+            // Link the fixture back to the assembly
+            fix1.Setup(f => f.Assembly).Returns(mock.Object);
+            fix2.Setup(f => f.Assembly).Returns(mock.Object);
 
             return mock;
         }
@@ -128,7 +175,6 @@ namespace RTF.Tests
         {
             var fix1 = new Mock<IFixtureData>();
             fix1.Setup(x => x.Name).Returns(fixtureName);
-            //fix1.Setup(x => x.Tests).Returns(tests);
             return fix1;
         }
 
@@ -136,7 +182,6 @@ namespace RTF.Tests
         {
             var cat1 = new Mock<ICategoryData>();
             cat1.Setup(x => x.Name).Returns(categoryName);
-            //cat1.Setup(x => x.Tests).Returns(tests);
             return cat1;
         }
 
@@ -148,5 +193,24 @@ namespace RTF.Tests
             test1.Setup(x => x.Fixture).Returns(fixture);
             return test1;
         }
+
+        private Runner SetupToRun(object parameter)
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+            };
+
+            var runner = Runner.Initialize(setupData);
+            runner.Assemblies.Clear();
+            runner.Assemblies.Add(assemblyData);
+            runner.SetupTests(parameter);
+            return runner;
+        }
+
+        #endregion
     }
 }

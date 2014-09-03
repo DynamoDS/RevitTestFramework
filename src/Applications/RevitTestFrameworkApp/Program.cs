@@ -60,21 +60,17 @@ namespace RTF.Applications
             }
             else if (!string.IsNullOrEmpty(runner.Category))
             {
-                var cd = runner.Assemblies.SelectMany(a => a.Categories).
+                data = runner.Assemblies.SelectMany(a => a.Categories).
                     FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
-                if (null != cd)
-                {
-                    runner.SetupCategoryTests(cd, runner.Continuous);
-                }
             }
 
             if (data == null)
             {
-                Console.WriteLine("Running mode could not be determined from the inputs provided.");
-                return;
+                throw new Exception("Running mode could not be determined from the inputs provided.");
             }
 
-            runner.Run(data);
+            runner.SetupTests(data);
+            runner.RunAllTests();
         }
 
         private static IRunnerSetupData ParseArguments(IEnumerable<string> args)

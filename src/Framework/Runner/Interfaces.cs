@@ -96,6 +96,8 @@ namespace RTF.Framework
         /// </summary>
         ObservableCollection<RevitProduct> Products { get; set; }
 
+        Dictionary<ITestData, string> TestDictionary { get; }
+
         /// <summary>
         /// A flag which can be used to specifi
         /// </summary>
@@ -187,40 +189,16 @@ namespace RTF.Framework
 
         GroupingType GroupingType { get; set; }
         
-        void Run(object parameter);
-
         /// <summary>
-        /// Setup all tests in a selected assembly.
-        /// </summary>
-        /// <param name="ad"></param>
-        /// <param name="continuous"></param>
-        void SetupAssemblyTests(IAssemblyData ad, bool continuous = false);
-
-        /// <summary>
-        /// Setup all tests in a selected fixture.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="continuous"></param>
-        void SetupFixtureTests(IFixtureData fd, bool continuous = false);
-
-        /// <summary>
-        /// Setup all tests in a selected category.
-        /// </summary>
-        /// <param name="cd">The category</param>
-        /// <param name="continuous">Run continously</param>
-        void SetupCategoryTests(ICategoryData cd, bool continuous = false);
-
-        /// <summary>
-        /// Setup the selected test.
-        /// </summary>
-        /// <param name="td"></param>
-        /// <param name="continuous"></param>
-        void SetupIndividualTest(ITestData td, bool continuous = false);
-
-        /// <summary>
-        /// Run all tests that have been set up.
+        /// Run all tests. Must be preceded by a call to SetupTests.
         /// </summary>
         void RunAllTests();
+
+        /// <summary>
+        /// Setup tests. Precedes a call to RunAllTests.
+        /// </summary>
+        /// <param name="parameter"></param>
+        void SetupTests(object parameter);
 
         /// <summary>
         /// Re-read the selected assembly to find available tests.
