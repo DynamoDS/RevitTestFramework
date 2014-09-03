@@ -84,7 +84,7 @@ namespace RTF.Framework
         private string _workingDirectory;
         private bool _gui = true;
         private string _revitPath;
-        private bool _copyAddins = false;
+        private bool _copyAddins = true;
         private Dictionary<ITestData, string> testDictionary = new Dictionary<ITestData, string>();
         private int _timeout = 120000;
         private bool _concat;

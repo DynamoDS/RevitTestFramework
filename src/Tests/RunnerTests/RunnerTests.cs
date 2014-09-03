@@ -136,7 +136,6 @@ namespace RTF.Tests
             Assert.IsNull(runner.TestDictionary[testData]);
         }
 
-
         #region private helper methods
 
         private Mock<IAssemblyData> MockAssemblyData()
