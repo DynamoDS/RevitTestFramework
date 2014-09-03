@@ -14,7 +14,7 @@ namespace RTF.Applications
         {
             InitializeComponent();
 
-            vm = new RunnerViewModel();
+            vm = new RunnerViewModel(new WpfContext());
 
             DataContext = vm;
 

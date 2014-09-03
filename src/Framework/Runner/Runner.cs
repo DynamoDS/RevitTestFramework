@@ -399,13 +399,6 @@ namespace RTF.Framework
 
             Products.Clear();
             Products.AddRange(setupData.Products);
-
-            if (Gui)
-            {
-                TestComplete += GetTestResultStatus;
-                TestFailed += Runner_TestFailed;
-                TestTimedOut += Runner_TestTimedOut; 
-            }
         }
 
         #endregion
@@ -969,7 +962,7 @@ namespace RTF.Framework
                 if (!File.Exists(AssemblyPath))
                 {
                     throw new Exception(
-                        string.Format("The specified revit app assembly does not exist: {0} does not exist.",
+                        string.Format("The specified RTF assembly does not exist: {0} does not exist.",
                             td.Fixture.Assembly.Path));
                 }
 
@@ -1073,25 +1066,19 @@ namespace RTF.Framework
             }
         }
 
-        private static void Runner_TestTimedOut(ITestData data)
+        public static void Runner_TestTimedOut(ITestData data)
         {
-            //Application.Current.Dispatcher.Invoke(() =>
-            //{
             data.ResultData.Clear();
             data.ResultData.Add(new ResultData() { Message = "Test timed out." });
-            //});
         }
 
-        private static void Runner_TestFailed(ITestData data, string message, string stackTrace)
+        public static void Runner_TestFailed(ITestData data, string message, string stackTrace)
         {
-            //Application.Current.Dispatcher.Invoke(() =>
-            //{
             data.ResultData.Clear();
             data.ResultData.Add(new ResultData() { Message = message, StackTrace = stackTrace });
-            //});
         }
 
-        private static resultType TryParseResultsOrEmitError(string resultsPath)
+        public static resultType TryParseResultsOrEmitError(string resultsPath)
         {
             try
             {
@@ -1105,7 +1092,7 @@ namespace RTF.Framework
             }
         }
 
-        private static void GetTestResultStatus(IEnumerable<ITestData> data, string resultsPath)
+        public static void GetTestResultStatus(IEnumerable<ITestData> data, string resultsPath)
         {
             // Try to get the results, if fail, short-circuit
             var results = TryParseResultsOrEmitError(resultsPath);
@@ -1113,8 +1100,6 @@ namespace RTF.Framework
 
             foreach (var td in data)
             {
-                //System.Windows.Application.Current.Dispatcher.Invoke((() =>
-                //td.ResultData.Clear()));
                 td.ResultData.Clear();
 
                 //find our results in the results
@@ -1166,14 +1151,6 @@ namespace RTF.Framework
 
                     var failure = ourTest.Item as failureType;
                     if (failure == null) return;
-
-                    //System.Windows.Application.Current.Dispatcher.Invoke((() =>
-                    //    td.ResultData.Add(
-                    //        new ResultData()
-                    //        {
-                    //            StackTrace = failure.stacktrace,
-                    //            Message = ourTest.name + ":" + failure.message
-                    //        })));
 
                     td.ResultData.Add(
                             new ResultData()

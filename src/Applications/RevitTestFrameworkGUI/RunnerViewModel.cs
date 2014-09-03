@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
@@ -15,6 +19,52 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace RTF.Applications
 {
+    public interface IContext
+    {
+        bool IsSynchronized { get; }
+        void Invoke(Action action);
+        void BeginInvoke(Action action);
+    }
+
+    public sealed class WpfContext : IContext
+    {
+        private readonly Dispatcher _dispatcher;
+
+        public bool IsSynchronized
+        {
+            get
+            {
+                return this._dispatcher.Thread == Thread.CurrentThread;
+            }
+        }
+
+        public WpfContext()
+            : this(Dispatcher.CurrentDispatcher)
+        {
+        }
+
+        public WpfContext(Dispatcher dispatcher)
+        {
+            Debug.Assert(dispatcher != null);
+
+            this._dispatcher = dispatcher;
+        }
+
+        public void Invoke(Action action)
+        {
+            Debug.Assert(action != null);
+
+            this._dispatcher.Invoke(action);
+        }
+
+        public void BeginInvoke(Action action)
+        {
+            Debug.Assert(action != null);
+
+            this._dispatcher.BeginInvoke(action);
+        }
+    }
+
     /// <summary>
     /// The Runner's view model.
     /// </summary>
@@ -26,6 +76,7 @@ namespace RTF.Applications
         private readonly Runner runner;
         private bool isRunning = false;
         private object isRunningLock = new object();
+        private IContext context;
 
         #endregion
 
@@ -219,8 +270,10 @@ namespace RTF.Applications
 
         #region constructors
 
-        internal RunnerViewModel()
+        internal RunnerViewModel(IContext context)
         {
+            this.context = context;
+
             var setupData = new RunnerSetupData
             {
                 WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory) &&
@@ -258,7 +311,26 @@ namespace RTF.Applications
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
 
-            this.runner.Products.CollectionChanged += Products_CollectionChanged;
+            runner.Products.CollectionChanged += Products_CollectionChanged;
+
+            runner.TestComplete += runner_TestComplete;
+            runner.TestFailed += runner_TestFailed;
+            runner.TestTimedOut += runner_TestTimedOut;
+        }
+
+        void runner_TestTimedOut(ITestData data)
+        {
+            context.BeginInvoke(()=>Runner.Runner_TestTimedOut(data));
+        }
+
+        void runner_TestFailed(ITestData data, string message, string stackTrace)
+        {
+            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
+        }
+
+        void runner_TestComplete(System.Collections.Generic.IList<ITestData> data, string resultsPath)
+        {
+            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
         }
 
         private bool CanCleanup()
