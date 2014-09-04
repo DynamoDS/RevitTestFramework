@@ -658,6 +658,11 @@ namespace RTF.Framework
                 }
 
                 DeleteAddins();
+
+                if (File.Exists(AddinPath))
+                {
+                    File.Delete(AddinPath);
+                }
             }
             catch (IOException ex)
             {
