@@ -527,6 +527,9 @@ namespace RTF.Framework
 
         public void SetupTests(object parameter)
         {
+            journalInitialized = false;
+            journalFinished = false;
+
             if (parameter is IAssemblyData)
             {
                 var ad = parameter as IAssemblyData;
@@ -619,6 +622,8 @@ namespace RTF.Framework
                 }
             }
 
+            Cleanup();
+
             OnTestRunsComplete();
         }
 
@@ -655,6 +660,11 @@ namespace RTF.Framework
                 foreach (var journal in journals)
                 {
                     File.Delete(journal);
+                }
+
+                if (File.Exists(batchJournalPath))
+                {
+                    File.Delete(batchJournalPath);
                 }
 
                 DeleteAddins();
@@ -1114,6 +1124,11 @@ namespace RTF.Framework
                     results.testsuite.results.Items
                         .Cast<testsuiteType>()
                         .FirstOrDefault(s => s.name == td.Fixture.Name);
+
+                if (ourSuite == null)
+                {
+                    return;
+                }
 
                 // parameterized tests will have multiple results
                 var ourTests = ourSuite.results.Items

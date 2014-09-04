@@ -21,8 +21,6 @@ namespace RTF.Applications
                 runner = Runner.Initialize(setupData);
 
                 Run();
-
-                runner.Cleanup();
             }
             catch (Exception ex)
             {
