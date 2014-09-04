@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -11,8 +10,6 @@ namespace RTF.Applications
     [Regeneration(RegenerationOption.Manual)]
     public class RevitTestFrameworkExternalApp : IExternalApplication
     {
-        public static ControlledApplication ControlledApplication;
-
         public Result OnStartup(UIControlledApplication application)
         {
             return Result.Succeeded;
