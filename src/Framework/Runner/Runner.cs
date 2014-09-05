@@ -38,6 +38,7 @@ namespace RTF.Framework
         private string _test;
         private string _fixture;
         private string _category;
+        private string _excludedCategory;
         private bool _isDebug;
         private string _results;
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
@@ -214,6 +215,15 @@ namespace RTF.Framework
         {
             get { return _category; }
             set { _category = value; }
+        }
+
+        /// <summary>
+        /// The name of the category to exclude.
+        /// </summary>
+        public string ExcludedCategory
+        {
+            get { return _excludedCategory; }
+            set { _excludedCategory = value; }
         }
 
         /// <summary>
@@ -517,6 +527,10 @@ namespace RTF.Framework
         {
             try
             {
+                //exclude the specified category
+                if (string.Compare(td.Category.Name, ExcludedCategory, true) == 0)
+                    return;
+
                 if (!File.Exists(td.ModelPath))
                 {
                     throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
@@ -695,6 +709,8 @@ namespace RTF.Framework
             var sb = new StringBuilder();
             sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
             sb.AppendLine(string.Format("Fixture : {0}", Fixture));
+            sb.AppendLine(string.Format("Category : {0}", Category));
+            sb.AppendLine(string.Format("Excluded Category : {0}", ExcludedCategory));
             sb.AppendLine(string.Format("Test : {0}", Test));
             sb.AppendLine(string.Format("Results Path : {0}", Results));
             sb.AppendLine(string.Format("Timeout : {0}", Timeout));
@@ -1109,6 +1125,7 @@ namespace RTF.Framework
                     catData.Tests.Add(testData);
                     data.Assembly.Categories.Add(catData);
                 }
+                testData.Category = cat as ICategoryData;
             }
 
             return true;
@@ -1277,6 +1294,8 @@ namespace RTF.Framework
         public ObservableCollection<IResultData> ResultData { get; set; }
 
         public IFixtureData Fixture { get; set; }
+
+        public ICategoryData Category { get; set; }
 
         public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
         {
