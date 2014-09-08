@@ -17,6 +17,7 @@ RevitTestFrameworkConsole.exe is a console application which allows running RTF 
       -r, --results[=VALUE]         The path to the results file.
       -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
           --category[=VALUE]        The name of the test category.
+          --exclude[=VALUE]         The name of the test category to exclude.
       -t, --testName[=VALUE]        The name of a test to run
       -c, --concatenate[=VALUE]     Concatenate results with existing results file.
           --revit[=VALUE]           The Revit executable.
@@ -45,6 +46,10 @@ The name of a test fixture to run. If no fixture, no category and no test names 
 
 **--category** (Optional)  
 The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
+
+**--exclude** (Optional)  
+The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases
+that belongs to that category will not run.
 
 **--testName** (Optional)  
 The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
