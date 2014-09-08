@@ -30,6 +30,7 @@ namespace RTF.Framework
     public interface ITestData
     {
         IFixtureData Fixture { get; set; }
+        ICategoryData Category { get; set; }
         string Name { get; set; }
         bool RunDynamo { get; set; }
         string ModelPath { get; set; }
