@@ -59,6 +59,7 @@
     <Compile Include="ObservableCollectionExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runner.cs" />
+    <Compile Include="TestResultDeserializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NUnitResultTypes.xsd">
