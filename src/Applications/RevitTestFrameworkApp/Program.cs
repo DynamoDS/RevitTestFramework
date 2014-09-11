@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using Microsoft.Practices.Prism;
 using NDesk.Options;
 using RTF.Framework;
 
@@ -18,24 +16,11 @@ namespace RTF.Applications
         {
             try
             {
-                runner = new Runner();
+                var setupData = ParseArguments(args);
 
-                if (!ParseArguments(args))
-                {
-                    return;
-                }
-
-                var products = Runner.FindRevit();
-                if (products == null)
-                {
-                    return;
-                }
-
-                runner.Products.AddRange(products);
+                runner = Runner.Initialize(setupData);
 
                 Run();
-
-                runner.Cleanup();
             }
             catch (Exception ex)
             {
@@ -45,81 +30,52 @@ namespace RTF.Applications
 
         private static void Run()
         {
-            if (string.IsNullOrEmpty(runner.RevitPath))
-            {
-                runner.RevitPath = Path.Combine(runner.Products.First().InstallLocation, "revit.exe");
-            }
+            object data = null;
 
-            if (string.IsNullOrEmpty(runner.WorkingDirectory))
+            // If the no fixture, test, or category is specified, run the whole assembly.
+            if (string.IsNullOrEmpty(runner.Fixture) && 
+                string.IsNullOrEmpty(runner.Test) && 
+                string.IsNullOrEmpty(runner.Category))
             {
-                runner.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                // Only support one assembly for right now.
+                data = runner.Assemblies.FirstOrDefault();
             }
-
-            // In any case here, the test assembly cannot be null
-            if (string.IsNullOrEmpty(runner.TestAssembly))
+            // Run by Category
+            if (!string.IsNullOrEmpty(runner.Category))
             {
-                Console.WriteLine("You must specify at least a test assembly.");
-                return;
+                data = runner.Category;
             }
-
-            var assemblyDatas = Runner.ReadAssembly(runner.TestAssembly, runner.WorkingDirectory, runner.GroupingType);
-            if (assemblyDatas == null)
+            // Run by Fixture
+            else if (!string.IsNullOrEmpty(runner.Fixture))
             {
-                return;
+                data = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
             }
-
-            runner.Assemblies.Clear();
-            runner.Assemblies.AddRange(assemblyDatas);
-
-            if (File.Exists(runner.Results) && !runner.Concat)
+            // Run by test.
+            else if (!string.IsNullOrEmpty(runner.Test))
             {
-                File.Delete(runner.Results);
-            }
-
-            Console.WriteLine(runner.ToString());
-
-            if (string.IsNullOrEmpty(runner.Fixture) && string.IsNullOrEmpty(runner.Test)
-                && string.IsNullOrEmpty(runner.Category))
-            {
-                foreach (var ad in runner.Assemblies)
-                {
-                    runner.SetupAssemblyTests(ad, runner.Continuous);
-                }
-            }
-            else if (string.IsNullOrEmpty(runner.Test) && !string.IsNullOrEmpty(runner.Fixture))
-            {
-                var fd = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
-                if (fd != null)
-                {
-                    runner.SetupFixtureTests(fd as IFixtureData, runner.Continuous);
-                }
-            }
-            else if (string.IsNullOrEmpty(runner.Fixture) && !string.IsNullOrEmpty(runner.Test))
-            {
-                var td =
-                    runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
+                data = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
                         .FirstOrDefault(t => t.Name == runner.Test);
-                if (td != null)
-                {
-                    runner.SetupIndividualTest(td, runner.Continuous);
-                }
             }
             else if (!string.IsNullOrEmpty(runner.Category))
             {
-                var cd = runner.Assemblies.SelectMany(a => a.Categories).
+                data = runner.Assemblies.SelectMany(a => a.Categories).
                     FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
-                if (null != cd)
-                {
-                    runner.SetupCategoryTests(cd, runner.Continuous);
-                }
             }
 
+            if (data == null)
+            {
+                throw new Exception("Running mode could not be determined from the inputs provided.");
+            }
+
+            runner.SetupTests(data);
             runner.RunAllTests();
         }
 
-        private static bool ParseArguments(IEnumerable<string> args)
+        private static IRunnerSetupData ParseArguments(IEnumerable<string> args)
         {
             var showHelp = false;
+
+            var setupData = new RunnerSetupData();
 
             var p = new OptionSet()
             {
@@ -151,36 +107,22 @@ namespace RTF.Applications
             }
             catch (OptionException e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(helpMessage);
-                return false;
+                string message = e.Message + "\n" + helpMessage;
+                throw new Exception(message);
             }
 
             if (notParsed.Count > 0)
             {
-                Console.WriteLine(String.Join(" ", notParsed.ToArray()));
-                return false;
+                throw new ArgumentException(String.Join(" ", notParsed.ToArray()));
             }
 
             if (showHelp)
             {
                 ShowHelp(p);
-                return false;
+                throw new Exception();
             }
 
-            if (!String.IsNullOrEmpty(runner.TestAssembly) && !File.Exists(runner.TestAssembly))
-            {
-                Console.Write("The specified test assembly does not exist.");
-                return false;
-            }
-
-            if (!String.IsNullOrEmpty(runner.WorkingDirectory) && !Directory.Exists(runner.WorkingDirectory))
-            {
-                Console.Write("The specified working directory does not exist.");
-                return false;
-            }
-
-            return true;
+            return setupData;
         }
 
         private static void ShowHelp(OptionSet p)

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Threading;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
@@ -16,6 +18,52 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace RTF.Applications
 {
+    public interface IContext
+    {
+        bool IsSynchronized { get; }
+        void Invoke(Action action);
+        void BeginInvoke(Action action);
+    }
+
+    public sealed class WpfContext : IContext
+    {
+        private readonly Dispatcher _dispatcher;
+
+        public bool IsSynchronized
+        {
+            get
+            {
+                return this._dispatcher.Thread == Thread.CurrentThread;
+            }
+        }
+
+        public WpfContext()
+            : this(Dispatcher.CurrentDispatcher)
+        {
+        }
+
+        public WpfContext(Dispatcher dispatcher)
+        {
+            Debug.Assert(dispatcher != null);
+
+            this._dispatcher = dispatcher;
+        }
+
+        public void Invoke(Action action)
+        {
+            Debug.Assert(action != null);
+
+            this._dispatcher.Invoke(action);
+        }
+
+        public void BeginInvoke(Action action)
+        {
+            Debug.Assert(action != null);
+
+            this._dispatcher.BeginInvoke(action);
+        }
+    }
+
     /// <summary>
     /// The Runner's view model.
     /// </summary>
@@ -27,6 +75,7 @@ namespace RTF.Applications
         private readonly Runner runner;
         private bool isRunning = false;
         private object isRunningLock = new object();
+        private IContext context;
 
         #endregion
 
@@ -203,6 +252,7 @@ namespace RTF.Applications
                 RaisePropertyChanged("SortBy");
             }
         }
+        
         #endregion
 
         #region commands
@@ -212,7 +262,6 @@ namespace RTF.Applications
         public DelegateCommand SetWorkingPathCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
         public DelegateCommand SaveSettingsCommand { get; set; }
-        public DelegateCommand LoadSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
 
@@ -220,20 +269,66 @@ namespace RTF.Applications
 
         #region constructors
 
-        internal RunnerViewModel(Runner runner)
+        internal RunnerViewModel(IContext context)
         {
-            this.runner = runner;
-            
+            this.context = context;
+
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory) &&
+                                   Directory.Exists(Settings.Default.workingDirectory)
+                    ? Settings.Default.workingDirectory
+                    : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                TestAssembly = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
+                               File.Exists(Settings.Default.assemblyPath)
+                    ? Settings.Default.assemblyPath
+                    : null,
+                Results = !String.IsNullOrEmpty(Settings.Default.resultsPath)
+                    ? Settings.Default.resultsPath
+                    : null,
+                Timeout = Settings.Default.timeout,
+                IsDebug = Settings.Default.isDebug,
+            };
+
+            runner = Runner.Initialize(setupData);
+
+            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
+            {
+                SelectedProductIndex = -1;
+            }
+            else
+            {
+                SelectedProductIndex = Settings.Default.selectedProduct;
+            }
+
             SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
             SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
             SetWorkingPathCommand = new DelegateCommand(SetWorkingPath, CanSetWorkingPath);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
-            LoadSettingsCommand = new DelegateCommand(LoadSettings, CanLoadSettings);
             SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
 
-            this.runner.Products.CollectionChanged += Products_CollectionChanged;
+            runner.Products.CollectionChanged += Products_CollectionChanged;
+
+            runner.TestComplete += runner_TestComplete;
+            runner.TestFailed += runner_TestFailed;
+            runner.TestTimedOut += runner_TestTimedOut;
+        }
+
+        void runner_TestTimedOut(ITestData data)
+        {
+            context.BeginInvoke(()=>Runner.Runner_TestTimedOut(data));
+        }
+
+        void runner_TestFailed(ITestData data, string message, string stackTrace)
+        {
+            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
+        }
+
+        void runner_TestComplete(System.Collections.Generic.IList<ITestData> data, string resultsPath)
+        {
+            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
         }
 
         private bool CanCleanup()
@@ -281,48 +376,20 @@ namespace RTF.Applications
                 File.Delete(runner.Results);
             }
 
-            SetupTests(parameter);
-
             var worker = new BackgroundWorker();
 
             worker.DoWork += TestThread;
-            worker.RunWorkerAsync();   
+            worker.RunWorkerAsync(parameter);   
         }
 
         private void TestThread(object sender, DoWorkEventArgs e)
         {
             IsRunning = true;
 
+            runner.SetupTests(e.Argument);
             runner.RunAllTests();
 
             IsRunning = false;
-        }
-
-        private void SetupTests(object parameter)
-        {
-            if (parameter is IAssemblyData)
-            {
-                var ad = parameter as IAssemblyData;
-                runner.RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                runner.SetupAssemblyTests(ad, runner.Continuous);
-            }
-            else if (parameter is IFixtureData)
-            {
-                var fd = parameter as IFixtureData;
-                runner.RunCount = fd.Tests.Count;
-                runner.SetupFixtureTests(fd, runner.Continuous);
-            }
-            else if (parameter is ITestData)
-            {
-                runner.RunCount = 1;
-                runner.SetupIndividualTest(parameter as ITestData, runner.Continuous);
-            }
-            else if (parameter is ICategoryData)
-            {
-                var catData = parameter as ICategoryData;
-                runner.RunCount = catData.Tests.Count;
-                catData.Tests.ToList().ForEach(x=>runner.SetupIndividualTest(x, runner.Continuous));
-            }
         }
 
         private bool CanSetWorkingPath()
@@ -403,41 +470,7 @@ namespace RTF.Applications
             Settings.Default.Save();
         }
 
-        internal void LoadSettings()
-        {
-            WorkingPath = !String.IsNullOrEmpty(Settings.Default.workingDirectory) && 
-                Directory.Exists(Settings.Default.workingDirectory)
-                ? Settings.Default.workingDirectory
-                : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            AssemblyPath = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
-                File.Exists(Settings.Default.assemblyPath)
-                ? Settings.Default.assemblyPath
-                : null;
-
-            ResultsPath = !String.IsNullOrEmpty(Settings.Default.resultsPath)
-                ? Settings.Default.resultsPath
-                : null;
-
-            Timeout = Settings.Default.timeout;
-            IsDebug = Settings.Default.isDebug;
-
-            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
-            {
-                SelectedProductIndex = -1;
-            }
-            else
-            {
-                SelectedProductIndex = Settings.Default.selectedProduct;
-            }
-        }
-
         private bool CanSaveSettings()
-        {
-            return true;
-        }
-
-        private bool CanLoadSettings()
         {
             return true;
         }
