@@ -972,7 +972,8 @@ namespace RTF.Framework
             try
             {
                 //exclude the specified category
-                if (String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
+                if (null != td.Category &&
+                    String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
                     return;
 
                 if (!File.Exists(td.ModelPath))
@@ -1307,14 +1308,15 @@ namespace RTF.Framework
                 if (cat != null)
                 {
                     cat.Tests.Add(testData);
+                    testData.Category = cat as ICategoryData;
                 }
                 else
                 {
                     var catData = new CategoryData(category);
                     catData.Tests.Add(testData);
                     data.Assembly.Categories.Add(catData);
+                    testData.Category = catData;
                 }
-                testData.Category = cat as ICategoryData;
             }
 
             return true;
