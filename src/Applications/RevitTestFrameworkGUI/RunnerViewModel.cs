@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -289,7 +288,6 @@ namespace RTF.Applications
                     : null,
                 Timeout = Settings.Default.timeout,
                 IsDebug = Settings.Default.isDebug,
-                Gui = true
             };
 
             runner = Runner.Initialize(setupData);

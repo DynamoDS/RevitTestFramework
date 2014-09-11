@@ -37,7 +37,6 @@ namespace RTF.Framework
         public bool CleanUp { get; set; }
         public bool Continuous { get; set; }
         public bool IsDebug { get; set; }
-        public bool Gui { get; set; }
         public GroupingType GroupingType { get; set; }
         public IList<RevitProduct> Products { get; set; }
         public int Timeout { get; set; }
