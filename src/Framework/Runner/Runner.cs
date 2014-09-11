@@ -225,6 +225,11 @@ namespace RTF.Framework
         public string Category { get; set; }
 
         /// <summary>
+        /// The name of the category to exclude.
+        /// </summary>
+        public string ExcludedCategory { get; set; }
+
+        /// <summary>
         /// A flag which, when set, allows you
         /// to attach to the debugger.
         /// </summary>
@@ -684,6 +689,8 @@ namespace RTF.Framework
             var sb = new StringBuilder();
             sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
             sb.AppendLine(string.Format("Fixture : {0}", Fixture));
+            sb.AppendLine(string.Format("Category : {0}", Category));
+            sb.AppendLine(string.Format("Excluded Category : {0}", ExcludedCategory));
             sb.AppendLine(string.Format("Test : {0}", Test));
             sb.AppendLine(string.Format("Results Path : {0}", Results));
             sb.AppendLine(string.Format("Timeout : {0}", Timeout));
@@ -964,6 +971,10 @@ namespace RTF.Framework
         {
             try
             {
+                //exclude the specified category
+                if (String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
+                    return;
+
                 if (!File.Exists(td.ModelPath))
                 {
                     throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
@@ -1303,6 +1314,7 @@ namespace RTF.Framework
                     catData.Tests.Add(testData);
                     data.Assembly.Categories.Add(catData);
                 }
+                testData.Category = cat as ICategoryData;
             }
 
             return true;
@@ -1471,6 +1483,8 @@ namespace RTF.Framework
         public ObservableCollection<IResultData> ResultData { get; set; }
 
         public IFixtureData Fixture { get; set; }
+
+        public ICategoryData Category { get; set; }
 
         public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
         {

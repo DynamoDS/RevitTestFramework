@@ -85,6 +85,7 @@ namespace RTF.Applications
                 {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
                 {"t:|testName:", "The name of a test to run", v => runner.Test = v},
                 {"category:", "The name of a test category to run.", v=> runner.Category = v},
+                {"exclude:", "The name of a test category to exclude.", v=> runner.ExcludedCategory = v},
                 {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
                 {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
                 {"copyAddins:", "Specify whether to copy the addins from the Revit folder to the current working directory",
