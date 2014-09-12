@@ -182,15 +182,6 @@ namespace RTF.Framework
         }
 
         /// <summary>
-        /// A flag which can be used to specifi
-        /// </summary>
-        public bool Gui
-        {
-            get { return _gui; }
-            set { _gui = value; }
-        }
-
-        /// <summary>
         /// The selected Revit application against which
         /// to test.
         /// </summary>
