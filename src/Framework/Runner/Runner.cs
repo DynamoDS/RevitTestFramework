@@ -30,12 +30,14 @@ namespace RTF.Framework
         public string Results { get; set; }
         public string Fixture { get; set; }
         public string Category { get; set; }
+        public string ExcludedCategory { get; set; }
         public string Test { get; set; }
         public bool Concat { get; set; }
         public bool DryRun { get; set; }
         public string RevitPath { get; set; }
         public bool CleanUp { get; set; }
         public bool Continuous { get; set; }
+        public bool CopyAddins { get; set; }
         public bool IsDebug { get; set; }
         public GroupingType GroupingType { get; set; }
         public IList<RevitProduct> Products { get; set; }
