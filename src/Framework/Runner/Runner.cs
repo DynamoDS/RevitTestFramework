@@ -380,6 +380,8 @@ namespace RTF.Framework
             IsDebug = setupData.IsDebug;
             GroupingType = setupData.GroupingType;
             Timeout = setupData.Timeout;
+            Products.Clear();
+            Products.AddRange(setupData.Products);
 
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)
@@ -395,8 +397,7 @@ namespace RTF.Framework
                 File.Delete(Results);
             }
 
-            Products.Clear();
-            Products.AddRange(setupData.Products);
+            
         }
 
         #endregion
