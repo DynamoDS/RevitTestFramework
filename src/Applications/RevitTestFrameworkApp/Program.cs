@@ -79,21 +79,21 @@ namespace RTF.Applications
 
             var p = new OptionSet()
             {
-                {"dir:","The path to the working directory.", v=> runner.WorkingDirectory = Path.GetFullPath(v)},
-                {"a:|assembly:", "The path to the test assembly.", v => runner.TestAssembly = Path.GetFullPath(v)},
-                {"r:|results:", "The path to the results file.", v=>runner.Results = Path.GetFullPath(v)},
-                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => runner.Fixture = v},
-                {"t:|testName:", "The name of a test to run", v => runner.Test = v},
-                {"category:", "The name of a test category to run.", v=> runner.Category = v},
-                {"exclude:", "The name of a test category to exclude.", v=> runner.ExcludedCategory = v},
-                {"c:|concatenate:", "Concatenate results with existing results file.", v=> runner.Concat = v != null},
-                {"revit:", "The path to Revit.", v=> runner.RevitPath = v},
+                {"dir:","The path to the working directory.", v=> setupData.WorkingDirectory = Path.GetFullPath(v)},
+                {"a:|assembly:", "The path to the test assembly.", v => setupData.TestAssembly = Path.GetFullPath(v)},
+                {"r:|results:", "The path to the results file.", v=>setupData.Results = Path.GetFullPath(v)},
+                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => setupData.Fixture = v},
+                {"t:|testName:", "The name of a test to run", v => setupData.Test = v},
+                {"category:", "The name of a test category to run.", v=> setupData.Category = v},
+                {"exclude:", "The name of a test category to exclude.", v=> setupData.ExcludedCategory = v},
+                {"c:|concatenate:", "Concatenate results with existing results file.", v=> setupData.Concat = v != null},
+                {"revit:", "The path to Revit.", v=> setupData.RevitPath = v},
                 {"copyAddins:", "Specify whether to copy the addins from the Revit folder to the current working directory",
-                    v=> runner.CopyAddins = v != null},
-                {"dry:", "Conduct a dry run.", v=> runner.DryRun = v != null},
-                {"x:|clean:", "Cleanup journal files after test completion", v=> runner.CleanUp = v != null},
-                {"continuous:", "Run all selected tests in one Revit session.", v=> runner.Continuous = v != null},
-                {"d|debug", "Run in debug mode.", v=>runner.IsDebug = v != null},
+                    v=> setupData.CopyAddins = v != null},
+                {"dry:", "Conduct a dry run.", v=> setupData.DryRun = v != null},
+                {"x:|clean:", "Cleanup journal files after test completion", v=> setupData.CleanUp = v != null},
+                {"continuous:", "Run all selected tests in one Revit session.", v=> setupData.Continuous = v != null},
+                {"d|debug", "Run in debug mode.", v=>setupData.IsDebug = v != null},
                 {"h|help", "Show this message and exit.", v=> showHelp = v != null}
             };
 
