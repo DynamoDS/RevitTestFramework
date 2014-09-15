@@ -600,6 +600,12 @@ namespace RTF.Framework
             {
                 foreach (var kvp in testDictionary)
                 {
+                    if (cancelRequested)
+                    {
+                        cancelRequested = false;
+                        break;
+                    }
+
                     if (kvp.Value == null) continue;
 
                     var td = kvp.Key;
