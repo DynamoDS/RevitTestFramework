@@ -383,6 +383,23 @@ namespace RTF.Framework
             GroupingType = setupData.GroupingType;
             Timeout = setupData.Timeout;
 
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+            int count = Products.Count;
+            SelectedProduct = -1;
+            for (int i = 0; i < count; ++i)
+            {
+                var location = Path.GetDirectoryName(RevitPath);
+                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
+                if (string.Compare(locationFromProduct, location, true) == 0)
+                    SelectedProduct = i;
+            }
+
+            if (SelectedProduct == -1)
+            {
+                throw new Exception("Can not find a proper application to start!");
+            }
+
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)
             {
