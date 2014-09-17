@@ -1200,9 +1200,12 @@ namespace RTF.Framework
         public ObservableCollection<IGroupable> SortingGroup { get; set; }
         public ObservableCollection<IGroupable> Fixtures { get; set; }
         public ObservableCollection<IGroupable> Categories { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public AssemblyData(string path, string name, GroupingType groupType)
         {
+            IsNodeExpanded = true;
+
             Fixtures = new ObservableCollection<IGroupable>();
             Categories = new ObservableCollection<IGroupable>();
 
@@ -1228,6 +1231,7 @@ namespace RTF.Framework
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public string FixtureSummary
         {
@@ -1311,6 +1315,7 @@ namespace RTF.Framework
         public string Name { get; set; }
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public bool ModelExists
         {
@@ -1381,6 +1386,7 @@ namespace RTF.Framework
     {
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public CategoryData(string name)
         {
@@ -1394,6 +1400,8 @@ namespace RTF.Framework
     {
         private string _message = "";
         private string _stackTrace = "";
+
+        public bool IsNodeExpanded { get; set; }
 
         public string Message
         {
