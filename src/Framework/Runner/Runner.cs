@@ -1200,7 +1200,8 @@ namespace RTF.Framework
 
             try
             {
-                var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
+                var bytes = File.ReadAllBytes(assemblyPath);
+                var assembly = Assembly.ReflectionOnlyLoad(bytes);
 
                 var assData = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
                 data.Add(assData);
