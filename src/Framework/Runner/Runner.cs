@@ -619,10 +619,6 @@ namespace RTF.Framework
 
             try
             {
-                // Sleep to allow Revit to close completely and 
-                // release the journal files.
-                System.Threading.Thread.Sleep(10000);
-
                 foreach (var kvp in testDictionary)
                 {
                     var path = kvp.Value;
