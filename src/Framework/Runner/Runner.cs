@@ -755,29 +755,7 @@ namespace RTF.Framework
 
             var timedOut = false;
 
-            if (IsDebug)
-            {
-                process.WaitForExit();
-            }
-            else
-            {
-                var time = 0;
-                while (!process.WaitForExit(1000))
-                {
-                    Console.Write(".");
-                    time += 1000;
-                    if (time > Timeout)
-                    {
-                        timedOut = true;
-                        break;
-                    }
-                }
-                if (timedOut)
-                {
-                    if (!process.HasExited)
-                        process.Kill();
-                }
-            }
+            process.WaitForExit();
 
             if (!timedOut)
             {
