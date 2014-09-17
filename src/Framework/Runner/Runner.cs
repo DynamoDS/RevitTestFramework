@@ -7,10 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.Text;
-using System.Threading;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
@@ -342,6 +339,23 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             Products.Clear();
             Products.AddRange(setupData.Products);
+
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+            int count = Products.Count;
+            SelectedProduct = -1;
+            for (int i = 0; i < count; ++i)
+            {
+                var location = Path.GetDirectoryName(RevitPath);
+                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
+                if (string.Compare(locationFromProduct, location, true) == 0)
+                    SelectedProduct = i;
+            }
+
+            if (SelectedProduct == -1)
+            {
+                throw new Exception("Can not find a proper application to start!");
+            }
 
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)

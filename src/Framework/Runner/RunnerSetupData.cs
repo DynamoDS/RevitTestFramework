@@ -26,6 +26,8 @@ namespace RTF.Framework
         public GroupingType GroupingType { get; set; }
         public IList<RevitProduct> Products { get; set; }
         public int Timeout { get; set; }
+        public string ExcludedCategory { get; set; }
+        public bool CopyAddins { get; set; }
 
         public RunnerSetupData()
         {
