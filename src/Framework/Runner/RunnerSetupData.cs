@@ -43,7 +43,7 @@ namespace RTF.Framework
 
             if (products.Any())
             {
-                products = products.Where(x => x.Version == RevitVersion.Revit2014).ToList();
+                products = products.Where(x => x.Version == RevitVersion.Revit2014 ||  x.Version == RevitVersion.Revit2015).ToList();
             }
 
             return products;
