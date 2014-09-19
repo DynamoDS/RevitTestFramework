@@ -55,6 +55,9 @@
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}"
                        Background="{Binding FixtureStatus, Converter={StaticResource FixtureStatusToColorConverter}, Mode=OneWay}">
+                    <TextBlock.ToolTip>
+                        <TextBlock Text="{Binding Summary}"></TextBlock>
+                    </TextBlock.ToolTip>
                 </TextBlock>
                 <TextBlock Margin="5,0,0,0" Text="{Binding FixtureSummary}" HorizontalAlignment="Left" Foreground="DarkGray"></TextBlock>
             </StackPanel>
@@ -68,6 +71,9 @@
                 <TextBlock Text="{Binding Name}" 
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
+                    <TextBlock.ToolTip>
+                        <TextBlock Text="{Binding Summary}"></TextBlock>
+                    </TextBlock.ToolTip>
                 </TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
@@ -78,6 +84,9 @@
                                   ItemTemplate="{StaticResource CategoryTemplate}">
             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
+                <TextBlock.ToolTip>
+                    <TextBlock Text="{Binding Summary}"></TextBlock>
+                </TextBlock.ToolTip>
             </TextBlock>
         </HierarchicalDataTemplate>
 
