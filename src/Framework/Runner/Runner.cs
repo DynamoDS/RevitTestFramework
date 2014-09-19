@@ -1181,6 +1181,15 @@ namespace RTF.Framework
         public ObservableCollection<IGroupable> Categories { get; set; }
         public bool IsNodeExpanded { get; set; }
 
+        public string Summary
+        {
+            get
+            {
+                return string.Format("{0} Fixtures with {1} Tests", Fixtures.Count,
+                    Fixtures.SelectMany(f => f.Tests).Count());
+            }
+        }
+
         public AssemblyData(string path, string name, GroupingType groupType)
         {
             IsNodeExpanded = true;
@@ -1211,6 +1220,13 @@ namespace RTF.Framework
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
         public bool IsNodeExpanded { get; set; }
+        public string Summary
+        {
+            get
+            {
+                return string.Format("{0} Tests", Tests.Count);
+            }
+        }
 
         public string FixtureSummary
         {
@@ -1366,6 +1382,13 @@ namespace RTF.Framework
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public bool IsNodeExpanded { get; set; }
+        public string Summary
+        {
+            get
+            {
+                return string.Format("{0} Tests", Tests.Count);
+            }
+        }
 
         public CategoryData(string name)
         {
