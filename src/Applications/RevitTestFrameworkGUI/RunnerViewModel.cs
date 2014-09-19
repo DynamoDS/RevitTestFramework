@@ -76,7 +76,7 @@ namespace RTF.Applications
         private bool isRunning = false;
         private object isRunningLock = new object();
         private IContext context;
-
+        private FileSystemWatcher watcher;
         #endregion
 
         #region public properties
@@ -161,6 +161,11 @@ namespace RTF.Applications
                 {
                     runner.Refresh();
                     RaisePropertyChanged("AssemblyPath");
+                    if (watcher != null)
+                    {
+                        watcher.Path = Path.GetDirectoryName(runner.TestAssembly);
+                        watcher.Filter = runner.TestAssembly;
+                    }
                 }
             }
         }
@@ -314,6 +319,24 @@ namespace RTF.Applications
             runner.TestComplete += runner_TestComplete;
             runner.TestFailed += runner_TestFailed;
             runner.TestTimedOut += runner_TestTimedOut;
+
+
+            watcher = new FileSystemWatcher
+            {
+                Path = Path.GetDirectoryName(AssemblyPath),
+                NotifyFilter = NotifyFilters.LastWrite,
+                Filter = Path.GetFileName(AssemblyPath)
+            };
+            watcher.Changed += watcher_Changed;
+            watcher.EnableRaisingEvents = true;
+        }
+
+        void watcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            if (!isRunning)
+            {
+                context.BeginInvoke(() => runner.Refresh());
+            }
         }
 
         void runner_TestTimedOut(ITestData data)

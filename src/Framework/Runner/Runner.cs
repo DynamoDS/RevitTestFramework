@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,50 +18,6 @@ namespace RTF.Framework
     public delegate void TestCompleteHandler(IList<ITestData> data, string resultsPath);
     public delegate void TestTimedOutHandler(ITestData data);
     public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
-
-    /// <summary>
-    /// The RunnerSetupData class is used to convey
-    /// required setup information to the Runner constructor.
-    /// </summary>
-    public class RunnerSetupData : IRunnerSetupData
-    {
-        public string WorkingDirectory { get; set; }
-        public string AssemblyPath { get; set; }
-        public string TestAssembly { get; set; }
-        public string Results { get; set; }
-        public string Fixture { get; set; }
-        public string Category { get; set; }
-        public string Test { get; set; }
-        public bool Concat { get; set; }
-        public bool DryRun { get; set; }
-        public string RevitPath { get; set; }
-        public bool CleanUp { get; set; }
-        public bool Continuous { get; set; }
-        public bool IsDebug { get; set; }
-        public GroupingType GroupingType { get; set; }
-        public IList<RevitProduct> Products { get; set; }
-        public int Timeout { get; set; }
-
-        public RunnerSetupData()
-        {
-            Products = FindRevit();
-            CleanUp = true;
-            GroupingType = GroupingType.Fixture;
-            Timeout = 120000;
-        }
-
-        public static IList<RevitProduct> FindRevit()
-        {
-            var products = RevitProductUtility.GetAllInstalledRevitProducts();
-
-            if (products.Any())
-            {
-                products = products.Where(x => x.Version == RevitVersion.Revit2014).ToList();
-            }
-
-            return products;
-        }
-    }
 
     /// <summary>
     /// The Runner is responsible for setting up tests, running
@@ -179,15 +136,6 @@ namespace RTF.Framework
         public Dictionary<ITestData, string> TestDictionary
         {
             get { return testDictionary; }
-        }
-
-        /// <summary>
-        /// A flag which can be used to specifi
-        /// </summary>
-        public bool Gui
-        {
-            get { return _gui; }
-            set { _gui = value; }
         }
 
         /// <summary>
@@ -389,6 +337,25 @@ namespace RTF.Framework
             IsDebug = setupData.IsDebug;
             GroupingType = setupData.GroupingType;
             Timeout = setupData.Timeout;
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+            int count = Products.Count;
+            SelectedProduct = -1;
+            for (int i = 0; i < count; ++i)
+            {
+                var location = Path.GetDirectoryName(RevitPath);
+                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
+                if (string.Compare(locationFromProduct, location, true) == 0)
+                    SelectedProduct = i;
+            }
+
+            if (SelectedProduct == -1)
+            {
+                throw new Exception("Can not find a proper application to start!");
+            }
 
             var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
             if (assemblyDatas == null)
@@ -403,9 +370,6 @@ namespace RTF.Framework
             {
                 File.Delete(Results);
             }
-
-            Products.Clear();
-            Products.AddRange(setupData.Products);
         }
 
         #endregion
@@ -609,6 +573,12 @@ namespace RTF.Framework
             {
                 foreach (var kvp in testDictionary)
                 {
+                    if (cancelRequested)
+                    {
+                        cancelRequested = false;
+                        break;
+                    }
+
                     if (kvp.Value == null) continue;
 
                     var td = kvp.Key;
@@ -785,29 +755,7 @@ namespace RTF.Framework
 
             var timedOut = false;
 
-            if (IsDebug)
-            {
-                process.WaitForExit();
-            }
-            else
-            {
-                var time = 0;
-                while (!process.WaitForExit(1000))
-                {
-                    Console.Write(".");
-                    time += 1000;
-                    if (time > Timeout)
-                    {
-                        timedOut = true;
-                        break;
-                    }
-                }
-                if (timedOut)
-                {
-                    if (!process.HasExited)
-                        process.Kill();
-                }
-            }
+            process.WaitForExit();
 
             if (!timedOut)
             {
@@ -973,7 +921,8 @@ namespace RTF.Framework
             try
             {
                 //exclude the specified category
-                if (String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
+                if (null != td.Category &&
+                    String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
                     return;
 
                 if (!File.Exists(td.ModelPath))
@@ -1202,20 +1151,12 @@ namespace RTF.Framework
 
             try
             {
-                var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
-
-                var assData = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
+                // Create a temporary application domain to load the assembly.
+                var tempDomain = AppDomain.CreateDomain("RTF_Domain");
+                var loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false,0,null,new object[]{assemblyPath},CultureInfo.InvariantCulture,null );
+                var assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                 data.Add(assData);
-                
-                foreach (var fixtureType in assembly.GetTypes())
-                {
-                    if (!ReadFixture(fixtureType, assData, workingDirectory))
-                    {
-                        //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
-                    }
-                }
-
-                assData.Fixtures = assData.Fixtures.Sorted(x => x.Name);
+                AppDomain.Unload(tempDomain);
             }
             catch (Exception e)
             {
@@ -1227,103 +1168,10 @@ namespace RTF.Framework
             return data;
         }
 
-        public static bool ReadFixture(Type fixtureType, IAssemblyData data, string workingDirectory)
-        {
-            var fixtureAttribs = CustomAttributeData.GetCustomAttributes(fixtureType);
-
-            if (!fixtureAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestFixtureAttribute"))
-            {
-                //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
-                return false;
-            }
-
-            var fixData = new FixtureData(data, fixtureType.Name);
-            data.Fixtures.Add(fixData);
-
-            foreach (var test in fixtureType.GetMethods())
-            {
-                var testAttribs = CustomAttributeData.GetCustomAttributes(test);
-
-                if (!testAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestAttribute"))
-                {
-                    // skip this method
-                    continue;
-                }
-
-                if (!ReadTest(test, fixData, workingDirectory))
-                {
-                    //Console.WriteLine(string.Format("Journal could not be created for test:{0} in fixture:{1}", _test,_fixture));
-                    continue;
-                }
-            }
-
-            // sort the collection
-            fixData.Tests = fixData.Tests.Sorted(x => x.Name);
-
-            return true;
-        }
-
-        public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
-        {
-            //set the default modelPath to the empty.rfa file that will live in the build directory
-            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
-
-            var testAttribs = CustomAttributeData.GetCustomAttributes(test);
-
-            var testModelAttrib =
-                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "TestModelAttribute");
-
-            if (testModelAttrib != null)
-            {
-                //overwrite the model path with the one
-                //specified in the test model attribute
-                var relModelPath = testModelAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-                modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
-            }
-
-            var category = "";
-            var categoryAttrib =
-                testAttribs.FirstOrDefault(
-                    x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
-            if (categoryAttrib != null)
-            {
-                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-            }
-
-            var runDynamoAttrib = 
-                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
-
-            var runDynamo = false;
-            if (runDynamoAttrib != null)
-            {
-                runDynamo = bool.Parse(runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value.ToString());
-            }
-
-            var testData = new TestData(data, test.Name, modelPath, runDynamo);
-            data.Tests.Add(testData);
-
-            if (!string.IsNullOrEmpty(category))
-            {
-                var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
-                if (cat != null)
-                {
-                    cat.Tests.Add(testData);
-                }
-                else
-                {
-                    var catData = new CategoryData(category);
-                    catData.Tests.Add(testData);
-                    data.Assembly.Categories.Add(catData);
-                }
-                testData.Category = cat as ICategoryData;
-            }
-
-            return true;
-        }
-
         #endregion
     }
 
+    [Serializable]
     public class AssemblyData : IAssemblyData
     {
         public string Path { get; set; }
@@ -1331,9 +1179,12 @@ namespace RTF.Framework
         public ObservableCollection<IGroupable> SortingGroup { get; set; }
         public ObservableCollection<IGroupable> Fixtures { get; set; }
         public ObservableCollection<IGroupable> Categories { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public AssemblyData(string path, string name, GroupingType groupType)
         {
+            IsNodeExpanded = true;
+
             Fixtures = new ObservableCollection<IGroupable>();
             Categories = new ObservableCollection<IGroupable>();
 
@@ -1352,12 +1203,14 @@ namespace RTF.Framework
         }
     }
 
+    [Serializable]
     public class FixtureData : NotificationObject, IFixtureData
     {
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public string FixtureSummary
         {
@@ -1433,6 +1286,7 @@ namespace RTF.Framework
         }
     }
 
+    [Serializable]
     public class TestData : NotificationObject, ITestData
     {
         private TestStatus _testStatus;
@@ -1440,6 +1294,7 @@ namespace RTF.Framework
         public string Name { get; set; }
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public bool ModelExists
         {
@@ -1505,10 +1360,12 @@ namespace RTF.Framework
         }
     }
 
+    [Serializable]
     public class CategoryData : NotificationObject, ICategoryData
     {
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
+        public bool IsNodeExpanded { get; set; }
 
         public CategoryData(string name)
         {
@@ -1517,10 +1374,13 @@ namespace RTF.Framework
         }
     }
 
+    [Serializable]
     public class ResultData : NotificationObject, IResultData
     {
         private string _message = "";
         private string _stackTrace = "";
+
+        public bool IsNodeExpanded { get; set; }
 
         public string Message
         {

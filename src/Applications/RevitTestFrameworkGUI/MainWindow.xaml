@@ -191,7 +191,14 @@
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
-                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
+                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                  >
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded}">
+                    </Setter>
+                </Style>
+            </TreeView.ItemContainerStyle>
         </TreeView>
         
         <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
