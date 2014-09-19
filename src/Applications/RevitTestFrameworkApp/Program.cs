@@ -40,13 +40,9 @@ namespace RTF.Applications
                 // Only support one assembly for right now.
                 data = runner.Assemblies.FirstOrDefault();
             }
-            // Run by Category
-            if (!string.IsNullOrEmpty(runner.Category))
-            {
-                data = runner.Category;
-            }
+
             // Run by Fixture
-            else if (!string.IsNullOrEmpty(runner.Fixture))
+            if (!string.IsNullOrEmpty(runner.Fixture))
             {
                 data = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
             }
