@@ -7,8 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
-using Autodesk.Revit.ApplicationServices;
-using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Dynamo.NUnit.Tests;
@@ -466,16 +464,18 @@ namespace RTF.Applications
             else
             {
                 //create one result to dump everything into
-                resultsRoot = new resultType { name = Assembly.GetExecutingAssembly().Location };
-
-                resultsRoot.testsuite = new testsuiteType
+                resultsRoot = new resultType
                 {
-                    name = "DynamoTestFrameworkTests",
-                    description = "Unit tests in Revit.",
-                    time = "0.0",
-                    type = "TestFixture",
-                    result = "Success",
-                    executed = "True"
+                    name = testAssembly,
+                    testsuite = new testsuiteType
+                    {
+                        name = "DynamoTestFrameworkTests",
+                        description = "Unit tests in Revit.",
+                        time = "0.0",
+                        type = "TestFixture",
+                        result = "Success",
+                        executed = "True"
+                    }
                 };
 
                 resultsRoot.testsuite = rootSuite;
