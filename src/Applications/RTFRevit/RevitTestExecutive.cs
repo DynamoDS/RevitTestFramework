@@ -169,10 +169,6 @@ namespace RTF.Applications
                 throw new Exception(string.Format("Could not find fixture: {0}", fixtureName));
 
             var setupMethods = fixture.GetSetUpMethods();
-            foreach (var m in setupMethods)
-            {
-                Debug.WriteLine(String.Format("Setup method: {0}", m.Name));
-            }
 
             InitializeResults();
 
