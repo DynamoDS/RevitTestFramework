@@ -75,7 +75,6 @@ namespace RTF.Tests
             var catData = assemblyData.Categories.First(c => c.Name == "Smoke");
             var runner = SetupToRun();
             runner.SetupTests(catData);
-            Assert.AreEqual(runner.RunCount, 2);
             Assert.AreEqual(runner.TestDictionary.Count, 2);
         }
 
@@ -85,7 +84,6 @@ namespace RTF.Tests
             var catData = assemblyData.Categories.First(c => c.Name == "Integration");
             var runner = SetupToRun();
             runner.SetupTests(catData);
-            Assert.AreEqual(runner.RunCount, 1);
             Assert.AreEqual(runner.TestDictionary.Count, 1);
         }
 
@@ -95,7 +93,6 @@ namespace RTF.Tests
             var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureA");
             var runner = SetupToRun();
             runner.SetupTests(fixData);
-            Assert.AreEqual(runner.RunCount, 3);
             Assert.AreEqual(runner.TestDictionary.Count, 3);
         }
 
@@ -105,7 +102,6 @@ namespace RTF.Tests
             var fixData = assemblyData.Fixtures.First(c => c.Name == "FixtureB");
             var runner = SetupToRun();
             runner.SetupTests(fixData);
-            Assert.AreEqual(runner.RunCount, 2);
             Assert.AreEqual(runner.TestDictionary.Count, 2);
         }
 
@@ -114,7 +110,6 @@ namespace RTF.Tests
         {
             var runner = SetupToRun();
             runner.SetupTests(assemblyData);
-            Assert.AreEqual(runner.RunCount, 5);
             Assert.AreEqual(runner.TestDictionary.Count, 5);
         }
 
@@ -123,7 +118,6 @@ namespace RTF.Tests
         {
             var runner = SetupToRun();
             runner.SetupTests(assemblyData.Fixtures.First().Tests.First());
-            Assert.AreEqual(runner.RunCount, 1);
             Assert.AreEqual(runner.TestDictionary.Count, 1);  
         }
 
@@ -136,6 +130,31 @@ namespace RTF.Tests
             Assert.IsNull(runner.TestDictionary[testData]);
         }
 
+        [Test]
+        public void DoesNotRunCategoryThatIsExcluded_Failure()
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+                ExcludedCategory = "Failure",
+                IsTesting = true
+            };
+
+            var runner = Runner.Initialize(setupData);
+            runner.Assemblies.Clear();
+            runner.Assemblies.Add(assemblyData);
+            runner.SetupTests(assemblyData);
+            Assert.AreEqual(runner.TestDictionary.Count, 3);
+
+            runner.ExcludedCategory = "Integration";
+            runner.Refresh();
+            runner.SetupTests(assemblyData);
+            Assert.AreEqual(runner.TestDictionary.Count, 4);
+        }
+
         #region private helper methods
 
         private Mock<IAssemblyData> MockAssemblyData()
@@ -145,13 +164,13 @@ namespace RTF.Tests
             var cat2 = MockCategory("Integration");
             var cat3 = MockCategory("Failure");
 
-            var cats = new ObservableCollection<IGroupable>(){cat1.Object, cat2.Object, cat3.Object};
+            var cats = new ObservableCollection<ITestGroup>(){cat1.Object, cat2.Object, cat3.Object};
 
             // Setup some mock fixtures
             var fix1 = MockFixture("FixtureA");
             var fix2 = MockFixture("FixtureB");
 
-            var fixes = new ObservableCollection<IGroupable>() { fix1.Object, fix2.Object};
+            var fixes = new ObservableCollection<ITestGroup>() { fix1.Object, fix2.Object};
 
             // Setup some mock tests
             var testModelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
@@ -163,11 +182,20 @@ namespace RTF.Tests
             var test4 = MockTest("TestD", testModelPath, fix2.Object);
             var test5 = MockTest("TestE", @"C:\foo.rfa", fix2.Object);
 
-            test1.Object.TestStatus = Framework.TestStatus.Failure;
-            test2.Object.TestStatus = Framework.TestStatus.Failure;
-            test3.Object.TestStatus = Framework.TestStatus.Success;
-            test4.Object.TestStatus = Framework.TestStatus.Success;
-            test5.Object.TestStatus = Framework.TestStatus.Inconclusive;
+            test1.Setup(t=>t.TestStatus).Returns(Framework.TestStatus.Failure);
+            test1.Setup(t=>t.ShouldRun).Returns(true);
+
+            test2.Setup(t=>t.TestStatus).Returns(Framework.TestStatus.Failure);
+            test2.Setup(t => t.ShouldRun).Returns(true);
+
+            test3.Setup(t => t.TestStatus).Returns(Framework.TestStatus.Success);
+            test3.Setup(t => t.ShouldRun).Returns(true);
+
+            test4.Setup(t => t.TestStatus).Returns(Framework.TestStatus.Success);
+            test4.Setup(t => t.ShouldRun).Returns(true);
+
+            test5.Setup(t => t.TestStatus).Returns(Framework.TestStatus.Inconclusive);
+            test5.Setup(t => t.ShouldRun).Returns(true);
 
             var catTests1 = new ObservableCollection<ITestData>() { test1.Object, test2.Object };
             var catTests2 = new ObservableCollection<ITestData>() { test3.Object };
@@ -177,11 +205,20 @@ namespace RTF.Tests
             var fixTests2 = new ObservableCollection<ITestData>() { test4.Object, test5.Object };
 
             fix1.Setup(x => x.Tests).Returns(fixTests1);
-            fix2.Setup(x => x.Tests).Returns(fixTests2);
-            cat1.Setup(x => x.Tests).Returns(catTests1);
-            cat2.Setup(x => x.Tests).Returns(catTests2);
-            cat3.Setup(x => x.Tests).Returns(catTests3);
+            fix1.Setup(x => x.ShouldRun).Returns(true);
 
+            fix2.Setup(x => x.Tests).Returns(fixTests2);
+            fix2.Setup(x => x.ShouldRun).Returns(true);
+
+            cat1.Setup(x => x.Tests).Returns(catTests1);
+            cat1.Setup(x => x.ShouldRun).Returns(true);
+
+            cat2.Setup(x => x.Tests).Returns(catTests2);
+            cat2.Setup(x => x.ShouldRun).Returns(true);
+
+            cat3.Setup(x => x.Tests).Returns(catTests3);
+            cat3.Setup(x => x.ShouldRun).Returns(true);
+            
             var dummyTestPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RunnerTests.dll");
 
@@ -195,6 +232,8 @@ namespace RTF.Tests
             // Link the fixture back to the assembly
             fix1.Setup(f => f.Assembly).Returns(mock.Object);
             fix2.Setup(f => f.Assembly).Returns(mock.Object);
+
+            mock.Setup(m => m.ShouldRun).Returns(true);
 
             return mock;
         }
@@ -230,6 +269,7 @@ namespace RTF.Tests
                 DryRun = true,
                 Results = Path.GetTempFileName(),
                 Continuous = false,
+                IsTesting = true
             };
 
             var runner = Runner.Initialize(setupData);

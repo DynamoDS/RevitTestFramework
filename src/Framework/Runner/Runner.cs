@@ -97,11 +97,6 @@ namespace RTF.Framework
         }
 
         /// <summary>
-        /// A counter for the number of runs processed.
-        /// </summary>
-        public int RunCount { get; set; }
-
-        /// <summary>
         /// The path of the selected assembly for testing.
         /// </summary>
         public string AssemblyPath { get; set; }
@@ -158,7 +153,7 @@ namespace RTF.Framework
         public string Test { get; set; }
 
         /// <summary>
-        /// The name of the assembly to run.
+        /// The assembly containing the tests.
         /// </summary>
         public string TestAssembly { get; set; }
 
@@ -312,6 +307,8 @@ namespace RTF.Framework
                 }
             }
         }
+        
+        public bool IsTesting { get; set; }
 
         #endregion
 
@@ -319,7 +316,6 @@ namespace RTF.Framework
 
         private Runner(IRunnerSetupData setupData)
         {
-            RunCount = 0;
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
             WorkingDirectory = setupData.WorkingDirectory;
@@ -339,6 +335,8 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             Products.Clear();
             Products.AddRange(setupData.Products);
+            IsTesting = setupData.IsTesting;
+            ExcludedCategory = setupData.ExcludedCategory;
 
             Products.Clear();
             Products.AddRange(setupData.Products);
@@ -357,7 +355,7 @@ namespace RTF.Framework
                 throw new Exception("Can not find a proper application to start!");
             }
 
-            var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
+            var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, IsTesting, ExcludedCategory);
             if (assemblyDatas == null)
             {
                 return;
@@ -501,24 +499,20 @@ namespace RTF.Framework
             if (parameter is IAssemblyData)
             {
                 var ad = parameter as IAssemblyData;
-                RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
                 SetupAssemblyTests(ad, Continuous);
             }
             else if (parameter is IFixtureData)
             {
                 var fd = parameter as IFixtureData;
-                RunCount = fd.Tests.Count;
                 SetupFixtureTests(fd, Continuous);
             }
             else if (parameter is ITestData)
             {
-                RunCount = 1;
                 SetupIndividualTest(parameter as ITestData, Continuous);
             }
             else if (parameter is ICategoryData)
             {
                 var catData = parameter as ICategoryData;
-                RunCount = catData.Tests.Count;
                 SetupCategoryTests(catData, Continuous);
             }
 
@@ -561,8 +555,6 @@ namespace RTF.Framework
                 sendDmps.ToList().ForEach(sd => sd.Kill());
             }
 
-            RunCount = continuous ? 1 : testDictionary.Count;
-
             if (continuous)
             {
                 // If running in continous mode, there will only
@@ -585,7 +577,6 @@ namespace RTF.Framework
                     try
                     {
                         ProcessTest(kvp.Key, kvp.Value);
-                        RunCount--;
                     }
                     catch (Exception ex)
                     {
@@ -604,9 +595,10 @@ namespace RTF.Framework
         public void Refresh()
         {
             Assemblies.Clear();
+            testDictionary.Clear();
             if (File.Exists(TestAssembly))
             {
-                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory, groupingType));
+                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory, groupingType, IsTesting, ExcludedCategory));
             }
            
             Console.WriteLine(ToString());
@@ -876,8 +868,12 @@ namespace RTF.Framework
         /// </summary>
         /// <param name="ad"></param>
         /// <param name="continuous"></param>
-        private void SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
+        private void 
+            SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
         {
+            if (ad.ShouldRun == false)
+                return;
+
             foreach (var fix in ad.Fixtures)
             {
                 if (cancelRequested)
@@ -897,6 +893,9 @@ namespace RTF.Framework
         /// <param name="continuous"></param>
         private void SetupFixtureTests(IFixtureData fd, bool continuous = false)
         {
+            if (fd.ShouldRun == false)
+                return;
+
             SetupIndividualTests(fd.Tests.ToList(), continuous);
         }
 
@@ -907,6 +906,9 @@ namespace RTF.Framework
         /// <param name="continuous">Run continously</param>
         private void SetupCategoryTests(ICategoryData cd, bool continuous = false)
         {
+            if (cd.ShouldRun == false)
+                return;
+
             SetupIndividualTests(cd.Tests, continuous);
         }
 
@@ -917,13 +919,11 @@ namespace RTF.Framework
         /// <param name="continuous"></param>
         private void SetupIndividualTest(ITestData td, bool continuous = false)
         {
+            if (td.ShouldRun == false)
+                return;
+
             try
             {
-                //exclude the specified category
-                if (null != td.Category &&
-                    String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
-                    return;
-
                 if (!File.Exists(td.ModelPath))
                 {
                     throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
@@ -1144,18 +1144,40 @@ namespace RTF.Framework
 
         }
 
-        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
+        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType, bool isTesting, string excludeCategory)
         {
             IList<IAssemblyData> data = new List<IAssemblyData>();
 
             try
             {
-                // Create a temporary application domain to load the assembly.
-                var tempDomain = AppDomain.CreateDomain("RTF_Domain");
-                var loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false,0,null,new object[]{assemblyPath},CultureInfo.InvariantCulture,null );
-                var assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
-                data.Add(assData);
-                AppDomain.Unload(tempDomain);
+                AssemblyLoader loader;
+                AssemblyData assData;
+
+                if (!isTesting)
+                {
+                    // Create a temporary application domain to load the assembly.
+                    var tempDomain = AppDomain.CreateDomain("RTF_Domain");
+                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath }, CultureInfo.InvariantCulture, null);
+                    assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
+                    data.Add(assData);
+                    AppDomain.Unload(tempDomain);
+                }
+                else
+                {
+                    loader = new AssemblyLoader(assemblyPath);
+                    assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
+                    data.Add(assData);
+                }
+
+                // Process exclusions
+                var excludeTests = assData.Fixtures.
+                    SelectMany(f => f.Tests).
+                    Where(t => t.Category != null && t.Category.Name == excludeCategory);
+                foreach (var test in excludeTests)
+                {
+                    test.ShouldRun = false;
+                }
+
             }
             catch (Exception e)
             {
@@ -1171,13 +1193,14 @@ namespace RTF.Framework
     }
 
     [Serializable]
-    public class AssemblyData : IAssemblyData
+    public class AssemblyData : NotificationObject, IAssemblyData
     {
+        private bool _shouldRun = true;
         public string Path { get; set; }
         public string Name { get; set; }
-        public ObservableCollection<IGroupable> SortingGroup { get; set; }
-        public ObservableCollection<IGroupable> Fixtures { get; set; }
-        public ObservableCollection<IGroupable> Categories { get; set; }
+        public ObservableCollection<ITestGroup> SortingGroup { get; set; }
+        public ObservableCollection<ITestGroup> Fixtures { get; set; }
+        public ObservableCollection<ITestGroup> Categories { get; set; }
         public bool IsNodeExpanded { get; set; }
 
         public string Summary
@@ -1189,12 +1212,32 @@ namespace RTF.Framework
             }
         }
 
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+
+                foreach (var fix in Fixtures)
+                {
+                    var fixData = fix as FixtureData;
+                    if (fixData != null)
+                    {
+                        fixData.ShouldRun = _shouldRun; 
+                    }
+                }
+
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
         public AssemblyData(string path, string name, GroupingType groupType)
         {
             IsNodeExpanded = true;
 
-            Fixtures = new ObservableCollection<IGroupable>();
-            Categories = new ObservableCollection<IGroupable>();
+            Fixtures = new ObservableCollection<ITestGroup>();
+            Categories = new ObservableCollection<ITestGroup>();
 
             switch (groupType)
             {
@@ -1214,11 +1257,13 @@ namespace RTF.Framework
     [Serializable]
     public class FixtureData : NotificationObject, IFixtureData
     {
+        private bool _shouldRun = true;
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
         public bool IsNodeExpanded { get; set; }
+        
         public string Summary
         {
             get
@@ -1235,6 +1280,22 @@ namespace RTF.Framework
                 var failCount = Tests.Count(x => x.TestStatus == TestStatus.Failure);
                 var otherCount = Tests.Count - successCount - failCount;
                 return string.Format("[Total: {0}, Success: {1}, Failure: {2}, Other: {3}]", Tests.Count, successCount, failCount, otherCount);
+            }
+        }
+
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+
+                foreach (var test in Tests)
+                {
+                    test.ShouldRun = _shouldRun;
+                }
+
+                RaisePropertyChanged("ShouldRun");
             }
         }
 
@@ -1306,6 +1367,7 @@ namespace RTF.Framework
     {
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
+        private bool _shouldRun = true;
         public string Name { get; set; }
         public bool RunDynamo { get; set; }
         public string ModelPath { get; set; }
@@ -1351,6 +1413,16 @@ namespace RTF.Framework
             }
         }
 
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
         public ObservableCollection<IResultData> ResultData { get; set; }
 
         public IFixtureData Fixture { get; set; }
@@ -1378,9 +1450,30 @@ namespace RTF.Framework
     [Serializable]
     public class CategoryData : NotificationObject, ICategoryData
     {
+        private bool _shouldRun = true;
         public string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
+        public IAssemblyData Assembly { get; set; }
+
         public bool IsNodeExpanded { get; set; }
+
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value && Assembly.ShouldRun;
+
+                foreach(var test in Tests)
+                {
+
+                    test.ShouldRun = _shouldRun;
+                }
+
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
         public string Summary
         {
             get
@@ -1389,10 +1482,11 @@ namespace RTF.Framework
             }
         }
 
-        public CategoryData(string name)
+        public CategoryData(IAssemblyData assembly, string name)
         {
             Name = name;
             Tests = new ObservableCollection<ITestData>();
+            Assembly = assembly;
         }
     }
 

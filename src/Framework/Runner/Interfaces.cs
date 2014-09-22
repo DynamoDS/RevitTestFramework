@@ -6,30 +6,40 @@ namespace RTF.Framework
 {
     public enum TestStatus{None,Cancelled, Error, Failure, Ignored, Inconclusive, NotRunnable, Skipped, Success,TimedOut}
     public enum FixtureStatus{None, Success, Failure, Mixed}
-    public enum GroupingType{Fixture, Category}
 
-    public interface IAssemblyData
+    public enum GroupingType
+    {
+        Fixture,
+        Category
+    }
+
+    public interface ITestGroup
+    {
+        string Name { get; set; }
+        ObservableCollection<ITestData> Tests { get; set; }
+        IAssemblyData Assembly { get; set; }
+    }
+
+    public interface IExcludable
+    {
+        bool ShouldRun { get; set; }
+    }
+
+    public interface IAssemblyData:IExcludable
     {
         string Path { get; set; }
         string Name { get; set; }
-        ObservableCollection<IGroupable> SortingGroup { get; set; }
-        ObservableCollection<IGroupable> Fixtures { get; set; } 
-        ObservableCollection<IGroupable> Categories { get; set; } 
+        ObservableCollection<ITestGroup> SortingGroup { get; set; }
+        ObservableCollection<ITestGroup> Fixtures { get; set; }
+        ObservableCollection<ITestGroup> Categories { get; set; } 
     }
 
-    public interface IGroupable
+    public interface IFixtureData:ITestGroup,IExcludable
     {
-        string Name { get; set; }
-        ObservableCollection<ITestData> Tests { get; set; } 
-    }
-
-    public interface IFixtureData:IGroupable
-    {
-        IAssemblyData Assembly { get; set; }
         FixtureStatus FixtureStatus { get; set; }
     }
 
-    public interface ITestData
+    public interface ITestData:IExcludable
     {
         IFixtureData Fixture { get; set; }
         ICategoryData Category { get; set; }
@@ -47,7 +57,8 @@ namespace RTF.Framework
         string StackTrace { get; set; }
     }
 
-    public interface ICategoryData : IGroupable{}
+    public interface ICategoryData : ITestGroup,IExcludable
+    {}
 
     public interface IRunnerSetupData
     {
@@ -67,6 +78,8 @@ namespace RTF.Framework
         GroupingType GroupingType { get; set; }
         IList<RevitProduct> Products { get; set; }
         int Timeout { get; set; }
+        bool IsTesting { get; set; }
+        string ExcludedCategory { get; set; }
     }
 
     public interface IRunner
@@ -75,11 +88,6 @@ namespace RTF.Framework
         /// The path of the RTF addin file.
         /// </summary>
         string AddinPath { get; set; }
-
-        /// <summary>
-        /// A counter for the number of runs processed.
-        /// </summary>
-        int RunCount { get; set; }
 
         /// <summary>
         /// The path of the selected assembly for testing.

@@ -28,6 +28,7 @@ namespace RTF.Framework
         public int Timeout { get; set; }
         public string ExcludedCategory { get; set; }
         public bool CopyAddins { get; set; }
+        public bool IsTesting { get; set; }
 
         public RunnerSetupData()
         {

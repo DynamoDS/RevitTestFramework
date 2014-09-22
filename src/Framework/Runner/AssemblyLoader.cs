@@ -122,7 +122,7 @@ namespace RTF.Framework
                 }
                 else
                 {
-                    var catData = new CategoryData(category);
+                    var catData = new CategoryData(data.Assembly, category);
                     catData.Tests.Add(testData);
                     data.Assembly.Categories.Add(catData);
                     testData.Category = catData;

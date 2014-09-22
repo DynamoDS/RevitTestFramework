@@ -30,7 +30,8 @@
                                   DataType="{x:Type runners:TestData}"
                                   ItemsSource="{Binding ResultData}"
                                   ItemTemplate="{StaticResource ResultTemplate}">
-            <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Name}" 
                                HorizontalAlignment="Left" 
@@ -51,6 +52,7 @@
                                   DataType="{x:Type runners:FixtureData}"
                                   ItemTemplate="{StaticResource TestTemplate}">
             <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
                 <TextBlock Text="{Binding Name}" 
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}"
@@ -68,6 +70,7 @@
                                   DataType="{x:Type runners:CategoryData}"
                                   ItemTemplate="{StaticResource TestTemplate}">
             <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
                 <TextBlock Text="{Binding Name}" 
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
@@ -82,12 +85,15 @@
                                   ItemsSource="{Binding SortingGroup}" 
                                   DataType="{x:Type runners:AssemblyData}"
                                   ItemTemplate="{StaticResource CategoryTemplate}">
-            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
+            <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
-                <TextBlock.ToolTip>
-                    <TextBlock Text="{Binding Summary}"></TextBlock>
-                </TextBlock.ToolTip>
-            </TextBlock>
+                    <TextBlock.ToolTip>
+                        <TextBlock Text="{Binding Summary}"></TextBlock>
+                    </TextBlock.ToolTip>
+                </TextBlock>
+            </StackPanel>
         </HierarchicalDataTemplate>
 
         <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues"
@@ -200,8 +206,7 @@
                   VirtualizingStackPanel.VirtualizationMode="Recycling" 
                   Name="TestDataTreeView" 
                   SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
-                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                  >
+                  IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="{x:Type TreeViewItem}">
                     <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded}">
