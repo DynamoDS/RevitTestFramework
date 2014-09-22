@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using Autodesk.RevitAddIns;
@@ -295,7 +297,7 @@ namespace RTF.Applications
                 IsDebug = Settings.Default.isDebug,
             };
 
-            runner = Runner.Initialize(setupData);
+            runner = new Runner(setupData);
 
             if (Settings.Default.selectedProduct > runner.Products.Count - 1)
             {
@@ -349,7 +351,7 @@ namespace RTF.Applications
             context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
         }
 
-        void runner_TestComplete(System.Collections.Generic.IList<ITestData> data, string resultsPath)
+        void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
         {
             context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
         }
