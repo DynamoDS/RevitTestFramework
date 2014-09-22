@@ -1432,9 +1432,9 @@ namespace RTF.Framework
             get { return _shouldRun; }
             set
             {
-                Debug.WriteLine(value
-                    ? string.Format("{0} should run.", Name)
-                    : string.Format("{0} should not run.", Name));
+                //Debug.WriteLine(value
+                //    ? string.Format("{0} should run.", Name)
+                //    : string.Format("{0} should not run.", Name));
 
                 _shouldRun = value;
                 RaisePropertyChanged("ShouldRun");
