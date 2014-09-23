@@ -478,32 +478,18 @@ namespace RTF.Framework
         #region public methods
 
         /// <summary>
-        /// Setup tests according to a provided data type.
+        /// Setup all runnable tests.
         /// </summary>
         /// <param name="parameter"></param>
-        public void SetupTests(object parameter)
+        public void SetupTests()
         {
             journalInitialized = false;
             journalFinished = false;
 
-            if (parameter is IAssemblyData)
+            var runnable = GetRunnableTests();
+            foreach (var test in runnable)
             {
-                var ad = parameter as IAssemblyData;
-                SetupAssemblyTests(ad, Continuous);
-            }
-            else if (parameter is IFixtureData)
-            {
-                var fd = parameter as IFixtureData;
-                SetupFixtureTests(fd, Continuous);
-            }
-            else if (parameter is ITestData)
-            {
-                SetupIndividualTest(parameter as ITestData, Continuous);
-            }
-            else if (parameter is ICategoryData)
-            {
-                var catData = parameter as ICategoryData;
-                SetupCategoryTests(catData, Continuous);
+                SetupIndividualTest(test, Continuous);
             }
 
             if (continuous && !journalFinished)

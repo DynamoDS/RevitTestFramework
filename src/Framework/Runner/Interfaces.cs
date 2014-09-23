@@ -201,8 +201,7 @@ namespace RTF.Framework
         /// <summary>
         /// Setup tests. Precedes a call to RunAllTests.
         /// </summary>
-        /// <param name="parameter"></param>
-        void SetupTests(object parameter);
+        void SetupTests();
 
         /// <summary>
         /// Re-read the selected assembly to find available tests.

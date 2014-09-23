@@ -30,40 +30,49 @@ namespace RTF.Applications
 
         private static void Run()
         {
-            object data = null;
-
-            // If the no fixture, test, or category is specified, run the whole assembly.
-            if (string.IsNullOrEmpty(runner.Fixture) && 
-                string.IsNullOrEmpty(runner.Test) && 
-                string.IsNullOrEmpty(runner.Category))
+            var assData = runner.Assemblies.FirstOrDefault();
+            if (assData == null)
             {
-                // Only support one assembly for right now.
-                data = runner.Assemblies.FirstOrDefault();
+                return;
             }
 
             // Run by Fixture
             if (!string.IsNullOrEmpty(runner.Fixture))
             {
-                data = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
+                var fixData = assData.Fixtures.FirstOrDefault(f => f.Name == runner.Fixture);
+                if (fixData != null)
+                {
+                    ((IExcludable) fixData).ShouldRun = true;
+                }
             }
             // Run by test.
             else if (!string.IsNullOrEmpty(runner.Test))
             {
-                data = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
+                var testData = runner.GetAllTests()
                         .FirstOrDefault(t => t.Name == runner.Test);
+                if (testData != null)
+                {
+                    testData.ShouldRun = true;
+                }
             }
+            // Run by category
             else if (!string.IsNullOrEmpty(runner.Category))
             {
-                data = runner.Assemblies.SelectMany(a => a.Categories).
-                    FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
+                var catData = assData.Categories.
+                    FirstOrDefault(c => c.Name == runner.Category);
+                if (catData != null)
+                {
+                    ((IExcludable) catData).ShouldRun = true;
+                }
             }
-
-            if (data == null)
+            // If the no fixture, test, or category is specified, run the whole assembly.
+            else
             {
-                throw new Exception("Running mode could not be determined from the inputs provided.");
+                // Only support one assembly for right now.
+                assData.ShouldRun = true;
             }
 
-            runner.SetupTests(data);
+            runner.SetupTests();
             runner.RunAllTests();
         }
 

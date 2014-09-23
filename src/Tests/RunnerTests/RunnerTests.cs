@@ -171,7 +171,7 @@ namespace RTF.Tests
         public void RunByAssemblySetup()
         {
             var runner = new TestRunner(TestSetupData());
-            runner.SetupTests(runner.Assemblies);
+            runner.SetupTests();
             Assert.AreEqual(runner.GetRunnableTests().Count(), 5);
         }
 
@@ -184,7 +184,7 @@ namespace RTF.Tests
 
             var testData = assData.Fixtures.First().Tests.First();
             testData.ShouldRun = true;
-            runner.SetupTests(testData);
+            runner.SetupTests();
             Assert.AreEqual(runner.GetRunnableTests().Count(), 1);  
         }
 
@@ -193,7 +193,7 @@ namespace RTF.Tests
         {
             var runner = new TestRunner(TestSetupData());
             var testData = runner.Assemblies.SelectMany(a=>a.Fixtures).SelectMany(f => f.Tests).First(t => t.Name == "TestE");
-            runner.SetupTests(testData);
+            runner.SetupTests();
             Assert.IsNull(testData.JournalPath);
         }
 
@@ -211,7 +211,7 @@ namespace RTF.Tests
             };
             var runner = new TestRunner(setupData);
             var assData = runner.Assemblies.First();
-            runner.SetupTests(assData);
+            runner.SetupTests();
             Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
         }
 
