@@ -108,10 +108,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Framework\RevitTestFramework\RevitTestFrameworkTypes.csproj">
-      <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
-      <Name>RevitTestFrameworkTypes</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Framework\Runner\Runner.csproj">
       <Project>{4a25bb46-081a-4acd-9c38-297cd800550f}</Project>
       <Name>Runner</Name>

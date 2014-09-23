@@ -7,12 +7,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.Logging;
 using Microsoft.Practices.Prism.ViewModel;
+using NDesk.Options;
 
 namespace RTF.Framework
 {
@@ -317,12 +319,12 @@ namespace RTF.Framework
                 throw new ArgumentException("The specified test assembly does not exist.");
             }
 
-            if (string.IsNullOrEmpty(setupData.TestAssembly))
+            if (String.IsNullOrEmpty(setupData.TestAssembly))
             {
                 setupData.TestAssembly = Assembly.GetExecutingAssembly().Location;
             }
 
-            if (string.IsNullOrEmpty(setupData.AssemblyPath) || !File.Exists(setupData.AssemblyPath))
+            if (String.IsNullOrEmpty(setupData.AssemblyPath) || !File.Exists(setupData.AssemblyPath))
             {
                 setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                     "RTFRevit.dll");
@@ -333,12 +335,12 @@ namespace RTF.Framework
                 throw new ArgumentException("The specified working directory does not exist.");
             }
 
-            if (string.IsNullOrEmpty(setupData.WorkingDirectory) || !Directory.Exists(setupData.WorkingDirectory))
+            if (String.IsNullOrEmpty(setupData.WorkingDirectory) || !Directory.Exists(setupData.WorkingDirectory))
             {
                 setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
-            if (!string.IsNullOrEmpty(setupData.Category))
+            if (!String.IsNullOrEmpty(setupData.Category))
             {
                 setupData.GroupingType = GroupingType.Category;
             }
@@ -348,7 +350,7 @@ namespace RTF.Framework
                 throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
             }
 
-            if (string.IsNullOrEmpty(setupData.RevitPath))
+            if (String.IsNullOrEmpty(setupData.RevitPath))
             {
                 setupData.RevitPath = Path.Combine(setupData.Products.First().InstallLocation, "revit.exe");
             }
@@ -383,7 +385,7 @@ namespace RTF.Framework
             {
                 var location = Path.GetDirectoryName(RevitPath);
                 var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
-                if (string.Compare(locationFromProduct, location, true) == 0)
+                if (String.Compare(locationFromProduct, location, true) == 0)
                     SelectedProduct = i;
             }
 
@@ -447,7 +449,7 @@ namespace RTF.Framework
             }
 
             // Finally, check the runtime directory
-            var runtime = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
+            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
             var systemCheck = runtime + "\\" + name.Name + ".dll";
             if (File.Exists(systemCheck))
             {
@@ -577,7 +579,7 @@ namespace RTF.Framework
             }
 
             // Run by Fixture
-            if (!string.IsNullOrEmpty(Fixture))
+            if (!String.IsNullOrEmpty(Fixture))
             {
                 var fixData = assData.SelectMany(a=>a.Fixtures).FirstOrDefault(f => f.Name == Fixture);
                 if (fixData != null)
@@ -586,7 +588,7 @@ namespace RTF.Framework
                 }
             }
             // Run by test.
-            else if (!string.IsNullOrEmpty(Test))
+            else if (!String.IsNullOrEmpty(Test))
             {
                 var testData = GetAllTests()
                         .FirstOrDefault(t => t.Name == Test);
@@ -596,7 +598,7 @@ namespace RTF.Framework
                 }
             }
             // Run by category
-            else if (!string.IsNullOrEmpty(Category))
+            else if (!String.IsNullOrEmpty(Category))
             {
                 var catData = assData.SelectMany(a=>a.Categories).
                     FirstOrDefault(c => c.Name == Category);
@@ -685,18 +687,18 @@ namespace RTF.Framework
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(string.Format("Assembly : {0}", TestAssembly));
-            sb.AppendLine(string.Format("Fixture : {0}", Fixture));
-            sb.AppendLine(string.Format("Category : {0}", Category));
-            sb.AppendLine(string.Format("Excluded Category : {0}", ExcludedCategory));
-            sb.AppendLine(string.Format("Test : {0}", Test));
-            sb.AppendLine(string.Format("Results Path : {0}", Results));
-            sb.AppendLine(string.Format("Timeout : {0}", Timeout));
-            sb.AppendLine(string.Format("Debug : {0}", IsDebug ? "True" : "False"));
-            sb.AppendLine(string.Format("Working Directory : {0}", WorkingDirectory));
-            sb.AppendLine(string.Format("Revit : {0}", RevitPath));
-            sb.AppendLine(string.Format("Addin Path : {0}", AddinPath));
-            sb.AppendLine(string.Format("Assembly Path : {0}", AssemblyPath));
+            sb.AppendLine(String.Format("Assembly : {0}", TestAssembly));
+            sb.AppendLine(String.Format("Fixture : {0}", Fixture));
+            sb.AppendLine(String.Format("Category : {0}", Category));
+            sb.AppendLine(String.Format("Excluded Category : {0}", ExcludedCategory));
+            sb.AppendLine(String.Format("Test : {0}", Test));
+            sb.AppendLine(String.Format("Results Path : {0}", Results));
+            sb.AppendLine(String.Format("Timeout : {0}", Timeout));
+            sb.AppendLine(String.Format("Debug : {0}", IsDebug ? "True" : "False"));
+            sb.AppendLine(String.Format("Working Directory : {0}", WorkingDirectory));
+            sb.AppendLine(String.Format("Revit : {0}", RevitPath));
+            sb.AppendLine(String.Format("Addin Path : {0}", AddinPath));
+            sb.AppendLine(String.Format("Assembly Path : {0}", AssemblyPath));
             return sb.ToString();
         }
 
@@ -962,19 +964,19 @@ namespace RTF.Framework
             {
                 if (!File.Exists(td.ModelPath))
                 {
-                    throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                    throw new Exception(String.Format("Specified model path: {0} does not exist.", td.ModelPath));
                 }
 
                 if (!File.Exists(td.Fixture.Assembly.Path))
                 {
-                    throw new Exception(string.Format("The specified assembly: {0} does not exist.",
+                    throw new Exception(String.Format("The specified assembly: {0} does not exist.",
                         td.Fixture.Assembly.Path));
                 }
 
                 if (!File.Exists(AssemblyPath))
                 {
                     throw new Exception(
-                        string.Format("The specified RTF assembly does not exist: {0} does not exist.",
+                        String.Format("The specified RTF assembly does not exist: {0} does not exist.",
                             td.Fixture.Assembly.Path));
                 }
 
@@ -1211,7 +1213,7 @@ namespace RTF.Framework
         /// <param name="assData"></param>
         private static void MarkExclusions(string excludeCategory, IEnumerable<IAssemblyData> assData)
         {
-            if (string.IsNullOrEmpty(excludeCategory))
+            if (String.IsNullOrEmpty(excludeCategory))
                 return;
 
             var excludeCat = assData.SelectMany(x => x.Categories).Where(c => c.Name == excludeCategory).Cast<IExcludable>();
@@ -1219,6 +1221,88 @@ namespace RTF.Framework
             {
                 cat.ShouldRun = false;
             }
+        }
+
+        #endregion
+
+        #region public static methods
+
+        public static IRunnerSetupData ParseCommandLineArguments(IEnumerable<string> args)
+        {
+            var showHelp = false;
+
+            var setupData = new RunnerSetupData();
+
+            var p = new OptionSet()
+            {
+                {"dir=","The path to the working directory.", v=> setupData.WorkingDirectory = Path.GetFullPath(v)},
+                {"a=|assembly=", "The path to the test assembly.", v => setupData.TestAssembly = Path.GetFullPath(v)},
+                {"r=|results=", "The path to the results file.", v=>setupData.Results = Path.GetFullPath(v)},
+                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => setupData.Fixture = v},
+                {"t:|testName:", "The name of a test to run", v => setupData.Test = v},
+                {"category:", "The name of a test category to run.", v=> setupData.Category = v},
+                {"exclude:", "The name of a test category to exclude.", v=> setupData.ExcludedCategory = v},
+                {"c|concatenate", "Concatenate results with existing results file.", v=> setupData.Concat = v != null},
+                {"revit:", "The path to Revit.", v=> setupData.RevitPath = v},
+                {"copyAddins", "Specify whether to copy the addins from the Revit folder to the current working directory",
+                    v=> setupData.CopyAddins = v != null},
+                {"dry", "Conduct a dry run.", v=> setupData.DryRun = v != null},
+                {"x|clean", "Cleanup journal files after test completion", v=> setupData.CleanUp = v != null},
+                {"continuous", "Run all selected tests in one Revit session.", v=> setupData.Continuous = v != null},
+                {"d|debug", "Run in debug mode.", v=>setupData.IsDebug = v != null},
+                {"h|help", "Show this message and exit.", v=> showHelp = v != null}
+            };
+
+            var notParsed = new List<string>();
+
+            const string helpMessage = "Try 'DynamoTestFrameworkRunner --help' for more information.";
+
+            try
+            {
+                notParsed = p.Parse(args);
+            }
+            catch (OptionException e)
+            {
+                string message = e.Message + "\n" + helpMessage;
+                throw new Exception(message);
+            }
+
+            if (notParsed.Count > 0)
+            {
+                throw new ArgumentException(String.Join(" ", notParsed.ToArray()));
+            }
+
+            if (string.IsNullOrEmpty(setupData.WorkingDirectory))
+            {
+                throw new Exception("You must specify a working directory.");
+            }
+
+            if (string.IsNullOrEmpty(setupData.TestAssembly))
+            {
+                throw new Exception("You must specify a test assembly.");
+            }
+
+            if (string.IsNullOrEmpty(setupData.Results))
+            {
+                throw new Exception("You must specify a results file.");
+            }
+
+            if (showHelp)
+            {
+                ShowHelp(p);
+                throw new Exception();
+            }
+
+            return setupData;
+        }
+
+        public static void ShowHelp(OptionSet p)
+        {
+            Console.WriteLine("Usage: DynamoTestFrameworkRunner [OPTIONS]");
+            Console.WriteLine("Run a test or a fixture of tests from an assembly.");
+            Console.WriteLine();
+            Console.WriteLine("Options:");
+            p.WriteOptionDescriptions(Console.Out);
         }
 
         #endregion
