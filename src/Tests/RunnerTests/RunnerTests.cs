@@ -23,7 +23,7 @@ namespace RTF.Tests
         {
             var dummyTestPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "RunnerTests.dll");
-            var assData = new AssemblyData(dummyTestPath, "RunnerTests", GroupingType.Category);
+            var assData = new AssemblyData(dummyTestPath, "RunnerTests", groupType);
 
             var cat1 = new CategoryData(assData, "Smoke");
             var cat2 = new CategoryData(assData, "Integration");
@@ -210,7 +210,40 @@ namespace RTF.Tests
                 ExcludedCategory = "Failure"
             };
             var runner = new TestRunner(setupData);
-            var assData = runner.Assemblies.First();
+            runner.SetupTests();
+            Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
+        }
+
+        [Test]
+        public void RunsTestIfSpecifiedInParameters()
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+                IsTesting = true,
+                Test = "TestA"
+            };
+            var runner = new TestRunner(setupData);
+            runner.SetupTests();
+            Assert.AreEqual(runner.GetRunnableTests().Count(), 1);
+        }
+
+        [Test]
+        public void RunsFixtureIfSpecifiedInParameters()
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+                IsTesting = true,
+                Fixture = "FixtureA"
+            };
+            var runner = new TestRunner(setupData);
             runner.SetupTests();
             Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
         }
