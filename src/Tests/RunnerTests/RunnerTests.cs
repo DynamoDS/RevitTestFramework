@@ -248,6 +248,31 @@ namespace RTF.Tests
             Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
         }
 
+        [Test]
+        public void RunTwoSelectedCategories()
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+                IsTesting = true,
+            };
+            var runner = new TestRunner(setupData);
+            var assData = runner.Assemblies.First();
+            assData.ShouldRun = false;
+
+            var catData1 = runner.Assemblies.SelectMany(a => a.Categories).First(c => c.Name == "Smoke");
+            ((IExcludable)catData1).ShouldRun = true;
+
+            var catData2 = runner.Assemblies.SelectMany(a => a.Categories).First(c => c.Name == "Integration");
+            ((IExcludable)catData2).ShouldRun = true;
+
+            runner.SetupTests();
+            Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
+        }
+
         #region private helper methods
 
         internal static Mock<AssemblyData> MockAssembly(string excludeCategory = null)
