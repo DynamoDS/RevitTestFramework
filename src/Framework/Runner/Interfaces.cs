@@ -29,9 +29,10 @@ namespace RTF.Framework
     {
         string Path { get; set; }
         string Name { get; set; }
-        ObservableCollection<ITestGroup> SortingGroup { get; set; }
+        ObservableCollection<ITestGroup> SortingGroup { get; }
         ObservableCollection<ITestGroup> Fixtures { get; set; }
         ObservableCollection<ITestGroup> Categories { get; set; } 
+        GroupingType GroupingType { get; set; }
     }
 
     public interface IFixtureData:ITestGroup,IExcludable
