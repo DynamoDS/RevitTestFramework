@@ -36,41 +36,7 @@ namespace RTF.Applications
                 return;
             }
 
-            // Run by Fixture
-            if (!string.IsNullOrEmpty(runner.Fixture))
-            {
-                var fixData = assData.Fixtures.FirstOrDefault(f => f.Name == runner.Fixture);
-                if (fixData != null)
-                {
-                    ((IExcludable) fixData).ShouldRun = true;
-                }
-            }
-            // Run by test.
-            else if (!string.IsNullOrEmpty(runner.Test))
-            {
-                var testData = runner.GetAllTests()
-                        .FirstOrDefault(t => t.Name == runner.Test);
-                if (testData != null)
-                {
-                    testData.ShouldRun = true;
-                }
-            }
-            // Run by category
-            else if (!string.IsNullOrEmpty(runner.Category))
-            {
-                var catData = assData.Categories.
-                    FirstOrDefault(c => c.Name == runner.Category);
-                if (catData != null)
-                {
-                    ((IExcludable) catData).ShouldRun = true;
-                }
-            }
-            // If the no fixture, test, or category is specified, run the whole assembly.
-            else
-            {
-                // Only support one assembly for right now.
-                assData.ShouldRun = true;
-            }
+            
 
             runner.SetupTests();
             runner.RunAllTests();
