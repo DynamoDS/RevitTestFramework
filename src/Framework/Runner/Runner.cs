@@ -286,19 +286,20 @@ namespace RTF.Framework
             set
             {
                 groupingType = value;
-                if (value == GroupingType.Category)
+                switch (value)
                 {
-                    foreach (var asm in Assemblies)
-                    {
-                        asm.SortingGroup = asm.Categories;
-                    }
-                }
-                else if (value == GroupingType.Fixture)
-                {
-                    foreach (var asm in Assemblies)
-                    {
-                        asm.SortingGroup = asm.Fixtures;
-                    }
+                    case GroupingType.Category:
+                        foreach (var asm in Assemblies)
+                        {
+                            asm.SortingGroup = asm.Categories;
+                        }
+                        break;
+                    case GroupingType.Fixture:
+                        foreach (var asm in Assemblies)
+                        {
+                            asm.SortingGroup = asm.Fixtures;
+                        }
+                        break;
                 }
             }
         }
@@ -391,10 +392,7 @@ namespace RTF.Framework
                 throw new Exception("Can not find a proper application to start!");
             }
 
-            Assemblies.Clear();
-            var assData = ReadAssembly(setupData.TestAssembly, setupData.WorkingDirectory, GroupingType.Fixture, false);
-            Assemblies.AddRange(assData);
-            MarkExclusions(ExcludedCategory, assData);
+            Refresh();
 
             if (File.Exists(Results) && !Concat)
             {
@@ -569,12 +567,19 @@ namespace RTF.Framework
         public void Refresh()
         {
             Assemblies.Clear();
-            if (!File.Exists(TestAssembly)) return;
-
-            var assData = ReadAssembly(TestAssembly, _workingDirectory, groupingType, IsTesting);
+            var assData = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, false);
             Assemblies.AddRange(assData);
 
+            // Mark all assemblies for running. This will cascade
+            // down to categories and fixtures, depending on 
+            // the grouping type set.
+            foreach (var data in assData)
+            {
+                data.ShouldRun = true;
+            }
+
             MarkExclusions(ExcludedCategory, assData);
+
         }
 
         public void Cleanup()
@@ -1182,10 +1187,10 @@ namespace RTF.Framework
     [Serializable]
     public class AssemblyData : NotificationObject, IAssemblyData
     {
-        private bool _shouldRun = true;
+        private bool _shouldRun = false;
+        private ObservableCollection<ITestGroup> _sortingGroup;
         public virtual string Path { get; set; }
         public virtual string Name { get; set; }
-        public ObservableCollection<ITestGroup> SortingGroup { get; set; }
         public ObservableCollection<ITestGroup> Fixtures { get; set; }
         public ObservableCollection<ITestGroup> Categories { get; set; }
         public bool IsNodeExpanded { get; set; }
@@ -1199,6 +1204,15 @@ namespace RTF.Framework
             }
         }
 
+        public ObservableCollection<ITestGroup> SortingGroup
+        {
+            get { return _sortingGroup; }
+            set
+            {
+                _sortingGroup = value;
+            }
+        }
+
         public bool ShouldRun
         {
             get { return _shouldRun; }
@@ -1206,21 +1220,19 @@ namespace RTF.Framework
             {
                 _shouldRun = value;
 
-                foreach (var fix in Fixtures)
+                // Set nothing to run.
+                foreach (var test in Fixtures.SelectMany(f => f.Tests))
                 {
-                    var fixData = fix as FixtureData;
-                    if (fixData != null)
-                    {
-                        fixData.ShouldRun = _shouldRun; 
-                    }
+                    test.ShouldRun = false;
                 }
 
-                foreach (var cat in Categories)
+                // Set all the categories or fixtures to run
+                foreach (var item in SortingGroup)
                 {
-                    var catData = cat as CategoryData;
-                    if (catData != null)
+                    var group = item as IExcludable;
+                    if (group != null)
                     {
-                        catData.ShouldRun = _shouldRun;
+                        group.ShouldRun = _shouldRun; 
                     }
                 }
 
@@ -1255,7 +1267,7 @@ namespace RTF.Framework
     [Serializable]
     public class FixtureData : NotificationObject, IFixtureData
     {
-        private bool _shouldRun = true;
+        private bool _shouldRun = false;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
@@ -1367,7 +1379,7 @@ namespace RTF.Framework
     {
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
-        private bool _shouldRun = true;
+        private bool _shouldRun = false;
         public virtual string Name { get; set; }
         public bool RunDynamo { get; set; }
         public virtual string ModelPath { get; set; }
@@ -1458,7 +1470,7 @@ namespace RTF.Framework
     [Serializable]
     public class CategoryData : NotificationObject, ICategoryData
     {
-        private bool _shouldRun = true;
+        private bool _shouldRun = false;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public IAssemblyData Assembly { get; set; }

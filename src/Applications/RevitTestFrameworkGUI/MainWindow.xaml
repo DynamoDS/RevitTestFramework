@@ -205,7 +205,11 @@
                 </CheckBox.ToolTip>
             </CheckBox>
             <TextBlock Text="Sort By:" Margin="20,0,0,0" VerticalAlignment="Center"></TextBlock>
-            <ComboBox Margin="5,0,0,0" VerticalAlignment="Center" ItemsSource="{Binding Source={StaticResource dataFromEnum}}" SelectedItem="{Binding Path=SortBy}" />
+            <ComboBox Margin="5,0,0,0" 
+                      VerticalAlignment="Center" 
+                      ItemsSource="{Binding Source={StaticResource dataFromEnum}}" 
+                      SelectedItem="{Binding Path=SortBy}" 
+                      SelectionChanged="ToggleButton_OnChecked"/>
         </StackPanel>
         
         <TreeView Margin="5" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 

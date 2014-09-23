@@ -260,6 +260,7 @@ namespace RTF.Applications
                 runner.GroupingType = value;
                 runner.Refresh();
                 RaisePropertyChanged("SortBy");
+                RaisePropertyChanged("SelectedTestSummary");
             }
         }
 
