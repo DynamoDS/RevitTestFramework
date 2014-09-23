@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Controls;
@@ -79,6 +80,8 @@ namespace RTF.Applications
         private object isRunningLock = new object();
         private IContext context;
         private FileSystemWatcher watcher;
+        private string selectedTestSummary;
+
         #endregion
 
         #region public properties
@@ -259,6 +262,17 @@ namespace RTF.Applications
                 RaisePropertyChanged("SortBy");
             }
         }
+
+        public string SelectedTestSummary
+        {
+            get
+            {
+                var allTests = runner.GetAllTests();
+                var selectedTests = runner.GetRunnableTests();
+
+                return string.Format("{0} tests selected of {1}", selectedTests.Count(), allTests.Count());
+            }
+        }
         
         #endregion
 
@@ -271,6 +285,7 @@ namespace RTF.Applications
         public DelegateCommand SaveSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
+        public DelegateCommand UpdateSummaryCommand { get; set; }
 
         #endregion
 
@@ -315,13 +330,13 @@ namespace RTF.Applications
             SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
+            UpdateSummaryCommand = new DelegateCommand(UpdateSummary, CanUpdateSummary);
 
             runner.Products.CollectionChanged += Products_CollectionChanged;
 
             runner.TestComplete += runner_TestComplete;
             runner.TestFailed += runner_TestFailed;
             runner.TestTimedOut += runner_TestTimedOut;
-
 
             watcher = new FileSystemWatcher
             {
@@ -385,7 +400,7 @@ namespace RTF.Applications
 
         private bool CanRun(object parameter)
         {
-            return SelectedItem != null;
+            return runner.GetRunnableTests().Any();
         }
 
         private void Run(object parameter)
@@ -513,6 +528,16 @@ namespace RTF.Applications
             }
 
             IsRunning = false;
+        }
+
+        private void UpdateSummary()
+        {
+            RaisePropertyChanged("SelectedTestSummary");
+        }
+
+        private bool CanUpdateSummary()
+        {
+            return true;
         }
 
         #endregion

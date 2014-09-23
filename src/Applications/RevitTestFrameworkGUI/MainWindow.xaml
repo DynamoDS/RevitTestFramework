@@ -31,7 +31,9 @@
                                   ItemsSource="{Binding ResultData}"
                                   ItemTemplate="{StaticResource ResultTemplate}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
+                          Checked="ToggleButton_OnChecked"
+                          Unchecked="ToggleButton_OnChecked"></CheckBox>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Name}" 
                                HorizontalAlignment="Left" 
@@ -52,7 +54,9 @@
                                   DataType="{x:Type runners:FixtureData}"
                                   ItemTemplate="{StaticResource TestTemplate}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
+                          Checked="ToggleButton_OnChecked"
+                          Unchecked="ToggleButton_OnChecked"></CheckBox>
                 <TextBlock Text="{Binding Name}" 
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}"
@@ -70,7 +74,9 @@
                                   DataType="{x:Type runners:CategoryData}"
                                   ItemTemplate="{StaticResource TestTemplate}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
+                          Checked="ToggleButton_OnChecked"
+                          Unchecked="ToggleButton_OnChecked"></CheckBox>
                 <TextBlock Text="{Binding Name}" 
                        VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
@@ -86,7 +92,9 @@
                                   DataType="{x:Type runners:AssemblyData}"
                                   ItemTemplate="{StaticResource CategoryTemplate}">
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}"></CheckBox>
+                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
+                          Checked="ToggleButton_OnChecked" 
+                          Unchecked="ToggleButton_OnChecked"></CheckBox>
                 <TextBlock Text="{Binding Name}" VerticalAlignment="Center" 
                        Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
                     <TextBlock.ToolTip>
@@ -113,6 +121,7 @@
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="40"></RowDefinition>
                 <RowDefinition Height="40"></RowDefinition>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -215,13 +224,20 @@
             </TreeView.ItemContainerStyle>
         </TreeView>
         
-        <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
+        <TextBlock Text="{Binding SelectedTestSummary}" 
+                   FontSize="30" 
+                   Grid.Row="6" 
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left"
+                   Margin="5"/>
+        
+        <Grid Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
                 <ColumnDefinition Width="*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" Grid.Row="0" Margin="5"
-                Content="{Binding RunText}" 
+                Content="Run Selected Tests" 
                 Command="{Binding RunCommand}" 
                 CommandParameter="{Binding SelectedItem}"
                 IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"/>
