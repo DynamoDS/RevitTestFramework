@@ -18,7 +18,7 @@ namespace RTF.Applications
             {
                 var setupData = ParseArguments(args);
 
-                runner = Runner.Initialize(setupData);
+                runner = new Runner(setupData);
 
                 Run();
             }
@@ -30,40 +30,15 @@ namespace RTF.Applications
 
         private static void Run()
         {
-            object data = null;
-
-            // If the no fixture, test, or category is specified, run the whole assembly.
-            if (string.IsNullOrEmpty(runner.Fixture) && 
-                string.IsNullOrEmpty(runner.Test) && 
-                string.IsNullOrEmpty(runner.Category))
+            var assData = runner.Assemblies.FirstOrDefault();
+            if (assData == null)
             {
-                // Only support one assembly for right now.
-                data = runner.Assemblies.FirstOrDefault();
+                return;
             }
 
-            // Run by Fixture
-            if (!string.IsNullOrEmpty(runner.Fixture))
-            {
-                data = runner.Assemblies.SelectMany(x => x.Fixtures).FirstOrDefault(f => f.Name == runner.Fixture);
-            }
-            // Run by test.
-            else if (!string.IsNullOrEmpty(runner.Test))
-            {
-                data = runner.Assemblies.SelectMany(a => a.Fixtures.SelectMany(f => f.Tests))
-                        .FirstOrDefault(t => t.Name == runner.Test);
-            }
-            else if (!string.IsNullOrEmpty(runner.Category))
-            {
-                data = runner.Assemblies.SelectMany(a => a.Categories).
-                    FirstOrDefault(c => string.Compare(c.Name, runner.Category, true) == 0) as ICategoryData;
-            }
+            
 
-            if (data == null)
-            {
-                throw new Exception("Running mode could not be determined from the inputs provided.");
-            }
-
-            runner.SetupTests(data);
+            runner.SetupTests();
             runner.RunAllTests();
         }
 

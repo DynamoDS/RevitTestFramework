@@ -10,9 +10,9 @@ namespace RTF.Framework
     /// </summary>
     public class RunnerSetupData : IRunnerSetupData
     {
-        public string WorkingDirectory { get; set; }
+        public virtual string WorkingDirectory { get; set; }
         public string AssemblyPath { get; set; }
-        public string TestAssembly { get; set; }
+        public virtual string TestAssembly { get; set; }
         public string Results { get; set; }
         public string Fixture { get; set; }
         public string Category { get; set; }
@@ -24,10 +24,11 @@ namespace RTF.Framework
         public bool Continuous { get; set; }
         public bool IsDebug { get; set; }
         public GroupingType GroupingType { get; set; }
-        public IList<RevitProduct> Products { get; set; }
+        public virtual IList<RevitProduct> Products { get; set; }
         public int Timeout { get; set; }
         public string ExcludedCategory { get; set; }
         public bool CopyAddins { get; set; }
+        public bool IsTesting { get; set; }
 
         public RunnerSetupData()
         {

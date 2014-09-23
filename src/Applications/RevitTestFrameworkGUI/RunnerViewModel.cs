@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using Autodesk.RevitAddIns;
@@ -77,6 +80,8 @@ namespace RTF.Applications
         private object isRunningLock = new object();
         private IContext context;
         private FileSystemWatcher watcher;
+        private string selectedTestSummary;
+
         #endregion
 
         #region public properties
@@ -255,6 +260,18 @@ namespace RTF.Applications
                 runner.GroupingType = value;
                 runner.Refresh();
                 RaisePropertyChanged("SortBy");
+                RaisePropertyChanged("SelectedTestSummary");
+            }
+        }
+
+        public string SelectedTestSummary
+        {
+            get
+            {
+                var allTests = runner.GetAllTests();
+                var selectedTests = runner.GetRunnableTests();
+
+                return string.Format("{0} tests selected of {1}", selectedTests.Count(), allTests.Count());
             }
         }
         
@@ -269,6 +286,7 @@ namespace RTF.Applications
         public DelegateCommand SaveSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
+        public DelegateCommand UpdateSummaryCommand { get; set; }
 
         #endregion
 
@@ -295,7 +313,7 @@ namespace RTF.Applications
                 IsDebug = Settings.Default.isDebug,
             };
 
-            runner = Runner.Initialize(setupData);
+            runner = new Runner(setupData);
 
             if (Settings.Default.selectedProduct > runner.Products.Count - 1)
             {
@@ -313,13 +331,13 @@ namespace RTF.Applications
             SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
+            UpdateSummaryCommand = new DelegateCommand(UpdateSummary, CanUpdateSummary);
 
             runner.Products.CollectionChanged += Products_CollectionChanged;
 
             runner.TestComplete += runner_TestComplete;
             runner.TestFailed += runner_TestFailed;
             runner.TestTimedOut += runner_TestTimedOut;
-
 
             watcher = new FileSystemWatcher
             {
@@ -349,7 +367,7 @@ namespace RTF.Applications
             context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
         }
 
-        void runner_TestComplete(System.Collections.Generic.IList<ITestData> data, string resultsPath)
+        void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
         {
             context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
         }
@@ -383,7 +401,7 @@ namespace RTF.Applications
 
         private bool CanRun(object parameter)
         {
-            return SelectedItem != null;
+            return runner.GetRunnableTests().Any();
         }
 
         private void Run(object parameter)
@@ -409,7 +427,7 @@ namespace RTF.Applications
         {
             IsRunning = true;
 
-            runner.SetupTests(e.Argument);
+            runner.SetupTests();
             runner.RunAllTests();
 
             IsRunning = false;
@@ -511,6 +529,16 @@ namespace RTF.Applications
             }
 
             IsRunning = false;
+        }
+
+        private void UpdateSummary()
+        {
+            RaisePropertyChanged("SelectedTestSummary");
+        }
+
+        private bool CanUpdateSummary()
+        {
+            return true;
         }
 
         #endregion

@@ -31,5 +31,10 @@ namespace RTF.Applications
         {
             vm.SelectedItem = e.NewValue;
         }
+
+        private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
+        {
+            vm.UpdateSummaryCommand.Execute();
+        }
     }
 }

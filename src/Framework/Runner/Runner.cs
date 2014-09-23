@@ -11,11 +11,12 @@ using System.Text;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
+using Microsoft.Practices.Prism.Logging;
 using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
 {
-    public delegate void TestCompleteHandler(IList<ITestData> data, string resultsPath);
+    public delegate void TestCompleteHandler(IEnumerable<ITestData> data, string resultsPath);
     public delegate void TestTimedOutHandler(ITestData data);
     public delegate void TestFailedHandler(ITestData data, string message, string stackTrace);
 
@@ -44,7 +45,6 @@ namespace RTF.Framework
         private bool _gui = true;
         private string _revitPath;
         private bool _copyAddins = true;
-        private Dictionary<ITestData, string> testDictionary = new Dictionary<ITestData, string>();
         private int _timeout = 120000;
         private bool _concat;
         private string _addinPath;
@@ -97,11 +97,6 @@ namespace RTF.Framework
         }
 
         /// <summary>
-        /// A counter for the number of runs processed.
-        /// </summary>
-        public int RunCount { get; set; }
-
-        /// <summary>
         /// The path of the selected assembly for testing.
         /// </summary>
         public string AssemblyPath { get; set; }
@@ -133,11 +128,6 @@ namespace RTF.Framework
             }
         }
 
-        public Dictionary<ITestData, string> TestDictionary
-        {
-            get { return testDictionary; }
-        }
-
         /// <summary>
         /// The selected Revit application against which
         /// to test.
@@ -158,7 +148,7 @@ namespace RTF.Framework
         public string Test { get; set; }
 
         /// <summary>
-        /// The name of the assembly to run.
+        /// The assembly containing the tests.
         /// </summary>
         public string TestAssembly { get; set; }
 
@@ -296,87 +286,31 @@ namespace RTF.Framework
             set
             {
                 groupingType = value;
-                if (value == GroupingType.Category)
+                switch (value)
                 {
-                    foreach (var asm in Assemblies)
-                    {
-                        asm.SortingGroup = asm.Categories;
-                    }
-                }
-                else if (value == GroupingType.Fixture)
-                {
-                    foreach (var asm in Assemblies)
-                    {
-                        asm.SortingGroup = asm.Fixtures;
-                    }
+                    case GroupingType.Category:
+                        foreach (var asm in Assemblies)
+                        {
+                            asm.GroupingType = GroupingType.Category;
+                        }
+                        break;
+                    case GroupingType.Fixture:
+                        foreach (var asm in Assemblies)
+                        {
+                            asm.GroupingType = GroupingType.Fixture;
+                        }
+                        break;
                 }
             }
         }
+        
+        public bool IsTesting { get; set; }
 
         #endregion
 
         #region private constructors
 
-        private Runner(IRunnerSetupData setupData)
-        {
-            RunCount = 0;
-            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-
-            WorkingDirectory = setupData.WorkingDirectory;
-            AssemblyPath = setupData.AssemblyPath;
-            TestAssembly = setupData.TestAssembly;
-            Results = setupData.Results;
-            Fixture = setupData.Fixture;
-            Category = setupData.Category;
-            Test = setupData.Test;
-            Concat = setupData.Concat;
-            DryRun = setupData.DryRun;
-            RevitPath = setupData.RevitPath;
-            CleanUp = setupData.CleanUp;
-            Continuous = setupData.Continuous;
-            IsDebug = setupData.IsDebug;
-            GroupingType = setupData.GroupingType;
-            Timeout = setupData.Timeout;
-            Products.Clear();
-            Products.AddRange(setupData.Products);
-
-            Products.Clear();
-            Products.AddRange(setupData.Products);
-            int count = Products.Count;
-            SelectedProduct = -1;
-            for (int i = 0; i < count; ++i)
-            {
-                var location = Path.GetDirectoryName(RevitPath);
-                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
-                if (string.Compare(locationFromProduct, location, true) == 0)
-                    SelectedProduct = i;
-            }
-
-            if (SelectedProduct == -1)
-            {
-                throw new Exception("Can not find a proper application to start!");
-            }
-
-            var assemblyDatas = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType);
-            if (assemblyDatas == null)
-            {
-                return;
-            }
-
-            Assemblies.Clear();
-            Assemblies.AddRange(assemblyDatas);
-
-            if (File.Exists(Results) && !Concat)
-            {
-                File.Delete(Results);
-            }
-        }
-
-        #endregion
-
-        #region public static constructors
-
-        public static Runner Initialize(IRunnerSetupData setupData)
+        public Runner(IRunnerSetupData setupData)
         {
             if (!String.IsNullOrEmpty(setupData.TestAssembly) && !File.Exists(setupData.TestAssembly))
             {
@@ -419,8 +353,56 @@ namespace RTF.Framework
                 setupData.RevitPath = Path.Combine(setupData.Products.First().InstallLocation, "revit.exe");
             }
 
-            return new Runner(setupData);
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
+            WorkingDirectory = setupData.WorkingDirectory;
+            AssemblyPath = setupData.AssemblyPath;
+            TestAssembly = setupData.TestAssembly;
+            Results = setupData.Results;
+            Fixture = setupData.Fixture;
+            Category = setupData.Category;
+            Test = setupData.Test;
+            Concat = setupData.Concat;
+            DryRun = setupData.DryRun;
+            RevitPath = setupData.RevitPath;
+            CleanUp = setupData.CleanUp;
+            Continuous = setupData.Continuous;
+            IsDebug = setupData.IsDebug;
+            GroupingType = setupData.GroupingType;
+            Timeout = setupData.Timeout;
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+            IsTesting = setupData.IsTesting;
+            ExcludedCategory = setupData.ExcludedCategory;
+
+            Products.Clear();
+            Products.AddRange(setupData.Products);
+            int count = Products.Count;
+            SelectedProduct = -1;
+            for (int i = 0; i < count; ++i)
+            {
+                var location = Path.GetDirectoryName(RevitPath);
+                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
+                if (string.Compare(locationFromProduct, location, true) == 0)
+                    SelectedProduct = i;
+            }
+
+            if (SelectedProduct == -1)
+            {
+                throw new Exception("Can not find a proper application to start!");
+            }
+
+            Refresh();
+
+            if (File.Exists(Results) && !Concat)
+            {
+                File.Delete(Results);
+            }
         }
+
+        #endregion
+
+        #region public static constructors
 
         Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
         {
@@ -493,33 +475,19 @@ namespace RTF.Framework
 
         #region public methods
 
-        public void SetupTests(object parameter)
+        /// <summary>
+        /// Setup all runnable tests.
+        /// </summary>
+        /// <param name="parameter"></param>
+        public void SetupTests()
         {
             journalInitialized = false;
             journalFinished = false;
 
-            if (parameter is IAssemblyData)
+            var runnable = GetRunnableTests();
+            foreach (var test in runnable)
             {
-                var ad = parameter as IAssemblyData;
-                RunCount = ad.Fixtures.SelectMany(f => f.Tests).Count();
-                SetupAssemblyTests(ad, Continuous);
-            }
-            else if (parameter is IFixtureData)
-            {
-                var fd = parameter as IFixtureData;
-                RunCount = fd.Tests.Count;
-                SetupFixtureTests(fd, Continuous);
-            }
-            else if (parameter is ITestData)
-            {
-                RunCount = 1;
-                SetupIndividualTest(parameter as ITestData, Continuous);
-            }
-            else if (parameter is ICategoryData)
-            {
-                var catData = parameter as ICategoryData;
-                RunCount = catData.Tests.Count;
-                SetupCategoryTests(catData, Continuous);
+                SetupIndividualTest(test, Continuous);
             }
 
             if (continuous && !journalFinished)
@@ -561,8 +529,6 @@ namespace RTF.Framework
                 sendDmps.ToList().ForEach(sd => sd.Kill());
             }
 
-            RunCount = continuous ? 1 : testDictionary.Count;
-
             if (continuous)
             {
                 // If running in continous mode, there will only
@@ -571,7 +537,8 @@ namespace RTF.Framework
             }
             else
             {
-                foreach (var kvp in testDictionary)
+                var runnable = GetRunnableTests();
+                foreach (var test in runnable)
                 {
                     if (cancelRequested)
                     {
@@ -579,19 +546,15 @@ namespace RTF.Framework
                         break;
                     }
 
-                    if (kvp.Value == null) continue;
-
-                    var td = kvp.Key;
                     try
                     {
-                        ProcessTest(kvp.Key, kvp.Value);
-                        RunCount--;
+                        ProcessTest(test, test.JournalPath);
                     }
                     catch (Exception ex)
                     {
-                        if (td == null) continue;
-                        td.TestStatus = TestStatus.Failure;
-                        OnTestFailed(td, ex.Message, ex.StackTrace);
+                        if (test == null) continue;
+                        test.TestStatus = TestStatus.Failure;
+                        OnTestFailed(test, ex.Message, ex.StackTrace);
                     }
                 }
             }
@@ -604,12 +567,56 @@ namespace RTF.Framework
         public void Refresh()
         {
             Assemblies.Clear();
-            if (File.Exists(TestAssembly))
+            var assData = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, false);
+            Assemblies.AddRange(assData);
+
+            // Clear running on all assemblies.
+            foreach (var data in assData)
             {
-                Assemblies.AddRange(ReadAssembly(TestAssembly, _workingDirectory, groupingType));
+                data.ShouldRun = false;
             }
-           
-            Console.WriteLine(ToString());
+
+            // Run by Fixture
+            if (!string.IsNullOrEmpty(Fixture))
+            {
+                var fixData = assData.SelectMany(a=>a.Fixtures).FirstOrDefault(f => f.Name == Fixture);
+                if (fixData != null)
+                {
+                    ((IExcludable)fixData).ShouldRun = true;
+                }
+            }
+            // Run by test.
+            else if (!string.IsNullOrEmpty(Test))
+            {
+                var testData = GetAllTests()
+                        .FirstOrDefault(t => t.Name == Test);
+                if (testData != null)
+                {
+                    testData.ShouldRun = true;
+                }
+            }
+            // Run by category
+            else if (!string.IsNullOrEmpty(Category))
+            {
+                var catData = assData.SelectMany(a=>a.Categories).
+                    FirstOrDefault(c => c.Name == Category);
+                if (catData != null)
+                {
+                    ((IExcludable)catData).ShouldRun = true;
+                }
+            }
+            // If the no fixture, test, or category is specified,
+            // run everything in all assemblies
+            else
+            {
+                foreach (var data in assData)
+                {
+                    data.ShouldRun = true;
+                }
+            }
+
+            MarkExclusions(ExcludedCategory, assData);
+
         }
 
         public void Cleanup()
@@ -619,16 +626,19 @@ namespace RTF.Framework
 
             try
             {
-                foreach (var kvp in testDictionary)
+                var runnable = GetRunnableTests();
+                foreach (var test in runnable)
                 {
-                    var path = kvp.Value;
-                    if (File.Exists(path))
+                    if (File.Exists(test.JournalPath))
                     {
-                        File.Delete(path);
+                        File.Delete(test.JournalPath);
                     }
                 }
 
-                testDictionary.Clear();
+                foreach (var test in GetAllTests())
+                {
+                    test.JournalPath = null;
+                }
 
                 var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
                 foreach (var journal in journals)
@@ -652,6 +662,24 @@ namespace RTF.Framework
             {
                 Console.WriteLine("One or more journal files could not be deleted.");
             }
+        }
+
+        public IEnumerable<ITestData> GetAllTests()
+        {
+            var tests = Assemblies.
+                SelectMany(a => a.Fixtures).
+                SelectMany(f => f.Tests);
+
+            return tests;
+        }
+
+        public IEnumerable<ITestData> GetRunnableTests()
+        {
+            var runnable = Assemblies.
+                SelectMany(a => a.Fixtures.SelectMany(f=>f.Tests)).
+                Where(t => t.ShouldRun);
+
+            return runnable;
         }
 
         public override string ToString()
@@ -759,7 +787,7 @@ namespace RTF.Framework
 
             if (!timedOut)
             {
-                OnTestComplete(testDictionary.Keys.ToList());
+                OnTestComplete(GetRunnableTests());
             }
         }
 
@@ -779,7 +807,7 @@ namespace RTF.Framework
             }
         }
 
-        private void OnTestComplete(IList<ITestData> data)
+        private void OnTestComplete(IEnumerable<ITestData> data)
         {
             if (TestComplete != null)
             {
@@ -877,8 +905,12 @@ namespace RTF.Framework
         /// </summary>
         /// <param name="ad"></param>
         /// <param name="continuous"></param>
-        private void SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
+        private void 
+            SetupAssemblyTests(IAssemblyData ad, bool continuous = false)
         {
+            if (ad.ShouldRun == false)
+                return;
+
             foreach (var fix in ad.Fixtures)
             {
                 if (cancelRequested)
@@ -898,6 +930,9 @@ namespace RTF.Framework
         /// <param name="continuous"></param>
         private void SetupFixtureTests(IFixtureData fd, bool continuous = false)
         {
+            if (fd.ShouldRun == false)
+                return;
+
             SetupIndividualTests(fd.Tests.ToList(), continuous);
         }
 
@@ -908,6 +943,9 @@ namespace RTF.Framework
         /// <param name="continuous">Run continously</param>
         private void SetupCategoryTests(ICategoryData cd, bool continuous = false)
         {
+            if (cd.ShouldRun == false)
+                return;
+
             SetupIndividualTests(cd.Tests, continuous);
         }
 
@@ -918,13 +956,11 @@ namespace RTF.Framework
         /// <param name="continuous"></param>
         private void SetupIndividualTest(ITestData td, bool continuous = false)
         {
+            if (td.ShouldRun == false)
+                return;
+
             try
             {
-                //exclude the specified category
-                if (null != td.Category &&
-                    String.Compare(td.Category.Name, ExcludedCategory, StringComparison.OrdinalIgnoreCase) == 0)
-                    return;
-
                 if (!File.Exists(td.ModelPath))
                 {
                     throw new Exception(string.Format("Specified model path: {0} does not exist.", td.ModelPath));
@@ -951,7 +987,7 @@ namespace RTF.Framework
                 {
                     journalPath = batchJournalPath;
                 }
-                testDictionary.Add(td, journalPath);
+                td.JournalPath = journalPath;
 
                 if (continuous)
                 {
@@ -968,17 +1004,6 @@ namespace RTF.Framework
             {
                 if (td == null) return;
                 td.TestStatus = TestStatus.Failure;
-
-                // Write a null journal path to the dictionary
-                // for failed tests.
-                if (testDictionary.ContainsKey(td))
-                {
-                    testDictionary[td] = null;
-                }
-                else
-                {
-                    testDictionary.Add(td, null);
-                }
             }
         }
 
@@ -1145,18 +1170,30 @@ namespace RTF.Framework
 
         }
 
-        public static IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType)
+        public virtual IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType, bool isTesting)
         {
             IList<IAssemblyData> data = new List<IAssemblyData>();
 
             try
             {
-                // Create a temporary application domain to load the assembly.
-                var tempDomain = AppDomain.CreateDomain("RTF_Domain");
-                var loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false,0,null,new object[]{assemblyPath},CultureInfo.InvariantCulture,null );
-                var assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
-                data.Add(assData);
-                AppDomain.Unload(tempDomain);
+                AssemblyLoader loader;
+                AssemblyData assData;
+
+                if (!isTesting)
+                {
+                    // Create a temporary application domain to load the assembly.
+                    var tempDomain = AppDomain.CreateDomain("RTF_Domain");
+                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath }, CultureInfo.InvariantCulture, null);
+                    assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
+                    data.Add(assData);
+                    AppDomain.Unload(tempDomain);
+                }
+                else
+                {
+                    loader = new AssemblyLoader(assemblyPath);
+                    assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
+                    data.Add(assData);
+                }
             }
             catch (Exception e)
             {
@@ -1168,18 +1205,53 @@ namespace RTF.Framework
             return data;
         }
 
+        /// <summary>
+        /// Flag tests to be excluded.
+        /// </summary>
+        /// <param name="excludeCategory"></param>
+        /// <param name="assData"></param>
+        private static void MarkExclusions(string excludeCategory, IEnumerable<IAssemblyData> assData)
+        {
+            if (string.IsNullOrEmpty(excludeCategory))
+                return;
+
+            var excludeCat = assData.SelectMany(x => x.Categories).Where(c => c.Name == excludeCategory).Cast<IExcludable>();
+            foreach (var cat in excludeCat)
+            {
+                cat.ShouldRun = false;
+            }
+        }
+
         #endregion
     }
 
     [Serializable]
-    public class AssemblyData : IAssemblyData
+    public class AssemblyData : NotificationObject, IAssemblyData
     {
-        public string Path { get; set; }
-        public string Name { get; set; }
-        public ObservableCollection<IGroupable> SortingGroup { get; set; }
-        public ObservableCollection<IGroupable> Fixtures { get; set; }
-        public ObservableCollection<IGroupable> Categories { get; set; }
+        private bool _shouldRun = true;
+        private ObservableCollection<ITestGroup> _sortingGroup;
+        public virtual string Path { get; set; }
+        public virtual string Name { get; set; }
+        public ObservableCollection<ITestGroup> Fixtures { get; set; }
+        public ObservableCollection<ITestGroup> Categories { get; set; }
         public bool IsNodeExpanded { get; set; }
+        public GroupingType GroupingType { get; set; }
+
+        public ObservableCollection<ITestGroup> SortingGroup
+        {
+            get
+            {
+                switch (GroupingType)
+                {
+                    case GroupingType.Category:
+                        return Categories;
+                    case GroupingType.Fixture:
+                        return Fixtures;
+                    default:
+                        return null;
+                }
+            }
+        }
 
         public string Summary
         {
@@ -1190,22 +1262,45 @@ namespace RTF.Framework
             }
         }
 
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+
+                // Set nothing to run.
+                foreach (var test in Fixtures.SelectMany(f => f.Tests))
+                {
+                    test.ShouldRun = false;
+                }
+
+                // Set all the categories or fixtures to run
+                foreach (var item in SortingGroup)
+                {
+                    var group = item as IExcludable;
+                    if (group != null)
+                    {
+                        group.ShouldRun = _shouldRun; 
+                    }
+                }
+
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
+        public AssemblyData()
+        {
+            Categories = new ObservableCollection<ITestGroup>();
+            Fixtures = new ObservableCollection<ITestGroup>();
+        }
+
         public AssemblyData(string path, string name, GroupingType groupType)
         {
+            Categories = new ObservableCollection<ITestGroup>();
+            Fixtures = new ObservableCollection<ITestGroup>();
             IsNodeExpanded = true;
-
-            Fixtures = new ObservableCollection<IGroupable>();
-            Categories = new ObservableCollection<IGroupable>();
-
-            switch (groupType)
-            {
-                case GroupingType.Category:
-                    SortingGroup = Categories;
-                    break;
-                case GroupingType.Fixture:
-                    SortingGroup = Fixtures;
-                    break;
-            }
+            GroupingType = groupType;
 
             Path = path;
             Name = name;
@@ -1215,11 +1310,13 @@ namespace RTF.Framework
     [Serializable]
     public class FixtureData : NotificationObject, IFixtureData
     {
-        public string Name { get; set; }
+        private bool _shouldRun = true;
+        public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
         public bool IsNodeExpanded { get; set; }
+        
         public string Summary
         {
             get
@@ -1238,6 +1335,24 @@ namespace RTF.Framework
                 return string.Format("[Total: {0}, Success: {1}, Failure: {2}, Other: {3}]", Tests.Count, successCount, failCount, otherCount);
             }
         }
+
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+
+                foreach (var test in Tests)
+                {
+                    test.ShouldRun = _shouldRun;
+                }
+
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
+        public FixtureData(){}
 
         public FixtureData(IAssemblyData assembly, string name)
         {
@@ -1307,9 +1422,10 @@ namespace RTF.Framework
     {
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
-        public string Name { get; set; }
+        private bool _shouldRun = true;
+        public virtual string Name { get; set; }
         public bool RunDynamo { get; set; }
-        public string ModelPath { get; set; }
+        public virtual string ModelPath { get; set; }
         public bool IsNodeExpanded { get; set; }
 
         public bool ModelExists
@@ -1342,7 +1458,7 @@ namespace RTF.Framework
             }
         }
 
-        public TestStatus TestStatus
+        public virtual TestStatus TestStatus
         {
             get { return _testStatus; }
             set
@@ -1352,11 +1468,29 @@ namespace RTF.Framework
             }
         }
 
-        public ObservableCollection<IResultData> ResultData { get; set; }
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                //Debug.WriteLine(value
+                //    ? string.Format("{0} should run.", Name)
+                //    : string.Format("{0} should not run.", Name));
 
-        public IFixtureData Fixture { get; set; }
+                _shouldRun = value;
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
+        public ObservableCollection<IResultData> ResultData { get; set; }
+        
+        public string JournalPath { get; set; }
+
+        public virtual IFixtureData Fixture { get; set; }
 
         public ICategoryData Category { get; set; }
+
+        public TestData(){}
 
         public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
         {
@@ -1379,9 +1513,30 @@ namespace RTF.Framework
     [Serializable]
     public class CategoryData : NotificationObject, ICategoryData
     {
-        public string Name { get; set; }
+        private bool _shouldRun = true;
+        public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
+        public IAssemblyData Assembly { get; set; }
+
         public bool IsNodeExpanded { get; set; }
+
+        public bool ShouldRun
+        {
+            get { return _shouldRun; }
+            set
+            {
+                _shouldRun = value;
+
+                foreach(var test in Tests)
+                {
+
+                    test.ShouldRun = _shouldRun;
+                }
+
+                RaisePropertyChanged("ShouldRun");
+            }
+        }
+
         public string Summary
         {
             get
@@ -1390,10 +1545,13 @@ namespace RTF.Framework
             }
         }
 
-        public CategoryData(string name)
+        public CategoryData(){}
+
+        public CategoryData(IAssemblyData assembly, string name)
         {
             Name = name;
             Tests = new ObservableCollection<ITestData>();
+            Assembly = assembly;
         }
     }
 
