@@ -1572,8 +1572,6 @@ namespace RTF.Framework
 
         public virtual IFixtureData Fixture { get; set; }
 
-        public ICategoryData Category { get; set; }
-
         public TestData(){}
 
         public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
