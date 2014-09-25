@@ -28,7 +28,8 @@ namespace RTF.Tests
             var cat1 = new CategoryData(assData, "Smoke");
             var cat2 = new CategoryData(assData, "Integration");
             var cat3 = new CategoryData(assData, "Failure");
-            assData.Categories = new ObservableCollection<ITestGroup>() { cat1, cat2, cat3 };
+            var cat4 = new CategoryData(assData, "Mix");
+            assData.Categories = new ObservableCollection<ITestGroup>() { cat1, cat2, cat3, cat4 };
 
             var fix1 = new FixtureData(assData, "FixtureA");
             var fix2 = new FixtureData(assData, "FixtureB");
@@ -46,6 +47,7 @@ namespace RTF.Tests
             cat1.Tests = new ObservableCollection<ITestData>() { test1, test2 };
             cat2.Tests = new ObservableCollection<ITestData>() { test3 };
             cat3.Tests = new ObservableCollection<ITestData>() { test4, test5 };
+            cat4.Tests = new ObservableCollection<ITestData>() { test1, test3, test4};
 
             fix1.Tests = new ObservableCollection<ITestData>() { test1, test2, test3 };
             fix2.Tests = new ObservableCollection<ITestData>() { test4, test5 };
@@ -271,6 +273,28 @@ namespace RTF.Tests
 
             runner.SetupTests();
             Assert.AreEqual(runner.GetRunnableTests().Count(), 3);
+        }
+
+        [Test]
+        public void TestInTwoCategories()
+        {
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = Path.GetTempFileName(),
+                Continuous = false,
+                IsTesting = true,
+            };
+            var runner = new TestRunner(setupData);
+
+            var test =
+                runner.Assemblies.
+                SelectMany(a => a.Categories).
+                SelectMany(c => c.Tests).
+                Where(t => t.Name == "TestA");
+
+            Assert.AreEqual(test.Count(),2);
         }
 
         #region private helper methods
