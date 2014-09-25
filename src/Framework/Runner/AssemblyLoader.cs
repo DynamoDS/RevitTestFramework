@@ -91,15 +91,6 @@ namespace RTF.Framework
                 modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
             }
 
-            var category = "";
-            var categoryAttrib =
-                testAttribs.FirstOrDefault(
-                    x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
-            if (categoryAttrib != null)
-            {
-                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-            }
-
             var runDynamoAttrib =
                 testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
 
@@ -112,20 +103,25 @@ namespace RTF.Framework
             var testData = new TestData(data, test.Name, modelPath, runDynamo);
             data.Tests.Add(testData);
 
-            if (!String.IsNullOrEmpty(category))
+            var category = string.Empty;
+            var categoryAttribs =
+                testAttribs.Where(x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
+            foreach (var categoryAttrib in categoryAttribs)
             {
-                var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
-                if (cat != null)
+                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+                if (!String.IsNullOrEmpty(category))
                 {
-                    cat.Tests.Add(testData);
-                    testData.Category = cat as ICategoryData;
-                }
-                else
-                {
-                    var catData = new CategoryData(data.Assembly, category);
-                    catData.Tests.Add(testData);
-                    data.Assembly.Categories.Add(catData);
-                    testData.Category = catData;
+                    var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
+                    if (cat != null)
+                    {
+                        cat.Tests.Add(testData);
+                    }
+                    else
+                    {
+                        var catData = new CategoryData(data.Assembly, category);
+                        catData.Tests.Add(testData);
+                        data.Assembly.Categories.Add(catData);
+                    }
                 }
             }
 
