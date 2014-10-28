@@ -570,6 +570,10 @@ namespace RTF.Framework
         {
             Assemblies.Clear();
             var assData = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, false);
+
+            if (assData == null)
+                return;
+
             Assemblies.AddRange(assData);
 
             // Clear running on all assemblies.
@@ -1180,18 +1184,20 @@ namespace RTF.Framework
                 AssemblyLoader loader;
                 AssemblyData assData;
 
+                var resolver = new DefaultAssemblyResolver();
+
                 if (!isTesting)
                 {
                     // Create a temporary application domain to load the assembly.
                     var tempDomain = AppDomain.CreateDomain("RTF_Domain");
-                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath }, CultureInfo.InvariantCulture, null);
+                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath, resolver }, CultureInfo.InvariantCulture, null);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                     AppDomain.Unload(tempDomain);
                 }
                 else
                 {
-                    loader = new AssemblyLoader(assemblyPath);
+                    loader = new AssemblyLoader(assemblyPath, resolver);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                 }
