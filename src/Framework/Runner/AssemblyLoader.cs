@@ -166,8 +166,14 @@ namespace RTF.Framework
             }
 
             // If the above fail, attempt to load from the GAC
-            var gacAssembly = Assembly.ReflectionOnlyLoad(args.Name);
-            return gacAssembly ?? null;
+            try
+            {
+                return Assembly.ReflectionOnlyLoad(args.Name);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static Assembly SearchChildren(ResolveEventArgs args, DirectoryInfo dirInfo)
