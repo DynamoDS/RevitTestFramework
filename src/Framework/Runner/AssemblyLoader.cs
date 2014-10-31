@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using Microsoft.Practices.Prism.Modularity;
 
 namespace RTF.Framework
 {
@@ -16,7 +18,7 @@ namespace RTF.Framework
         public AssemblyLoader(string assemblyPath, RTFAssemblyResolver resolver)
         {  
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve +=
-                    (object s, ResolveEventArgs a) => resolver.Resolve(s, a, assemblyPath);
+                    resolver.Resolve;
         }
 
         public AssemblyData ReadAssembly(string assemblyPath, GroupingType groupType, string workingDirectory)
@@ -126,68 +128,6 @@ namespace RTF.Framework
             }
 
             return true;
-        }
-    }
-
-    [Serializable]
-    public class DefaultAssemblyResolver : RTFAssemblyResolver
-    {
-        public virtual Assembly Resolve(object sender, ResolveEventArgs args, string assemblyPath)
-        {
-            var dir = Path.GetDirectoryName(assemblyPath);
-            var testFile = Path.Combine(dir, new AssemblyName(args.Name).Name + ".dll");
-            if (File.Exists(testFile))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(testFile);
-            }
-
-            var dirInfo = new DirectoryInfo(dir);
-            var assembly = SearchChildren(args, dirInfo);
-            if (assembly != null)
-            {
-                return assembly;
-            }
-
-            // Search upstream of the test assembly
-            for (var i = 0; i < 3; i++)
-            {
-                dirInfo = dirInfo.Parent;
-                assembly = SearchChildren(args, dirInfo);
-                if (assembly != null)
-                {
-                    return assembly;
-                }
-
-                testFile = Path.Combine(dirInfo.FullName, new AssemblyName(args.Name).Name + ".dll");
-                if (File.Exists(testFile))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(testFile);
-                }
-            }
-
-            // If the above fail, attempt to load from the GAC
-            try
-            {
-                return Assembly.ReflectionOnlyLoad(args.Name);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static Assembly SearchChildren(ResolveEventArgs args, DirectoryInfo dirInfo)
-        {
-            var children = dirInfo.GetDirectories();
-            foreach (var child in children)
-            {
-                var testFile = Path.Combine(child.FullName, new AssemblyName(args.Name).Name + ".dll");
-                if (File.Exists(testFile))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(testFile);
-                }
-            }
-            return null;
         }
     }
 }

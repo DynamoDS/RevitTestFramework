@@ -69,7 +69,6 @@ namespace RTF.Applications
 
         public Result Execute(ExternalCommandData revit, ref string message, ElementSet elements)
         {
-
             try
             {
                 CommandData = revit;

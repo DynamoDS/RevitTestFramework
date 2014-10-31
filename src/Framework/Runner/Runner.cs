@@ -1184,7 +1184,9 @@ namespace RTF.Framework
                 AssemblyLoader loader;
                 AssemblyData assData;
 
-                var resolver = new DefaultAssemblyResolver();
+                var product = _products[_selectedProduct];
+                var revitDirectory = product.InstallLocation;
+                var resolver = new DefaultAssemblyResolver(revitDirectory);
 
                 if (!isTesting)
                 {
