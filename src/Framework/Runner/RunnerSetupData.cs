@@ -24,15 +24,14 @@ namespace RTF.Framework
         public bool Continuous { get; set; }
         public bool IsDebug { get; set; }
         public GroupingType GroupingType { get; set; }
-        public virtual IList<RevitProduct> Products { get; set; }
         public int Timeout { get; set; }
         public string ExcludedCategory { get; set; }
         public bool CopyAddins { get; set; }
         public bool IsTesting { get; set; }
+        public int SelectedProduct { get; set; }
 
         public RunnerSetupData()
         {
-            Products = FindRevit();
             CleanUp = true;
             GroupingType = GroupingType.Fixture;
             Timeout = 120000;

@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
@@ -75,7 +76,7 @@ namespace RTF.Applications
         #region private members
 
         private object selectedItem;
-        private readonly Runner runner;
+        private Runner runner;
         private bool isRunning = false;
         private object isRunningLock = new object();
         private IContext context;
@@ -287,6 +288,8 @@ namespace RTF.Applications
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
         public DelegateCommand UpdateSummaryCommand { get; set; }
+        public DelegateCommand OpenCommand { get; set; }
+        public DelegateCommand SaveCommand { get; set; }
 
         #endregion
 
@@ -311,6 +314,7 @@ namespace RTF.Applications
                     : null,
                 Timeout = Settings.Default.timeout,
                 IsDebug = Settings.Default.isDebug,
+                Continuous = Settings.Default.continuous,
             };
 
             runner = new Runner(setupData);
@@ -332,6 +336,8 @@ namespace RTF.Applications
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
             UpdateSummaryCommand = new DelegateCommand(UpdateSummary, CanUpdateSummary);
+            OpenCommand = new DelegateCommand(Open, CanOpen);
+            SaveCommand = new DelegateCommand(Save, CanSave);
 
             runner.Products.CollectionChanged += Products_CollectionChanged;
 
@@ -508,6 +514,8 @@ namespace RTF.Applications
             Settings.Default.isDebug = runner.IsDebug;
             Settings.Default.timeout = runner.Timeout;
             Settings.Default.selectedProduct = runner.SelectedProduct;
+            Settings.Default.continuous = runner.Continuous;
+
             Settings.Default.Save();
         }
 
@@ -539,6 +547,57 @@ namespace RTF.Applications
         private bool CanUpdateSummary()
         {
             return true;
+        }
+
+        private bool CanSave()
+        {
+            return !isRunning;
+        }
+
+        private void Save()
+        {
+            var sfd = new SaveFileDialog
+            {
+                InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                Filter = "xml files (*.xml)|*.xml",
+                DefaultExt = ".xml",
+                AddExtension = true,
+                RestoreDirectory = true
+            };
+
+            // Call the ShowDialog method to show the dialog box.
+            var ok = sfd.ShowDialog();
+
+            // Process input if the user clicked OK.
+            if (ok != true) return;
+
+            Runner.Save(sfd.FileName, runner);
+        }
+
+        private bool CanOpen()
+        {
+            return !isRunning;
+        }
+
+        private void Open()
+        {
+            var ofd = new OpenFileDialog
+            {
+                InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                Filter = "xml files (*.xml)|*.xml", 
+                RestoreDirectory = true
+            };
+
+            // Call the ShowDialog method to show the dialog box.
+            var ok = ofd.ShowDialog();
+
+            // Process input if the user clicked OK.
+            if (ok != true) return;
+
+            //deserialize the settings
+            runner = null;
+
+            runner = Runner.Load(ofd.FileName);
         }
 
         #endregion

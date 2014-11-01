@@ -77,10 +77,10 @@ namespace RTF.Framework
         bool Continuous { get; set; }
         bool IsDebug { get; set; }
         GroupingType GroupingType { get; set; }
-        IList<RevitProduct> Products { get; set; }
         int Timeout { get; set; }
         bool IsTesting { get; set; }
         string ExcludedCategory { get; set; }
+        int SelectedProduct { get; set; }
     }
 
     public interface IRunner

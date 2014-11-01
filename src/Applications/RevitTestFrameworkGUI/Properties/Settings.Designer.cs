@@ -94,5 +94,17 @@ namespace RTF.Applications.Properties {
                 this["selectedProduct"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool continuous {
+            get {
+                return ((bool)(this["continuous"]));
+            }
+            set {
+                this["continuous"] = value;
+            }
+        }
     }
 }
