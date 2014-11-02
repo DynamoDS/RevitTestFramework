@@ -18,7 +18,8 @@
         <applications:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"></applications:EmptyStringToCollapsedConverter>
         <applications:BoolInverseConverter x:Key="BoolInverseConverter"></applications:BoolInverseConverter>
         <applications:BoolExistsConverter x:Key="BoolExistsConverter"></applications:BoolExistsConverter>
-
+        <applications:BoolToVisibilityCollapsedConverter x:Key="BoolToVisibilityCollapsedConverter"/>
+        
         <HierarchicalDataTemplate x:Key="ResultTemplate" 
                                   DataType="{x:Type runners:ResultData}">
             <StackPanel Orientation="Vertical" Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}">
@@ -125,8 +126,18 @@
             
             <Menu>
                 <MenuItem Header="File">
-                    <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
-                    <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
+                    <MenuItem Header="Open..." Command="{Binding OpenCommand}"/>
+                    <MenuItem Header="Save As..." Command="{Binding SaveCommand}"/>
+                    <MenuItem Header="Recent Files" 
+                              ItemsSource="{Binding RecentFiles}"
+                              Visibility="{Binding HasRecentFiles, Converter={StaticResource BoolToVisibilityCollapsedConverter}}">
+                        <MenuItem.ItemContainerStyle>
+                            <Style>
+                                <Setter Property="MenuItem.Command" Value="{Binding Path=DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType={x:Type StackPanel}}}"/>
+                                <Setter Property="MenuItem.CommandParameter" Value="{Binding Path=Header, RelativeSource={RelativeSource Self}}"/>
+                            </Style>
+                        </MenuItem.ItemContainerStyle>
+                    </MenuItem>
                 </MenuItem>
             </Menu>
 

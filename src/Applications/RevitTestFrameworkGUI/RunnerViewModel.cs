@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -12,6 +13,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
+using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
 using RTF.Applications.Properties;
@@ -82,7 +84,8 @@ namespace RTF.Applications
         private IContext context;
         private FileSystemWatcher watcher;
         private string selectedTestSummary;
-
+        private ObservableCollection<string> recentFiles = new ObservableCollection<string>();
+ 
         #endregion
 
         #region public properties
@@ -245,7 +248,11 @@ namespace RTF.Applications
         public bool Concatenate
         {
             get { return runner.Concat; }
-            set { runner.Concat = value; }
+            set
+            {
+                runner.Concat = value;
+                RaisePropertyChanged("Concatenate");
+            }
         }
 
         public GroupingType SortBy
@@ -275,6 +282,22 @@ namespace RTF.Applications
                 return string.Format("{0} tests selected of {1}", selectedTests.Count(), allTests.Count());
             }
         }
+
+        public ObservableCollection<string> RecentFiles
+        {
+            get { return recentFiles; }
+            set
+            {
+                recentFiles = value;
+                RaisePropertyChanged("RecentFiles");
+                RaisePropertyChanged("HasRecentFiles");
+            }
+        }
+
+        public bool HasRecentFiles
+        {
+            get { return recentFiles != null && recentFiles.Any(); }
+        }
         
         #endregion
 
@@ -290,6 +313,7 @@ namespace RTF.Applications
         public DelegateCommand UpdateSummaryCommand { get; set; }
         public DelegateCommand OpenCommand { get; set; }
         public DelegateCommand SaveCommand { get; set; }
+        public DelegateCommand<object> OpenFileCommand { get; set; }
 
         #endregion
 
@@ -338,6 +362,7 @@ namespace RTF.Applications
             UpdateSummaryCommand = new DelegateCommand(UpdateSummary, CanUpdateSummary);
             OpenCommand = new DelegateCommand(Open, CanOpen);
             SaveCommand = new DelegateCommand(Save, CanSave);
+            OpenFileCommand = new DelegateCommand<object>(OpenFile, CanOpenFile);
 
             runner.Products.CollectionChanged += Products_CollectionChanged;
 
@@ -353,6 +378,46 @@ namespace RTF.Applications
             };
             watcher.Changed += watcher_Changed;
             watcher.EnableRaisingEvents = true;
+
+            if (Settings.Default.recentFiles != null)
+            {
+                RecentFiles.AddRange(Settings.Default.recentFiles.Cast<string>());
+            }
+
+            runner.PropertyChanged += runner_PropertyChanged;
+            
+        }
+
+        void runner_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "Concat":
+                    RaisePropertyChanged("Concatenate");
+                    break;
+                case "Results":
+                    RaisePropertyChanged("ResultsPath");
+                    break;
+                case "TestAssembly":
+                    RaisePropertyChanged("AssemblyPath");
+                    break;
+                case "WorkingDirectory":
+                    RaisePropertyChanged("WorkingPath");
+                    break;
+                case "IsDebug":
+                    RaisePropertyChanged("IsDebug");
+                    break;
+                case "Continuous":
+                    RaisePropertyChanged("RunContinuously");
+                    break;
+                case "Timeout":
+                    RaisePropertyChanged("Timeout");
+                    break;
+                case "GroupingType":
+                    RaisePropertyChanged("SortBy");
+                    break;
+
+            }
         }
 
         void watcher_Changed(object sender, FileSystemEventArgs e)
@@ -572,6 +637,8 @@ namespace RTF.Applications
             if (ok != true) return;
 
             Runner.Save(sfd.FileName, runner);
+
+            SaveRecentFile(sfd.FileName);
         }
 
         private bool CanOpen()
@@ -598,6 +665,43 @@ namespace RTF.Applications
             runner = null;
 
             runner = Runner.Load(ofd.FileName);
+
+            SaveRecentFile(ofd.FileName);
+        }
+
+        private void SaveRecentFile(string fileName)
+        {
+            RecentFiles.Clear();
+            RecentFiles.Add(fileName);
+
+            var i = 0;
+            while (i < 2 && 
+                Settings.Default.recentFiles != null &&
+                Settings.Default.recentFiles.Count > i)
+            {
+                RecentFiles.Add(Settings.Default.recentFiles[i]);
+                i++;
+            }
+
+            var sc = new StringCollection();
+            sc.AddRange(RecentFiles.ToArray());
+            Settings.Default.recentFiles = sc;
+        }
+
+        private bool CanOpenFile(object parameter)
+        {
+            return true;
+        }
+
+        private void OpenFile(object parameter)
+        {
+            if (!File.Exists(parameter.ToString()))
+            {
+                MessageBox.Show("The specified file no longer exists.");
+                return;
+            }
+
+            Runner.Load(parameter.ToString());
         }
 
         #endregion

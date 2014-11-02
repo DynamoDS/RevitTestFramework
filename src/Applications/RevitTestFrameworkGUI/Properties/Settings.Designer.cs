@@ -106,5 +106,16 @@ namespace RTF.Applications.Properties {
                 this["continuous"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection recentFiles {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["recentFiles"]));
+            }
+            set {
+                this["recentFiles"] = value;
+            }
+        }
     }
 }
