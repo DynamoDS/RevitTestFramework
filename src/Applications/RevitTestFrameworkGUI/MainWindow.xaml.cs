@@ -23,7 +23,6 @@ namespace RTF.Applications
 
         private void View_Closing(object sender, CancelEventArgs e)
         {
-            vm.SaveSettingsCommand.Execute();
             vm.CleanupCommand.Execute();
         }
 
@@ -32,9 +31,9 @@ namespace RTF.Applications
             vm.SelectedItem = e.NewValue;
         }
 
-        private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
+        private void UpdateRequired(object sender, RoutedEventArgs e)
         {
-            vm.UpdateSummaryCommand.Execute();
+            vm.UpdateCommand.Execute();
         }
     }
 }

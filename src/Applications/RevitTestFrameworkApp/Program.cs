@@ -16,6 +16,7 @@ namespace RTF.Applications
                 var setupData = Runner.ParseCommandLineArguments(args);
 
                 runner = new Runner(setupData);
+                runner.Initialize();
 
                 Run();
             }

@@ -122,6 +122,7 @@ namespace RTF.Tests
         public void RunByCategorySetup_Smoke()
         {
             var runner = new TestRunner(TestSetupData());
+            
             var assData = runner.Assemblies.First();
             assData.ShouldRun = false;
 

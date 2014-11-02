@@ -30,7 +30,7 @@ namespace RTF.Framework
     /// </summary>
     [Serializable]
     [XmlRoot]
-    public class Runner : NotificationObject, IRunner
+    public class Runner : IRunner, IDisposable
     {
         #region events
 
@@ -38,6 +38,7 @@ namespace RTF.Framework
         public event TestCompleteHandler TestComplete;
         public event TestTimedOutHandler TestTimedOut;
         public event TestFailedHandler TestFailed;
+        public event EventHandler Initialized;
 
         #endregion
 
@@ -53,7 +54,6 @@ namespace RTF.Framework
         private bool _copyAddins = true;
         private int _timeout = 120000;
         private bool _concat;
-        private string _addinPath;
         private List<string> _copiedAddins = new List<string>();
         private string _assemblyPath;
         private int _selectedProduct;
@@ -64,7 +64,6 @@ namespace RTF.Framework
         private object cancelLock = new object();
         private bool dryRun;
         private bool cleanup = true;
-        private string batchJournalPath;
         private bool continuous;
         private bool journalInitialized = false;
         private bool journalFinished;
@@ -91,7 +90,18 @@ namespace RTF.Framework
         /// <summary>
         /// The path of the RTF addin file.
         /// </summary>
-        public string AddinPath { get; set; }
+        public string AddinPath 
+        {
+            get{return Path.Combine(WorkingDirectory, "RevitTestFramework.addin");}
+        }
+
+        /// <summary>
+        /// The path to the batch journal file.
+        /// </summary>
+        public string BatchJournalPath
+        {
+            get { return Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt"); }
+        }
 
         /// <summary>
         /// This one records all the addins that are copied
@@ -117,8 +127,6 @@ namespace RTF.Framework
             set
             {
                 _assemblies = value;
-
-                RaisePropertyChanged("Assemblies");
             }
         }
 
@@ -132,7 +140,6 @@ namespace RTF.Framework
             set
             {
                 _products = value;
-                RaisePropertyChanged("Products");
             }
         }
 
@@ -146,7 +153,6 @@ namespace RTF.Framework
             set
             {
                 _selectedProduct = value;
-                RaisePropertyChanged("SelectedProduct");
             }
         }
 
@@ -198,9 +204,6 @@ namespace RTF.Framework
 
                 // Delete any existing addins before resetting the addins path.
                 DeleteAddins();
-
-                AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
-                batchJournalPath = Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt");
             }
         }
 
@@ -320,11 +323,13 @@ namespace RTF.Framework
 
         public Runner()
         {
-            InitializeProducts();
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
         }
 
         public Runner(IRunnerSetupData setupData)
         {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
             if (!String.IsNullOrEmpty(setupData.TestAssembly) && !File.Exists(setupData.TestAssembly))
             {
                 throw new ArgumentException("The specified test assembly does not exist.");
@@ -337,8 +342,7 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(setupData.AssemblyPath) || !File.Exists(setupData.AssemblyPath))
             {
-                setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                    "RTFRevit.dll");
+                setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RTFRevit.dll");
             }
 
             if (!String.IsNullOrEmpty(setupData.WorkingDirectory) && !Directory.Exists(setupData.WorkingDirectory))
@@ -355,8 +359,6 @@ namespace RTF.Framework
             {
                 setupData.GroupingType = GroupingType.Category;
             }
-
-            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
 
             WorkingDirectory = setupData.WorkingDirectory;
             AssemblyPath = setupData.AssemblyPath;
@@ -378,110 +380,21 @@ namespace RTF.Framework
 
             InitializeProducts();
 
-            Refresh();
-        }
-
-        private void InitializeProducts()
-        {
-            Products.Clear();
-            Products.AddRange(RunnerSetupData.FindRevit());
-
-            if (Products == null || !Products.Any())
-            {
-                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
-            }
-
-            if (String.IsNullOrEmpty(RevitPath))
-            {
-                RevitPath = Path.Combine(Products.First().InstallLocation, "revit.exe");
-            }
-
-            int count = Products.Count;
-            SelectedProduct = -1;
-            for (int i = 0; i < count; ++i)
-            {
-                var location = Path.GetDirectoryName(RevitPath);
-                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
-                if (String.Compare(locationFromProduct, location, true) == 0)
-                    SelectedProduct = i;
-            }
-
-            if (SelectedProduct == -1)
-            {
-                throw new Exception("Can not find a proper application to start!");
-            }
+            InitializeTests();
         }
 
         #endregion
 
-        Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            var name = new AssemblyName(args.Name);
-
-            // Check the assembly location
-            var asmToCheck = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + name.Name + ".dll";
-            if (File.Exists(asmToCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-            }
-
-            // Check same directory as assembly
-            asmToCheck = Path.GetDirectoryName(TestAssembly) + "\\" + name.Name + ".dll";
-            if (File.Exists(asmToCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-            }
-
-            // Check several levels above directory
-            for (int i = 0; i < 3; i++)
-            {
-                var prevFolder = Path.GetDirectoryName(asmToCheck);
-                var folder = Path.GetFullPath(Path.Combine(prevFolder, @"..\" ));
-                asmToCheck = folder + "\\" + name.Name + ".dll";
-                if (File.Exists(asmToCheck))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-                }
-
-                // If we can't find it in this directory, search
-                // all sub-directories that aren't the previous folder
-                var di = new DirectoryInfo(folder);
-                foreach (var d in di.GetDirectories("*",SearchOption.AllDirectories) .Where(d => d.FullName != folder))
-                {
-                    var subfolderCheck = d.FullName + "\\" + name.Name + ".dll";
-                    if (File.Exists(subfolderCheck))
-                    {
-                        return Assembly.ReflectionOnlyLoadFrom(subfolderCheck);
-                    }
-                }
-            }
-
-            // Finally, check the runtime directory
-            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
-            var systemCheck = runtime + "\\" + name.Name + ".dll";
-            if (File.Exists(systemCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(systemCheck);
-            }
-
-            // Check WPF
-            var wpfCheck = runtime + "\\WPF\\" + name.Name + ".dll";
-            if (File.Exists(wpfCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(wpfCheck);
-            }
-
-            // Check the Revit API
-            var revitCheck = Path.GetDirectoryName(Products[SelectedProduct].InstallLocation) + "\\" + name.Name + ".dll";
-            if (File.Exists(revitCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(revitCheck);
-            }
-
-            return null;
-        }
-
         #region public methods
+
+        public void Initialize()
+        {
+            ConductInitializationChecks();
+
+            InitializeProducts();
+
+            InitializeTests();
+        }
 
         /// <summary>
         /// Setup all runnable tests.
@@ -500,7 +413,7 @@ namespace RTF.Framework
 
             if (continuous && !journalFinished)
             {
-                FinishJournal(batchJournalPath);
+                FinishJournal(BatchJournalPath);
             }
 
             if (!File.Exists(AddinPath))
@@ -541,7 +454,7 @@ namespace RTF.Framework
             {
                 // If running in continous mode, there will only
                 // be one journal file, as the value for every test
-                ProcessBatchTests(batchJournalPath);
+                ProcessBatchTests(BatchJournalPath);
             }
             else
             {
@@ -572,7 +485,7 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
-        public void Refresh()
+        public void InitializeTests()
         {
             Assemblies.Clear();
             var assData = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, false);
@@ -633,6 +546,8 @@ namespace RTF.Framework
             {
                 File.Delete(Results);
             }
+
+            OnInitialized();
         }
 
         public void Cleanup()
@@ -662,9 +577,9 @@ namespace RTF.Framework
                     File.Delete(journal);
                 }
 
-                if (File.Exists(batchJournalPath))
+                if (File.Exists(BatchJournalPath))
                 {
-                    File.Delete(batchJournalPath);
+                    File.Delete(BatchJournalPath);
                 }
 
                 DeleteAddins();
@@ -716,6 +631,11 @@ namespace RTF.Framework
             return sb.ToString();
         }
 
+        public void Dispose()
+        {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve -= CurrentDomain_ReflectionOnlyAssemblyResolve;
+        }
+
         public static void Save(string filePath, Runner runner)
         {
             using (var writer = new StreamWriter(filePath))
@@ -735,7 +655,7 @@ namespace RTF.Framework
                 runner = (Runner)serializer.Deserialize(reader);
             }
 
-            runner.Refresh();
+            runner.Initialize();
 
             return runner;
         }
@@ -743,6 +663,137 @@ namespace RTF.Framework
         #endregion
 
         #region private methods
+
+        private void ConductInitializationChecks()
+        {
+            if (!String.IsNullOrEmpty(TestAssembly) && !File.Exists(TestAssembly))
+            {
+                throw new ArgumentException("The specified test assembly does not exist.");
+            }
+
+            if (String.IsNullOrEmpty(TestAssembly))
+            {
+                TestAssembly = Assembly.GetExecutingAssembly().Location;
+            }
+
+            if (String.IsNullOrEmpty(AssemblyPath) || !File.Exists(AssemblyPath))
+            {
+                AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RTFRevit.dll");
+            }
+
+            if (!String.IsNullOrEmpty(WorkingDirectory) && !Directory.Exists(WorkingDirectory))
+            {
+                throw new ArgumentException("The specified working directory does not exist.");
+            }
+
+            if (String.IsNullOrEmpty(WorkingDirectory) || !Directory.Exists(WorkingDirectory))
+            {
+                WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            }
+
+            if (!String.IsNullOrEmpty(Category))
+            {
+                GroupingType = GroupingType.Category;
+            }
+        }
+
+        private void InitializeProducts()
+        {
+            Products.Clear();
+            Products.AddRange(RunnerSetupData.FindRevit());
+
+            if (Products == null || !Products.Any())
+            {
+                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
+            }
+
+            if (String.IsNullOrEmpty(RevitPath))
+            {
+                RevitPath = Path.Combine(Products.First().InstallLocation, "revit.exe");
+            }
+
+            int count = Products.Count;
+            SelectedProduct = -1;
+            for (int i = 0; i < count; ++i)
+            {
+                var location = Path.GetDirectoryName(RevitPath);
+                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
+                if (String.Compare(locationFromProduct, location, true) == 0)
+                    SelectedProduct = i;
+            }
+
+            if (SelectedProduct == -1)
+            {
+                throw new Exception("Can not find a proper application to start!");
+            }
+        }
+
+        private Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            var name = new AssemblyName(args.Name);
+
+            // Check the assembly location
+            var asmToCheck = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check same directory as assembly
+            asmToCheck = Path.GetDirectoryName(TestAssembly) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check several levels above directory
+            for (int i = 0; i < 3; i++)
+            {
+                var prevFolder = Path.GetDirectoryName(asmToCheck);
+                var folder = Path.GetFullPath(Path.Combine(prevFolder, @"..\"));
+                asmToCheck = folder + "\\" + name.Name + ".dll";
+                if (File.Exists(asmToCheck))
+                {
+                    return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+                }
+
+                // If we can't find it in this directory, search
+                // all sub-directories that aren't the previous folder
+                var di = new DirectoryInfo(folder);
+                foreach (var d in di.GetDirectories("*", SearchOption.AllDirectories).Where(d => d.FullName != folder))
+                {
+                    var subfolderCheck = d.FullName + "\\" + name.Name + ".dll";
+                    if (File.Exists(subfolderCheck))
+                    {
+                        return Assembly.ReflectionOnlyLoadFrom(subfolderCheck);
+                    }
+                }
+            }
+
+            // Finally, check the runtime directory
+            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
+            var systemCheck = runtime + "\\" + name.Name + ".dll";
+            if (File.Exists(systemCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(systemCheck);
+            }
+
+            // Check WPF
+            var wpfCheck = runtime + "\\WPF\\" + name.Name + ".dll";
+            if (File.Exists(wpfCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(wpfCheck);
+            }
+
+            // Check the Revit API
+            var revitCheck = Path.GetDirectoryName(Products[SelectedProduct].InstallLocation) + "\\" + name.Name + ".dll";
+            if (File.Exists(revitCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(revitCheck);
+            }
+
+            return null;
+        }
 
         private void SetupIndividualTests(IEnumerable<ITestData> data, bool continuous)
         {
@@ -828,6 +879,14 @@ namespace RTF.Framework
             if (!timedOut)
             {
                 OnTestComplete(GetRunnableTests());
+            }
+        }
+
+        private void OnInitialized()
+        {
+            if (Initialized != null)
+            {
+                Initialized(this, EventArgs.Empty);
             }
         }
 
@@ -1024,7 +1083,7 @@ namespace RTF.Framework
                 // the same journal path
                 if (continuous)
                 {
-                    journalPath = batchJournalPath;
+                    journalPath = BatchJournalPath;
                 }
                 td.JournalPath = journalPath;
 

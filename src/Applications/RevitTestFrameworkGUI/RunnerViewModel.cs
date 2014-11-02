@@ -107,10 +107,12 @@ namespace RTF.Applications
             get { return runner.SelectedProduct; }
             set
             {
+                if (runner == null) return;
+
                 runner.SelectedProduct = value;
 
                 runner.RevitPath = runner.SelectedProduct == -1 ? 
-                    string.Empty : 
+                    string.Empty :
                     Path.Combine(runner.Products[value].InstallLocation, "revit.exe");
 
                 RaisePropertyChanged("SelectedProductIndex");
@@ -149,83 +151,6 @@ namespace RTF.Applications
             }
         }
         
-        public string ResultsPath
-        {
-            get { return runner.Results; }
-            set
-            {
-                runner.Results = value;
-                RaisePropertyChanged("ResultsPath");
-                RunCommand.RaiseCanExecuteChanged();
-            }
-        }
-
-        public string AssemblyPath
-        {
-            get { return runner.TestAssembly; }
-            set
-            {
-                runner.TestAssembly = value;
-                if (value != null)
-                {
-                    runner.Refresh();
-                    RaisePropertyChanged("AssemblyPath");
-                    if (watcher != null)
-                    {
-                        watcher.Path = Path.GetDirectoryName(runner.TestAssembly);
-                        watcher.Filter = runner.TestAssembly;
-                    }
-                }
-            }
-        }
-
-        public string WorkingPath
-        {
-            get { return runner.WorkingDirectory; }
-            set
-            {
-                runner.WorkingDirectory = value;
-                runner.Refresh();
-                RaisePropertyChanged("WorkingPath");
-            }
-        }
-
-        public bool IsDebug
-        {
-            get { return runner.IsDebug; }
-            set
-            {
-                runner.IsDebug = value;
-                RaisePropertyChanged("IsDebug");
-            }
-        }
-
-        public bool RunContinuously
-        {
-            get { return runner.Continuous; }
-            set
-            {
-                runner.Continuous = value;
-                RaisePropertyChanged("RunContinuously");
-            }
-        }
-
-        public int Timeout
-        {
-            get { return runner.Timeout; }
-            set { runner.Timeout = value; }
-        }
-
-        public ObservableCollection<IAssemblyData> Assemblies
-        {
-            get { return runner.Assemblies; }
-        }
-
-        public ObservableCollection<RevitProduct> Products
-        {
-            get { return runner.Products; }
-        }
-
         public bool IsRunning
         {
             get
@@ -245,37 +170,12 @@ namespace RTF.Applications
             }
         }
 
-        public bool Concatenate
-        {
-            get { return runner.Concat; }
-            set
-            {
-                runner.Concat = value;
-                RaisePropertyChanged("Concatenate");
-            }
-        }
-
-        public GroupingType SortBy
-        {
-            get
-            {
-                // All assembly datas will have the same
-                // grouping type for now.
-                return runner.GroupingType;
-            }
-            set
-            {
-                runner.GroupingType = value;
-                runner.Refresh();
-                RaisePropertyChanged("SortBy");
-                RaisePropertyChanged("SelectedTestSummary");
-            }
-        }
-
         public string SelectedTestSummary
         {
             get
             {
+                if (runner == null) return string.Empty;
+
                 var allTests = runner.GetAllTests();
                 var selectedTests = runner.GetRunnableTests();
 
@@ -298,7 +198,103 @@ namespace RTF.Applications
         {
             get { return recentFiles != null && recentFiles.Any(); }
         }
-        
+
+        public ObservableCollection<IAssemblyData> Assemblies
+        {
+            get { return runner.Assemblies; }
+        }
+
+        public ObservableCollection<RevitProduct> Products
+        {
+            get { return runner.Products; }
+        }
+
+        public bool IsDebug
+        {
+            get { return runner.IsDebug; }
+            set
+            {
+                runner.IsDebug = value;
+                RaisePropertyChanged("IsDebug");
+            }
+        }
+
+        public bool Concat
+        {
+            get { return runner.Concat; }
+            set
+            {
+                runner.Concat = value;
+                RaisePropertyChanged("Concat");
+            }
+        }
+
+        public int Timeout
+        {
+            get { return runner.Timeout; }
+            set
+            {
+                runner.Timeout = value;
+                RaisePropertyChanged("Timeout");
+            }
+        }
+
+        public string WorkingDirectory
+        {
+            get { return runner.WorkingDirectory; }
+            set
+            {
+                runner.WorkingDirectory = value;
+                runner.InitializeTests();
+                RaisePropertyChanged("WorkingDirectory");
+                RaisePropertyChanged("Assemblies");
+            }
+        }
+
+        public bool Continuous
+        {
+            get { return runner.Continuous; }
+            set
+            {
+                runner.Continuous = value;
+                RaisePropertyChanged("Continuous");
+            }
+        }
+
+        public GroupingType GroupingType
+        {
+            get { return runner.GroupingType; }
+            set
+            {
+                runner.GroupingType = value;
+                runner.InitializeTests();
+                RaisePropertyChanged("GroupingType");
+                RaisePropertyChanged("Assemblies");
+            }
+        }
+
+        public string TestAssembly
+        {
+            get { return runner.TestAssembly; }
+            set
+            {
+                runner.TestAssembly = value;
+                runner.InitializeTests();
+                RaisePropertyChanged("TestAssembly");
+                RaisePropertyChanged("Assemblies");
+            }
+        }
+
+        public string Results
+        {
+            get { return runner.Results; }
+            set
+            {
+                runner.Results = value;
+                RaisePropertyChanged("Results");
+            }
+        }
+
         #endregion
 
         #region commands
@@ -307,10 +303,9 @@ namespace RTF.Applications
         public DelegateCommand SetResultsPathCommand { get; set; }
         public DelegateCommand SetWorkingPathCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
-        public DelegateCommand SaveSettingsCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
-        public DelegateCommand UpdateSummaryCommand { get; set; }
+        public DelegateCommand UpdateCommand { get; set; }
         public DelegateCommand OpenCommand { get; set; }
         public DelegateCommand SaveCommand { get; set; }
         public DelegateCommand<object> OpenFileCommand { get; set; }
@@ -323,124 +318,91 @@ namespace RTF.Applications
         {
             this.context = context;
 
-            var setupData = new RunnerSetupData
-            {
-                WorkingDirectory = !String.IsNullOrEmpty(Settings.Default.workingDirectory) &&
-                                   Directory.Exists(Settings.Default.workingDirectory)
-                    ? Settings.Default.workingDirectory
-                    : Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                TestAssembly = !String.IsNullOrEmpty(Settings.Default.assemblyPath) &&
-                               File.Exists(Settings.Default.assemblyPath)
-                    ? Settings.Default.assemblyPath
-                    : null,
-                Results = !String.IsNullOrEmpty(Settings.Default.resultsPath)
-                    ? Settings.Default.resultsPath
-                    : null,
-                Timeout = Settings.Default.timeout,
-                IsDebug = Settings.Default.isDebug,
-                Continuous = Settings.Default.continuous,
-            };
+            InitializeRecentFiles();
 
-            runner = new Runner(setupData);
+            InitializeRunner();
 
-            if (Settings.Default.selectedProduct > runner.Products.Count - 1)
+            InitializeCommands();
+
+            InitializeFileWatcher();
+        }
+
+        private void InitializeRunner()
+        {
+            // If the recent files contains a previously
+            // saved runner, then open the first saved file
+            if (Settings.Default.recentFiles.Count > 0)
             {
-                SelectedProductIndex = -1;
+                OpenFile(Settings.Default.recentFiles[0]);
             }
             else
             {
-                SelectedProductIndex = Settings.Default.selectedProduct;
+                // Create a default runner
+                runner = new Runner();
             }
 
-            SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
-            SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
-            SetWorkingPathCommand = new DelegateCommand(SetWorkingPath, CanSetWorkingPath);
-            RunCommand = new DelegateCommand<object>(Run, CanRun);
-            SaveSettingsCommand = new DelegateCommand(SaveSettings, CanSaveSettings);
-            CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
-            CancelCommand = new DelegateCommand(Cancel, CanCancel);
-            UpdateSummaryCommand = new DelegateCommand(UpdateSummary, CanUpdateSummary);
-            OpenCommand = new DelegateCommand(Open, CanOpen);
-            SaveCommand = new DelegateCommand(Save, CanSave);
-            OpenFileCommand = new DelegateCommand<object>(OpenFile, CanOpenFile);
-
-            runner.Products.CollectionChanged += Products_CollectionChanged;
-
-            runner.TestComplete += runner_TestComplete;
-            runner.TestFailed += runner_TestFailed;
-            runner.TestTimedOut += runner_TestTimedOut;
-
-            watcher = new FileSystemWatcher
+            if (runner.SelectedProduct > runner.Products.Count - 1)
             {
-                Path = Path.GetDirectoryName(AssemblyPath),
-                NotifyFilter = NotifyFilters.LastWrite,
-                Filter = Path.GetFileName(AssemblyPath)
-            };
-            watcher.Changed += watcher_Changed;
-            watcher.EnableRaisingEvents = true;
+                SelectedProductIndex = -1;
+            }
+        }
 
+        #endregion
+
+        #region setup
+
+        private void InitializeRecentFiles()
+        {
             if (Settings.Default.recentFiles != null)
             {
                 RecentFiles.AddRange(Settings.Default.recentFiles.Cast<string>());
             }
-
-            runner.PropertyChanged += runner_PropertyChanged;
-            
         }
 
-        void runner_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void InitializeFileWatcher()
         {
-            switch (e.PropertyName)
+            watcher = new FileSystemWatcher
             {
-                case "Concat":
-                    RaisePropertyChanged("Concatenate");
-                    break;
-                case "Results":
-                    RaisePropertyChanged("ResultsPath");
-                    break;
-                case "TestAssembly":
-                    RaisePropertyChanged("AssemblyPath");
-                    break;
-                case "WorkingDirectory":
-                    RaisePropertyChanged("WorkingPath");
-                    break;
-                case "IsDebug":
-                    RaisePropertyChanged("IsDebug");
-                    break;
-                case "Continuous":
-                    RaisePropertyChanged("RunContinuously");
-                    break;
-                case "Timeout":
-                    RaisePropertyChanged("Timeout");
-                    break;
-                case "GroupingType":
-                    RaisePropertyChanged("SortBy");
-                    break;
-
-            }
+                Path = Path.GetDirectoryName(runner.AssemblyPath),
+                NotifyFilter = NotifyFilters.LastWrite,
+                Filter = Path.GetFileName(runner.AssemblyPath)
+            };
+            watcher.Changed += watcher_Changed;
+            watcher.EnableRaisingEvents = true;
         }
 
-        void watcher_Changed(object sender, FileSystemEventArgs e)
+        private void InitializeEventHandlers()
         {
-            if (!isRunning)
-            {
-                context.BeginInvoke(() => runner.Refresh());
-            }
+            runner.Assemblies.CollectionChanged += Assemblies_CollectionChanged;
+            runner.Products.CollectionChanged += Products_CollectionChanged;
+            runner.TestComplete += runner_TestComplete;
+            runner.TestFailed += runner_TestFailed;
+            runner.TestTimedOut += runner_TestTimedOut;
+            runner.Initialized += runner_Initialized;
         }
 
-        void runner_TestTimedOut(ITestData data)
+        private void RemoveEventHandlers()
         {
-            context.BeginInvoke(()=>Runner.Runner_TestTimedOut(data));
+            runner.Assemblies.CollectionChanged -= Assemblies_CollectionChanged;
+            runner.Products.CollectionChanged -= Products_CollectionChanged;
+            runner.TestComplete -= runner_TestComplete;
+            runner.TestFailed -= runner_TestFailed;
+            runner.TestTimedOut -= runner_TestTimedOut;
+            runner.Initialized -= runner_Initialized;
         }
 
-        void runner_TestFailed(ITestData data, string message, string stackTrace)
+        private void InitializeCommands()
         {
-            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
-        }
-
-        void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
-        {
-            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
+            SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
+            SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
+            SetWorkingPathCommand = new DelegateCommand(SetWorkingDirectory, CanSetWorkingPath);
+            RunCommand = new DelegateCommand<object>(Run, CanRun);
+            CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
+            CancelCommand = new DelegateCommand(Cancel, CanCancel);
+            UpdateCommand = new DelegateCommand(Update, CanUpdate);
+            OpenCommand = new DelegateCommand(Open, CanOpen);
+            SaveCommand = new DelegateCommand(Save, CanSave);
+            OpenFileCommand = new DelegateCommand<object>(OpenFile, CanOpenFile);
         }
 
         private bool CanCleanup()
@@ -451,6 +413,34 @@ namespace RTF.Applications
         #endregion
 
         #region event handlers
+
+        void runner_Initialized(object sender, EventArgs e)
+        {
+            RaisePropertyChanged("");
+        }
+
+        private void watcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            if (!isRunning)
+            {
+                context.BeginInvoke(() => runner.InitializeTests());
+            }
+        }
+
+        private void runner_TestTimedOut(ITestData data)
+        {
+            context.BeginInvoke(() => Runner.Runner_TestTimedOut(data));
+        }
+
+        private void runner_TestFailed(ITestData data, string message, string stackTrace)
+        {
+            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
+        }
+
+        private void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
+        {
+            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
+        }
 
         void Products_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
@@ -464,6 +454,13 @@ namespace RTF.Applications
             {
                 SelectedProductIndex = -1;
             }
+
+            RaisePropertyChanged("Products");
+        }
+
+        void Assemblies_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            RaisePropertyChanged("Assemblies");
         }
 
         #endregion
@@ -509,16 +506,14 @@ namespace RTF.Applications
             return true;
         }
 
-        private void SetWorkingPath()
+        private void SetWorkingDirectory()
         {
             var dirs = new FolderBrowserDialog();
 
             if (dirs.ShowDialog() == DialogResult.OK)
             {
-                WorkingPath = dirs.SelectedPath;
+                WorkingDirectory = dirs.SelectedPath;
             }
-
-            SaveSettings();
         }
 
         private bool CanSetResultsPath()
@@ -540,10 +535,9 @@ namespace RTF.Applications
 
             if (filesResult != null && filesResult == true)
             {
-                ResultsPath = files.FileName;
+               Results = files.FileName;
+               RunCommand.RaiseCanExecuteChanged();
             }
-
-            SaveSettings();
         }
 
         private bool CanSetAssemblyPath()
@@ -565,28 +559,8 @@ namespace RTF.Applications
 
             if (filesResult != null && filesResult == true)
             {
-                AssemblyPath = files.FileName;
+                TestAssembly = files.FileName;
             }
-
-            SaveSettings();
-        }
-
-        internal void SaveSettings()
-        {
-            Settings.Default.workingDirectory = runner.WorkingDirectory;
-            Settings.Default.assemblyPath = runner.TestAssembly;
-            Settings.Default.resultsPath = runner.Results;
-            Settings.Default.isDebug = runner.IsDebug;
-            Settings.Default.timeout = runner.Timeout;
-            Settings.Default.selectedProduct = runner.SelectedProduct;
-            Settings.Default.continuous = runner.Continuous;
-
-            Settings.Default.Save();
-        }
-
-        private bool CanSaveSettings()
-        {
-            return true;
         }
 
         private bool CanCancel()
@@ -604,12 +578,12 @@ namespace RTF.Applications
             IsRunning = false;
         }
 
-        private void UpdateSummary()
+        private void Update()
         {
             RaisePropertyChanged("SelectedTestSummary");
         }
 
-        private bool CanUpdateSummary()
+        private bool CanUpdate()
         {
             return true;
         }
@@ -665,6 +639,7 @@ namespace RTF.Applications
             runner = null;
 
             runner = Runner.Load(ofd.FileName);
+            RaisePropertyChanged("");
 
             SaveRecentFile(ofd.FileName);
         }
@@ -701,7 +676,16 @@ namespace RTF.Applications
                 return;
             }
 
-            Runner.Load(parameter.ToString());
+            // Clear the runner
+            if (runner != null)
+            {
+                RemoveEventHandlers();
+                runner = null;
+            }
+
+            runner = Runner.Load(parameter.ToString());
+
+            InitializeEventHandlers();
         }
 
         #endregion
