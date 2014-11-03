@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace RTF.Applications
 {
@@ -34,6 +35,11 @@ namespace RTF.Applications
         private void UpdateRequired(object sender, RoutedEventArgs e)
         {
             vm.UpdateCommand.Execute();
+        }
+
+        private void ProductSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            vm.ChangeProductCommand.Execute(((ComboBox) sender).SelectedIndex);
         }
     }
 }

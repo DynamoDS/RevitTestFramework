@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Forms;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
@@ -108,49 +109,7 @@ namespace RTF.Applications
         {
             get
             {
-                if (Products.Count == 0 || 
-                    Products == null || 
-
-                    string.IsNullOrEmpty(runner.RevitPath))
-                {
-                    return -1;
-                }
-
-                // Loop over all the installed Revit products attempting
-                // to find a match to the revit path stored on the runner. 
-                // If one is found, set the selected index to that one.
-
-                var found =
-                    Products.FirstOrDefault(
-                        x =>
-                            System.String.CompareOrdinal(
-                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(runner.RevitPath)) ==
-                            0);
-                var index =
-                    Products.IndexOf(found);
-
-                return index;
-            }
-            set
-            {
-                if (runner == null) return;
-
-                selectedProductIndex = value;
-
-                // If the selected product index is more
-                // than the number of available products, something
-                // is wrong. Reset the Revit path.
-                if (selectedProductIndex >= Products.Count ||
-                    selectedProductIndex == -1)
-                {
-                    runner.RevitPath = string.Empty;
-                }
-                else
-                {
-                    runner.RevitPath = Path.Combine(Products[selectedProductIndex].InstallLocation, "revit.exe");
-                }
-
-                RaisePropertyChanged("SelectedProductIndex");
+                return IndexOfRevitProduct();
             }
         }
 
@@ -343,6 +302,7 @@ namespace RTF.Applications
         public DelegateCommand UpdateCommand { get; set; }
         public DelegateCommand SaveCommand { get; set; }
         public DelegateCommand<object> OpenFileCommand { get; set; }
+        public DelegateCommand<object> ChangeProductCommand { get; set; }
 
         #endregion
 
@@ -434,12 +394,9 @@ namespace RTF.Applications
             UpdateCommand = new DelegateCommand(Update, CanUpdate);
             SaveCommand = new DelegateCommand(Save, CanSave);
             OpenFileCommand = new DelegateCommand<object>(OpenFile, CanOpenFile);
+            ChangeProductCommand = new DelegateCommand<object>(ChangeProduct, CanChangeProduct);
         }
 
-        private bool CanCleanup()
-        {
-            return true;
-        }
 
         #endregion
 
@@ -477,14 +434,14 @@ namespace RTF.Applications
         {
             // When the products collection is changed, we want to set
             // the selected product index to the first in the list
-            if (runner.Products.Count > 0)
-            {
-                SelectedProductIndex = 0;
-            }
-            else
-            {
-                SelectedProductIndex = -1;
-            }
+            //if (runner.Products.Count > 0)
+            //{
+            //    SelectedProductIndex = 0;
+            //}
+            //else
+            //{
+            //    SelectedProductIndex = -1;
+            //}
 
             RaisePropertyChanged("Products");
         }
@@ -497,6 +454,22 @@ namespace RTF.Applications
         #endregion
 
         #region private methods
+
+        private int IndexOfRevitProduct()
+        {
+            if (string.IsNullOrEmpty(runner.RevitPath))
+                return -1;
+
+            var found =
+                Products.FirstOrDefault(
+                    x =>
+                        System.String.CompareOrdinal(
+                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(runner.RevitPath)) ==
+                        0);
+            var index =
+                Products.IndexOf(found);
+            return index;
+        }
 
         private bool CanRun(object parameter)
         {
@@ -720,8 +693,28 @@ namespace RTF.Applications
             InitializeEventHandlers();
 
             RaisePropertyChanged("");
+            RaisePropertyChanged("SelectedProductIndex");
 
             SaveRecentFile(fileName);
+        }
+
+        private bool CanChangeProduct(object arg)
+        {
+            return true;
+        }
+
+        private void ChangeProduct(object obj)
+        {
+            var index = (int) obj;
+            if (index != -1 && index < runner.Products.Count)
+            {
+                runner.RevitPath = runner.Products[index].InstallLocation;
+            }
+        }
+
+        private bool CanCleanup()
+        {
+            return true;
         }
 
         #endregion
