@@ -126,7 +126,7 @@
             
             <Menu>
                 <MenuItem Header="File">
-                    <MenuItem Header="Open..." Command="{Binding OpenCommand}"/>
+                    <MenuItem Header="Open..." Command="{Binding OpenFileCommand}"/>
                     <MenuItem Header="Save As..." Command="{Binding SaveCommand}"/>
                     <MenuItem Header="Recent Files" 
                               ItemsSource="{Binding RecentFiles}"

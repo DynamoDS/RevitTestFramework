@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -85,7 +86,8 @@ namespace RTF.Applications
         private FileSystemWatcher watcher;
         private string selectedTestSummary;
         private ObservableCollection<string> recentFiles = new ObservableCollection<string>();
- 
+        private int selectedProductIndex;
+
         #endregion
 
         #region public properties
@@ -104,16 +106,49 @@ namespace RTF.Applications
 
         public int SelectedProductIndex
         {
-            get { return runner.SelectedProduct; }
+            get
+            {
+                if (Products.Count == 0 || 
+                    Products == null || 
+
+                    string.IsNullOrEmpty(runner.RevitPath))
+                {
+                    return -1;
+                }
+
+                // Loop over all the installed Revit products attempting
+                // to find a match to the revit path stored on the runner. 
+                // If one is found, set the selected index to that one.
+
+                var found =
+                    Products.FirstOrDefault(
+                        x =>
+                            System.String.CompareOrdinal(
+                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(runner.RevitPath)) ==
+                            0);
+                var index =
+                    Products.IndexOf(found);
+
+                return index;
+            }
             set
             {
                 if (runner == null) return;
 
-                runner.SelectedProduct = value;
+                selectedProductIndex = value;
 
-                runner.RevitPath = runner.SelectedProduct == -1 ? 
-                    string.Empty :
-                    Path.Combine(runner.Products[value].InstallLocation, "revit.exe");
+                // If the selected product index is more
+                // than the number of available products, something
+                // is wrong. Reset the Revit path.
+                if (selectedProductIndex >= Products.Count ||
+                    selectedProductIndex == -1)
+                {
+                    runner.RevitPath = string.Empty;
+                }
+                else
+                {
+                    runner.RevitPath = Path.Combine(Products[selectedProductIndex].InstallLocation, "revit.exe");
+                }
 
                 RaisePropertyChanged("SelectedProductIndex");
             }
@@ -306,7 +341,6 @@ namespace RTF.Applications
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
         public DelegateCommand UpdateCommand { get; set; }
-        public DelegateCommand OpenCommand { get; set; }
         public DelegateCommand SaveCommand { get; set; }
         public DelegateCommand<object> OpenFileCommand { get; set; }
 
@@ -323,28 +357,16 @@ namespace RTF.Applications
             InitializeRunner();
 
             InitializeCommands();
-
-            InitializeFileWatcher();
         }
 
         private void InitializeRunner()
         {
-            // If the recent files contains a previously
-            // saved runner, then open the first saved file
-            if (Settings.Default.recentFiles.Count > 0)
-            {
-                OpenFile(Settings.Default.recentFiles[0]);
-            }
-            else
-            {
-                // Create a default runner
-                runner = new Runner();
-            }
+            runner = new Runner();
 
-            if (runner.SelectedProduct > runner.Products.Count - 1)
-            {
-                SelectedProductIndex = -1;
-            }
+            if (runner != null) return;
+
+            MessageBox.Show("The runner could not be created with the specified inputs.");
+            throw new Exception();
         }
 
         #endregion
@@ -361,6 +383,8 @@ namespace RTF.Applications
 
         private void InitializeFileWatcher()
         {
+            if (runner == null || string.IsNullOrEmpty(runner.AssemblyPath)) return;
+
             watcher = new FileSystemWatcher
             {
                 Path = Path.GetDirectoryName(runner.AssemblyPath),
@@ -369,6 +393,14 @@ namespace RTF.Applications
             };
             watcher.Changed += watcher_Changed;
             watcher.EnableRaisingEvents = true;
+        }
+
+        private void DeinitializeFileWatcher()
+        {
+            if (watcher == null) return;
+            watcher.Changed -= watcher_Changed;
+            watcher.EnableRaisingEvents = false;
+            watcher = null;
         }
 
         private void InitializeEventHandlers()
@@ -400,7 +432,6 @@ namespace RTF.Applications
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
             UpdateCommand = new DelegateCommand(Update, CanUpdate);
-            OpenCommand = new DelegateCommand(Open, CanOpen);
             SaveCommand = new DelegateCommand(Save, CanSave);
             OpenFileCommand = new DelegateCommand<object>(OpenFile, CanOpenFile);
         }
@@ -622,26 +653,9 @@ namespace RTF.Applications
 
         private void Open()
         {
-            var ofd = new OpenFileDialog
-            {
-                InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                Filter = "xml files (*.xml)|*.xml", 
-                RestoreDirectory = true
-            };
+            
 
-            // Call the ShowDialog method to show the dialog box.
-            var ok = ofd.ShowDialog();
-
-            // Process input if the user clicked OK.
-            if (ok != true) return;
-
-            //deserialize the settings
-            runner = null;
-
-            runner = Runner.Load(ofd.FileName);
-            RaisePropertyChanged("");
-
-            SaveRecentFile(ofd.FileName);
+            
         }
 
         private void SaveRecentFile(string fileName)
@@ -670,22 +684,56 @@ namespace RTF.Applications
 
         private void OpenFile(object parameter)
         {
-            if (!File.Exists(parameter.ToString()))
+            string fileName;
+
+            // If the parameter is null, then this request
+            // is coming from the file menu.
+            if (parameter == null)
             {
-                MessageBox.Show("The specified file no longer exists.");
-                return;
+                var ofd = new OpenFileDialog
+                {
+                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    Filter = "xml files (*.xml)|*.xml",
+                    RestoreDirectory = true
+                };
+
+                // Call the ShowDialog method to show the dialog box.
+                var ok = ofd.ShowDialog();
+
+                // Process input if the user clicked OK.
+                if (ok != true) return;
+
+                fileName = ofd.FileName;
+            }
+            // Otherwise, the request is coming from the recent
+            // files list.
+            else
+            {
+                fileName = parameter.ToString();
+                if (!File.Exists(fileName))
+                {
+                    MessageBox.Show("The specified file no longer exists.");
+                    return;
+                }
             }
 
             // Clear the runner
             if (runner != null)
             {
+                DeinitializeFileWatcher();
                 RemoveEventHandlers();
                 runner = null;
             }
 
-            runner = Runner.Load(parameter.ToString());
+            runner = Runner.Load(fileName);
+
+            InitializeFileWatcher();
 
             InitializeEventHandlers();
+
+            RaisePropertyChanged("");
+
+            SaveRecentFile(fileName);
         }
 
         #endregion

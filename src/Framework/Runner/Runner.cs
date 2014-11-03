@@ -144,19 +144,6 @@ namespace RTF.Framework
         }
 
         /// <summary>
-        /// The selected Revit application against which
-        /// to test.
-        /// </summary>
-        public int SelectedProduct
-        {
-            get { return _selectedProduct; }
-            set
-            {
-                _selectedProduct = value;
-            }
-        }
-
-        /// <summary>
         /// The name of the test to run.
         /// </summary>
         public string Test { get; set; }
@@ -211,7 +198,11 @@ namespace RTF.Framework
         /// The path to the version of Revit to be
         /// used for testing.
         /// </summary>
-        public string RevitPath { get; set; }
+        public string RevitPath
+        {
+            get { return _revitPath;}
+            set { _revitPath = value; }
+        }
 
         /// <summary>
         /// Specified whether to copy addins from the 
@@ -324,6 +315,8 @@ namespace RTF.Framework
         public Runner()
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
+            InitializeProducts();
         }
 
         public Runner(IRunnerSetupData setupData)
@@ -558,18 +551,26 @@ namespace RTF.Framework
             try
             {
                 var runnable = GetRunnableTests();
-                foreach (var test in runnable)
+                if (runnable != null)
                 {
-                    if (File.Exists(test.JournalPath))
+                    foreach (var test in runnable.Where(test => File.Exists(test.JournalPath)))
                     {
                         File.Delete(test.JournalPath);
+                    } 
+                }
+
+                var allTests = GetAllTests();
+                if (allTests != null)
+                {
+                    foreach (var test in allTests)
+                    {
+                        test.JournalPath = null;
                     }
                 }
 
-                foreach (var test in GetAllTests())
-                {
-                    test.JournalPath = null;
-                }
+                DeleteAddins();
+
+                if (WorkingDirectory == null) return;
 
                 var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
                 foreach (var journal in journals)
@@ -581,8 +582,6 @@ namespace RTF.Framework
                 {
                     File.Delete(BatchJournalPath);
                 }
-
-                DeleteAddins();
 
                 if (File.Exists(AddinPath))
                 {
@@ -711,21 +710,6 @@ namespace RTF.Framework
             {
                 RevitPath = Path.Combine(Products.First().InstallLocation, "revit.exe");
             }
-
-            int count = Products.Count;
-            SelectedProduct = -1;
-            for (int i = 0; i < count; ++i)
-            {
-                var location = Path.GetDirectoryName(RevitPath);
-                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
-                if (String.Compare(locationFromProduct, location, true) == 0)
-                    SelectedProduct = i;
-            }
-
-            if (SelectedProduct == -1)
-            {
-                throw new Exception("Can not find a proper application to start!");
-            }
         }
 
         private Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
@@ -786,7 +770,7 @@ namespace RTF.Framework
             }
 
             // Check the Revit API
-            var revitCheck = Path.GetDirectoryName(Products[SelectedProduct].InstallLocation) + "\\" + name.Name + ".dll";
+            var revitCheck = Path.GetDirectoryName(RevitPath) + "\\" + name.Name + ".dll";
             if (File.Exists(revitCheck))
             {
                 return Assembly.ReflectionOnlyLoadFrom(revitCheck);
@@ -1111,7 +1095,13 @@ namespace RTF.Framework
         /// <returns></returns>
         private string GetRevitAddinFolder()
         {
-            return Products[SelectedProduct].AllUsersAddInFolder;
+            var prod =
+                    Products.FirstOrDefault(
+                        x =>
+                            System.String.CompareOrdinal(
+                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
+                            0);
+            return prod.AllUsersAddInFolder;
         }
 
         /// <summary>
@@ -1119,9 +1109,11 @@ namespace RTF.Framework
         /// </summary>
         private void DeleteAddins()
         {
-            foreach (var addin in CopiedAddins)
+            if (!CopiedAddins.Any() || CopiedAddins == null)
+                return;
+
+            foreach (var file in CopiedAddins.Select(addin => Path.Combine(WorkingDirectory, addin)))
             {
-                var file = Path.Combine(WorkingDirectory, addin);
                 File.Delete(file);
             }
             CopiedAddins.Clear();

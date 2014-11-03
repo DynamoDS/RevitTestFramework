@@ -107,14 +107,6 @@ namespace RTF.Framework
         /// </summary>
         ObservableCollection<RevitProduct> Products { get; set; }
 
-        //Dictionary<ITestData, string> TestDictionary { get; }
-
-        /// <summary>
-        /// The selected Revit application against which
-        /// to test.
-        /// </summary>
-        int SelectedProduct { get; set; }
-
         /// <summary>
         /// The name of the test to run.
         /// </summary>
@@ -155,7 +147,7 @@ namespace RTF.Framework
         /// The path to the version of Revit to be
         /// used for testing.
         /// </summary>
-        string RevitPath { get; set; }
+        string RevitPath { get; set;}
 
         /// <summary>
         /// A timeout value in milliseconds, after which
