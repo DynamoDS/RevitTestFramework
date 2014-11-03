@@ -646,18 +646,6 @@ namespace RTF.Applications
             SaveRecentFile(sfd.FileName);
         }
 
-        private bool CanOpen()
-        {
-            return !isRunning;
-        }
-
-        private void Open()
-        {
-            
-
-            
-        }
-
         private void SaveRecentFile(string fileName)
         {
             RecentFiles.Clear();
@@ -679,7 +667,7 @@ namespace RTF.Applications
 
         private bool CanOpenFile(object parameter)
         {
-            return true;
+            return !IsRunning;
         }
 
         private void OpenFile(object parameter)
