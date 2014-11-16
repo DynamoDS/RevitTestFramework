@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using RTF.Framework;
+using Autodesk.RevitAddIns;
 
 namespace RTF.Applications
 {
@@ -175,6 +179,25 @@ namespace RTF.Applications
             }
 
             return new SolidColorBrush(Colors.LightPink);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
+    public class BoolToVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if ((bool) value)
+            {
+                var check = (bool) value;
+                return check ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            return Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

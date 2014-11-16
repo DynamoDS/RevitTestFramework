@@ -25,73 +25,12 @@ namespace RTF.Applications.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string workingDirectory {
+        public global::System.Collections.Specialized.StringCollection recentFiles {
             get {
-                return ((string)(this["workingDirectory"]));
+                return ((global::System.Collections.Specialized.StringCollection)(this["recentFiles"]));
             }
             set {
-                this["workingDirectory"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string assemblyPath {
-            get {
-                return ((string)(this["assemblyPath"]));
-            }
-            set {
-                this["assemblyPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string resultsPath {
-            get {
-                return ((string)(this["resultsPath"]));
-            }
-            set {
-                this["resultsPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool isDebug {
-            get {
-                return ((bool)(this["isDebug"]));
-            }
-            set {
-                this["isDebug"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("120000")]
-        public int timeout {
-            get {
-                return ((int)(this["timeout"]));
-            }
-            set {
-                this["timeout"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int selectedProduct {
-            get {
-                return ((int)(this["selectedProduct"]));
-            }
-            set {
-                this["selectedProduct"] = value;
+                this["recentFiles"] = value;
             }
         }
     }

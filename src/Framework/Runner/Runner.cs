@@ -8,7 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
@@ -26,7 +28,9 @@ namespace RTF.Framework
     /// The Runner is responsible for setting up tests, running
     /// them, and interpreting the results.
     /// </summary>
-    public class Runner : NotificationObject, IRunner
+    [Serializable]
+    [XmlRoot]
+    public class Runner : IRunner, IDisposable
     {
         #region events
 
@@ -34,6 +38,7 @@ namespace RTF.Framework
         public event TestCompleteHandler TestComplete;
         public event TestTimedOutHandler TestTimedOut;
         public event TestFailedHandler TestFailed;
+        public event EventHandler Initialized;
 
         #endregion
 
@@ -49,7 +54,6 @@ namespace RTF.Framework
         private bool _copyAddins = true;
         private int _timeout = 120000;
         private bool _concat;
-        private string _addinPath;
         private List<string> _copiedAddins = new List<string>();
         private string _assemblyPath;
         private int _selectedProduct;
@@ -60,11 +64,11 @@ namespace RTF.Framework
         private object cancelLock = new object();
         private bool dryRun;
         private bool cleanup = true;
-        private string batchJournalPath;
         private bool continuous;
         private bool journalInitialized = false;
         private bool journalFinished;
         private GroupingType groupingType = GroupingType.Fixture;
+        private List<SelectionHint> selectionHints = new List<SelectionHint>(); 
 
         #endregion
 
@@ -87,7 +91,18 @@ namespace RTF.Framework
         /// <summary>
         /// The path of the RTF addin file.
         /// </summary>
-        public string AddinPath { get; set; }
+        public string AddinPath 
+        {
+            get{return Path.Combine(WorkingDirectory, "RevitTestFramework.addin");}
+        }
+
+        /// <summary>
+        /// The path to the batch journal file.
+        /// </summary>
+        public string BatchJournalPath
+        {
+            get { return Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt"); }
+        }
 
         /// <summary>
         /// This one records all the addins that are copied
@@ -106,41 +121,26 @@ namespace RTF.Framework
         /// <summary>
         /// A collection of assemblies available for testing.
         /// </summary>
+        [XmlIgnore]
         public ObservableCollection<IAssemblyData> Assemblies
         {
             get { return _assemblies; }
             set
             {
                 _assemblies = value;
-
-                RaisePropertyChanged("Assemblies");
             }
         }
 
         /// <summary>
         /// A collection of available Revit products for testing.
         /// </summary>
+        [XmlIgnore]
         public ObservableCollection<RevitProduct> Products
         {
             get { return _products; }
             set
             {
                 _products = value;
-                RaisePropertyChanged("Products");
-            }
-        }
-
-        /// <summary>
-        /// The selected Revit application against which
-        /// to test.
-        /// </summary>
-        public int SelectedProduct
-        {
-            get { return _selectedProduct; }
-            set
-            {
-                _selectedProduct = value;
-                RaisePropertyChanged("SelectedProduct");
             }
         }
 
@@ -192,9 +192,6 @@ namespace RTF.Framework
 
                 // Delete any existing addins before resetting the addins path.
                 DeleteAddins();
-
-                AddinPath = Path.Combine(WorkingDirectory, "RevitTestFramework.addin");
-                batchJournalPath = Path.Combine(WorkingDirectory, "RTF_Batch_Test.txt");
             }
         }
 
@@ -202,7 +199,11 @@ namespace RTF.Framework
         /// The path to the version of Revit to be
         /// used for testing.
         /// </summary>
-        public string RevitPath { get; set; }
+        public string RevitPath
+        {
+            get { return _revitPath;}
+            set { _revitPath = value; }
+        }
 
         /// <summary>
         /// Specified whether to copy addins from the 
@@ -282,6 +283,18 @@ namespace RTF.Framework
             set { continuous = value; }
         }
 
+        public List<SelectionHint> SelectionHints
+        {
+            get
+            {
+                return selectionHints;
+            }
+            set
+            {
+                selectionHints = value;
+            }
+        }
+
         public GroupingType GroupingType
         {
             get { return groupingType; }
@@ -305,15 +318,24 @@ namespace RTF.Framework
                 }
             }
         }
-        
+
         public bool IsTesting { get; set; }
 
         #endregion
 
-        #region private constructors
+        #region constructors
+
+        public Runner()
+        {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
+            InitializeProducts();
+        }
 
         public Runner(IRunnerSetupData setupData)
         {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
             if (!String.IsNullOrEmpty(setupData.TestAssembly) && !File.Exists(setupData.TestAssembly))
             {
                 throw new ArgumentException("The specified test assembly does not exist.");
@@ -326,8 +348,7 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(setupData.AssemblyPath) || !File.Exists(setupData.AssemblyPath))
             {
-                setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                    "RTFRevit.dll");
+                setupData.AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RTFRevit.dll");
             }
 
             if (!String.IsNullOrEmpty(setupData.WorkingDirectory) && !Directory.Exists(setupData.WorkingDirectory))
@@ -345,18 +366,6 @@ namespace RTF.Framework
                 setupData.GroupingType = GroupingType.Category;
             }
 
-            if (setupData.Products == null || !setupData.Products.Any())
-            {
-                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
-            }
-
-            if (String.IsNullOrEmpty(setupData.RevitPath))
-            {
-                setupData.RevitPath = Path.Combine(setupData.Products.First().InstallLocation, "revit.exe");
-            }
-
-            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-
             WorkingDirectory = setupData.WorkingDirectory;
             AssemblyPath = setupData.AssemblyPath;
             TestAssembly = setupData.TestAssembly;
@@ -372,110 +381,26 @@ namespace RTF.Framework
             IsDebug = setupData.IsDebug;
             GroupingType = setupData.GroupingType;
             Timeout = setupData.Timeout;
-            Products.Clear();
-            Products.AddRange(setupData.Products);
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
 
-            Products.Clear();
-            Products.AddRange(setupData.Products);
-            int count = Products.Count;
-            SelectedProduct = -1;
-            for (int i = 0; i < count; ++i)
-            {
-                var location = Path.GetDirectoryName(RevitPath);
-                var locationFromProduct = Path.GetDirectoryName(Products[i].InstallLocation);
-                if (String.Compare(locationFromProduct, location, true) == 0)
-                    SelectedProduct = i;
-            }
+            InitializeProducts();
 
-            if (SelectedProduct == -1)
-            {
-                throw new Exception("Can not find a proper application to start!");
-            }
-
-            Refresh();
-
-            if (File.Exists(Results) && !Concat)
-            {
-                File.Delete(Results);
-            }
-        }
-
-        #endregion
-
-        #region public static constructors
-
-        Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            var name = new AssemblyName(args.Name);
-
-            // Check the assembly location
-            var asmToCheck = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + name.Name + ".dll";
-            if (File.Exists(asmToCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-            }
-
-            // Check same directory as assembly
-            asmToCheck = Path.GetDirectoryName(TestAssembly) + "\\" + name.Name + ".dll";
-            if (File.Exists(asmToCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-            }
-
-            // Check several levels above directory
-            for (int i = 0; i < 3; i++)
-            {
-                var prevFolder = Path.GetDirectoryName(asmToCheck);
-                var folder = Path.GetFullPath(Path.Combine(prevFolder, @"..\" ));
-                asmToCheck = folder + "\\" + name.Name + ".dll";
-                if (File.Exists(asmToCheck))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
-                }
-
-                // If we can't find it in this directory, search
-                // all sub-directories that aren't the previous folder
-                var di = new DirectoryInfo(folder);
-                foreach (var d in di.GetDirectories("*",SearchOption.AllDirectories) .Where(d => d.FullName != folder))
-                {
-                    var subfolderCheck = d.FullName + "\\" + name.Name + ".dll";
-                    if (File.Exists(subfolderCheck))
-                    {
-                        return Assembly.ReflectionOnlyLoadFrom(subfolderCheck);
-                    }
-                }
-            }
-
-            // Finally, check the runtime directory
-            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
-            var systemCheck = runtime + "\\" + name.Name + ".dll";
-            if (File.Exists(systemCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(systemCheck);
-            }
-
-            // Check WPF
-            var wpfCheck = runtime + "\\WPF\\" + name.Name + ".dll";
-            if (File.Exists(wpfCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(wpfCheck);
-            }
-
-            // Check the Revit API
-            var revitCheck = Path.GetDirectoryName(Products[SelectedProduct].InstallLocation) + "\\" + name.Name + ".dll";
-            if (File.Exists(revitCheck))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(revitCheck);
-            }
-
-            return null;
+            InitializeTests();
         }
 
         #endregion
 
         #region public methods
+
+        public void Initialize()
+        {
+            ConductInitializationChecks();
+
+            InitializeProducts();
+
+            InitializeTests();
+        }
 
         /// <summary>
         /// Setup all runnable tests.
@@ -494,7 +419,7 @@ namespace RTF.Framework
 
             if (continuous && !journalFinished)
             {
-                FinishJournal(batchJournalPath);
+                FinishJournal(BatchJournalPath);
             }
 
             if (!File.Exists(AddinPath))
@@ -535,7 +460,7 @@ namespace RTF.Framework
             {
                 // If running in continous mode, there will only
                 // be one journal file, as the value for every test
-                ProcessBatchTests(batchJournalPath);
+                ProcessBatchTests(BatchJournalPath);
             }
             else
             {
@@ -566,10 +491,14 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
-        public void Refresh()
+        public void InitializeTests()
         {
             Assemblies.Clear();
             var assData = ReadAssembly(TestAssembly, WorkingDirectory, GroupingType, false);
+
+            if (assData == null)
+                return;
+
             Assemblies.AddRange(assData);
 
             // Clear running on all assemblies.
@@ -619,6 +548,12 @@ namespace RTF.Framework
 
             MarkExclusions(ExcludedCategory, assData);
 
+            if (File.Exists(Results) && !Concat)
+            {
+                File.Delete(Results);
+            }
+
+            OnInitialized();
         }
 
         public void Cleanup()
@@ -629,18 +564,26 @@ namespace RTF.Framework
             try
             {
                 var runnable = GetRunnableTests();
-                foreach (var test in runnable)
+                if (runnable != null)
                 {
-                    if (File.Exists(test.JournalPath))
+                    foreach (var test in runnable.Where(test => File.Exists(test.JournalPath)))
                     {
                         File.Delete(test.JournalPath);
+                    } 
+                }
+
+                var allTests = GetAllTests();
+                if (allTests != null)
+                {
+                    foreach (var test in allTests)
+                    {
+                        test.JournalPath = null;
                     }
                 }
 
-                foreach (var test in GetAllTests())
-                {
-                    test.JournalPath = null;
-                }
+                DeleteAddins();
+
+                if (WorkingDirectory == null) return;
 
                 var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
                 foreach (var journal in journals)
@@ -648,12 +591,10 @@ namespace RTF.Framework
                     File.Delete(journal);
                 }
 
-                if (File.Exists(batchJournalPath))
+                if (File.Exists(BatchJournalPath))
                 {
-                    File.Delete(batchJournalPath);
+                    File.Delete(BatchJournalPath);
                 }
-
-                DeleteAddins();
 
                 if (File.Exists(AddinPath))
                 {
@@ -702,9 +643,207 @@ namespace RTF.Framework
             return sb.ToString();
         }
 
+        public void Dispose()
+        {
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve -= CurrentDomain_ReflectionOnlyAssemblyResolve;
+        }
+
+        public static void Save(string filePath, Runner runner)
+        {
+            var selectedTests =
+                runner.Assemblies.SelectMany(
+                    a =>
+                        a.Fixtures.Cast<FixtureData>()
+                            .SelectMany(f => f.Tests.Cast<TestData>().Where(t => t.ShouldRun))).ToList();
+            
+            runner.SelectionHints = selectedTests.Select(t => new SelectionHint(t.Fixture.Assembly.Name, t.Fixture.Name, t.Name)).ToList();
+
+            using (var writer = new StreamWriter(filePath))
+            {
+                var serializer = new XmlSerializer(typeof(Runner));
+                serializer.Serialize(writer, runner);
+            }
+        }
+
+        public static Runner Load(string filePath)
+        {
+            Runner runner;
+
+            using (var reader = new StreamReader(filePath))
+            {
+                var serializer = new XmlSerializer(typeof(Runner));
+                runner = (Runner)serializer.Deserialize(reader);
+            }
+
+            runner.Initialize();
+
+            runner.SetSelectionsFromHints();
+
+            return runner;
+        }
+
         #endregion
 
         #region private methods
+
+        private void SetSelectionsFromHints()
+        {
+            if (!SelectionHints.Any())
+            {
+                return;
+            }
+
+            Assemblies.ToList().ForEach(a=>a.ShouldRun = false);
+
+            // The SelectionHints that are deserialized are only hints.
+            // There's a chance the assembly no longer contains a fixture
+            // or a test that is specified to run. So we walk over
+            // the selection hints by groups, attempting to find the
+            // test which we want to enable.
+
+            var asmHints = SelectionHints.GroupBy(x => x.AssemblyName);
+            foreach (var asmHintGroup in asmHints)
+            {
+                var foundAsm = Assemblies.FirstOrDefault(a => a.Name == asmHintGroup.Key);
+                if(foundAsm == null)
+                    continue;
+
+                var fixHints = asmHintGroup.GroupBy(g => g.FixtureName);
+                foreach (var fixHintGroup in fixHints)
+                {
+                    var foundFix = foundAsm.Fixtures.FirstOrDefault(f => f.Name == fixHintGroup.Key);
+                    if (foundFix == null)
+                        continue;
+
+                    foreach (var fixHint in fixHintGroup)
+                    {
+                        var foundTest = foundFix.Tests.FirstOrDefault(t => t.Name == fixHint.TestName);
+                        if (foundTest == null)
+                            continue;
+
+                        foundTest.ShouldRun = true;
+                    }
+                }
+            }
+
+            SelectionHints.Clear();
+        }
+
+        private void ConductInitializationChecks()
+        {
+            if (!String.IsNullOrEmpty(TestAssembly) && !File.Exists(TestAssembly))
+            {
+                throw new ArgumentException("The specified test assembly does not exist.");
+            }
+
+            if (String.IsNullOrEmpty(TestAssembly))
+            {
+                TestAssembly = Assembly.GetExecutingAssembly().Location;
+            }
+
+            if (String.IsNullOrEmpty(AssemblyPath) || !File.Exists(AssemblyPath))
+            {
+                AssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RTFRevit.dll");
+            }
+
+            if (!String.IsNullOrEmpty(WorkingDirectory) && !Directory.Exists(WorkingDirectory))
+            {
+                throw new ArgumentException("The specified working directory does not exist.");
+            }
+
+            if (String.IsNullOrEmpty(WorkingDirectory) || !Directory.Exists(WorkingDirectory))
+            {
+                WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            }
+
+            if (!String.IsNullOrEmpty(Category))
+            {
+                GroupingType = GroupingType.Category;
+            }
+        }
+
+        private void InitializeProducts()
+        {
+            Products.Clear();
+            Products.AddRange(RunnerSetupData.FindRevit());
+
+            if (Products == null || !Products.Any())
+            {
+                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
+            }
+
+            if (String.IsNullOrEmpty(RevitPath))
+            {
+                RevitPath = Path.Combine(Products.First().InstallLocation, "revit.exe");
+            }
+        }
+
+        private Assembly CurrentDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            var name = new AssemblyName(args.Name);
+
+            // Check the assembly location
+            var asmToCheck = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check same directory as assembly
+            asmToCheck = Path.GetDirectoryName(TestAssembly) + "\\" + name.Name + ".dll";
+            if (File.Exists(asmToCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+            }
+
+            // Check several levels above directory
+            for (int i = 0; i < 3; i++)
+            {
+                var prevFolder = Path.GetDirectoryName(asmToCheck);
+                var folder = Path.GetFullPath(Path.Combine(prevFolder, @"..\"));
+                asmToCheck = folder + "\\" + name.Name + ".dll";
+                if (File.Exists(asmToCheck))
+                {
+                    return Assembly.ReflectionOnlyLoadFrom(asmToCheck);
+                }
+
+                // If we can't find it in this directory, search
+                // all sub-directories that aren't the previous folder
+                var di = new DirectoryInfo(folder);
+                foreach (var d in di.GetDirectories("*", SearchOption.AllDirectories).Where(d => d.FullName != folder))
+                {
+                    var subfolderCheck = d.FullName + "\\" + name.Name + ".dll";
+                    if (File.Exists(subfolderCheck))
+                    {
+                        return Assembly.ReflectionOnlyLoadFrom(subfolderCheck);
+                    }
+                }
+            }
+
+            // Finally, check the runtime directory
+            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
+            var systemCheck = runtime + "\\" + name.Name + ".dll";
+            if (File.Exists(systemCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(systemCheck);
+            }
+
+            // Check WPF
+            var wpfCheck = runtime + "\\WPF\\" + name.Name + ".dll";
+            if (File.Exists(wpfCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(wpfCheck);
+            }
+
+            // Check the Revit API
+            var revitCheck = Path.GetDirectoryName(RevitPath) + "\\" + name.Name + ".dll";
+            if (File.Exists(revitCheck))
+            {
+                return Assembly.ReflectionOnlyLoadFrom(revitCheck);
+            }
+
+            return null;
+        }
 
         private void SetupIndividualTests(IEnumerable<ITestData> data, bool continuous)
         {
@@ -790,6 +929,14 @@ namespace RTF.Framework
             if (!timedOut)
             {
                 OnTestComplete(GetRunnableTests());
+            }
+        }
+
+        private void OnInitialized()
+        {
+            if (Initialized != null)
+            {
+                Initialized(this, EventArgs.Empty);
             }
         }
 
@@ -987,7 +1134,7 @@ namespace RTF.Framework
                 // the same journal path
                 if (continuous)
                 {
-                    journalPath = batchJournalPath;
+                    journalPath = BatchJournalPath;
                 }
                 td.JournalPath = journalPath;
 
@@ -1015,7 +1162,13 @@ namespace RTF.Framework
         /// <returns></returns>
         private string GetRevitAddinFolder()
         {
-            return Products[SelectedProduct].AllUsersAddInFolder;
+            var prod =
+                    Products.FirstOrDefault(
+                        x =>
+                            System.String.CompareOrdinal(
+                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
+                            0);
+            return prod.AllUsersAddInFolder;
         }
 
         /// <summary>
@@ -1023,9 +1176,11 @@ namespace RTF.Framework
         /// </summary>
         private void DeleteAddins()
         {
-            foreach (var addin in CopiedAddins)
+            if (!CopiedAddins.Any() || CopiedAddins == null)
+                return;
+
+            foreach (var file in CopiedAddins.Select(addin => Path.Combine(WorkingDirectory, addin)))
             {
-                var file = Path.Combine(WorkingDirectory, addin);
                 File.Delete(file);
             }
             CopiedAddins.Clear();
@@ -1181,18 +1336,22 @@ namespace RTF.Framework
                 AssemblyLoader loader;
                 AssemblyData assData;
 
+                var product = _products[_selectedProduct];
+                var revitDirectory = product.InstallLocation;
+                var resolver = new DefaultAssemblyResolver(revitDirectory);
+
                 if (!isTesting)
                 {
                     // Create a temporary application domain to load the assembly.
                     var tempDomain = AppDomain.CreateDomain("RTF_Domain");
-                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath }, CultureInfo.InvariantCulture, null);
+                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath, resolver }, CultureInfo.InvariantCulture, null);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                     AppDomain.Unload(tempDomain);
                 }
                 else
                 {
-                    loader = new AssemblyLoader(assemblyPath);
+                    loader = new AssemblyLoader(assemblyPath, resolver);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                 }
@@ -1309,360 +1468,22 @@ namespace RTF.Framework
         #endregion
     }
 
-    [Serializable]
-    public class AssemblyData : NotificationObject, IAssemblyData
+    public class SelectionHint
     {
-        private bool _shouldRun = true;
-        private ObservableCollection<ITestGroup> _sortingGroup;
-        public virtual string Path { get; set; }
-        public virtual string Name { get; set; }
-        public ObservableCollection<ITestGroup> Fixtures { get; set; }
-        public ObservableCollection<ITestGroup> Categories { get; set; }
-        public bool IsNodeExpanded { get; set; }
-        public GroupingType GroupingType { get; set; }
+        public string AssemblyName { get; set; }
+        public string FixtureName { get; set; }
+        public string TestName { get; set; }
 
-        public ObservableCollection<ITestGroup> SortingGroup
+        public SelectionHint()
         {
-            get
-            {
-                switch (GroupingType)
-                {
-                    case GroupingType.Category:
-                        return Categories;
-                    case GroupingType.Fixture:
-                        return Fixtures;
-                    default:
-                        return null;
-                }
-            }
+            // used for serialization
         }
 
-        public string Summary
+        public SelectionHint(string asmName, string fixName, string testName)
         {
-            get
-            {
-                return string.Format("{0} Fixtures with {1} Tests", Fixtures.Count,
-                    Fixtures.SelectMany(f => f.Tests).Count());
-            }
-        }
-
-        public bool ShouldRun
-        {
-            get { return _shouldRun; }
-            set
-            {
-                _shouldRun = value;
-
-                // Set nothing to run.
-                foreach (var test in Fixtures.SelectMany(f => f.Tests))
-                {
-                    test.ShouldRun = false;
-                }
-
-                // Set all the categories or fixtures to run
-                foreach (var item in SortingGroup)
-                {
-                    var group = item as IExcludable;
-                    if (group != null)
-                    {
-                        group.ShouldRun = _shouldRun; 
-                    }
-                }
-
-                RaisePropertyChanged("ShouldRun");
-            }
-        }
-
-        public AssemblyData()
-        {
-            Categories = new ObservableCollection<ITestGroup>();
-            Fixtures = new ObservableCollection<ITestGroup>();
-        }
-
-        public AssemblyData(string path, string name, GroupingType groupType)
-        {
-            Categories = new ObservableCollection<ITestGroup>();
-            Fixtures = new ObservableCollection<ITestGroup>();
-            IsNodeExpanded = true;
-            GroupingType = groupType;
-
-            Path = path;
-            Name = name;
-        }
-    }
-
-    [Serializable]
-    public class FixtureData : NotificationObject, IFixtureData
-    {
-        private bool _shouldRun = true;
-        public virtual string Name { get; set; }
-        public ObservableCollection<ITestData> Tests { get; set; }
-        public FixtureStatus FixtureStatus { get; set; }
-        public IAssemblyData Assembly { get; set; }
-        public bool IsNodeExpanded { get; set; }
-        
-        public string Summary
-        {
-            get
-            {
-                return string.Format("{0} Tests", Tests.Count);
-            }
-        }
-
-        public string FixtureSummary
-        {
-            get
-            {
-                var successCount = Tests.Count(x => x.TestStatus == TestStatus.Success);
-                var failCount = Tests.Count(x => x.TestStatus == TestStatus.Failure);
-                var otherCount = Tests.Count - successCount - failCount;
-                return string.Format("[Total: {0}, Success: {1}, Failure: {2}, Other: {3}]", Tests.Count, successCount, failCount, otherCount);
-            }
-        }
-
-        public bool ShouldRun
-        {
-            get { return _shouldRun; }
-            set
-            {
-                _shouldRun = value;
-
-                foreach (var test in Tests)
-                {
-                    test.ShouldRun = _shouldRun;
-                }
-
-                RaisePropertyChanged("ShouldRun");
-            }
-        }
-
-        public FixtureData(){}
-
-        public FixtureData(IAssemblyData assembly, string name)
-        {
-            Assembly = assembly;
-            Tests = new ObservableCollection<ITestData>();
-            Name = name;
-            FixtureStatus = FixtureStatus.None;
-
-            Tests.CollectionChanged += Tests_CollectionChanged;
-        }
-
-        void Tests_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    foreach (var item in e.NewItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged += td_PropertyChanged;
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    foreach (var item in e.OldItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged -= td_PropertyChanged;
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Reset:
-                    foreach (var item in e.OldItems)
-                    {
-                        var td = item as TestData;
-                        td.PropertyChanged -= td_PropertyChanged;
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "TestStatus" || e.PropertyName=="ResultData")
-            {
-                if (Tests.All(t => t.TestStatus == TestStatus.Success))
-                {
-                    FixtureStatus = FixtureStatus.Success;
-                }
-                else if (Tests.Any(t => t.TestStatus == TestStatus.Failure))
-                {
-                    FixtureStatus = FixtureStatus.Failure;
-                }
-                else
-                {
-                    FixtureStatus = FixtureStatus.Mixed;
-                }
-
-                RaisePropertyChanged("FixtureStatus");
-                RaisePropertyChanged("FixtureSummary");
-            }
-        }
-    }
-
-    [Serializable]
-    public class TestData : NotificationObject, ITestData
-    {
-        private TestStatus _testStatus;
-        private IList<IResultData> _resultData;
-        private bool _shouldRun = true;
-        public virtual string Name { get; set; }
-        public bool RunDynamo { get; set; }
-        public virtual string ModelPath { get; set; }
-        public bool IsNodeExpanded { get; set; }
-
-        public bool ModelExists
-        {
-            get { return ModelPath != null &&  File.Exists(ModelPath); }
-        }
-
-        public string ModelPathMessage
-        {
-            get
-            {
-                return ModelExists ? 
-                    "The selected test model exists." : 
-                    "The selected test model does not exist. Check your working directory.";
-            }
-        }
-
-        public string ShortModelPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(ModelPath))
-                {
-                    return string.Empty;
-                }
-
-                var info = new FileInfo(ModelPath);
-                //return string.Format("[{0}]", info.Name);
-                return string.Format("[{0}]", info.FullName);
-            }
-        }
-
-        public virtual TestStatus TestStatus
-        {
-            get { return _testStatus; }
-            set
-            {
-                _testStatus = value;
-                RaisePropertyChanged("TestStatus");
-            }
-        }
-
-        public bool ShouldRun
-        {
-            get { return _shouldRun; }
-            set
-            {
-                //Debug.WriteLine(value
-                //    ? string.Format("{0} should run.", Name)
-                //    : string.Format("{0} should not run.", Name));
-
-                _shouldRun = value;
-                RaisePropertyChanged("ShouldRun");
-            }
-        }
-
-        public ObservableCollection<IResultData> ResultData { get; set; }
-        
-        public string JournalPath { get; set; }
-
-        public virtual IFixtureData Fixture { get; set; }
-
-        public TestData(){}
-
-        public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
-        {
-            Fixture = fixture;
-            Name = name;
-            ModelPath = modelPath;
-            RunDynamo = runDynamo;
-            _testStatus = TestStatus.None;
-            ResultData = new ObservableCollection<IResultData>();
-
-            ResultData.CollectionChanged += ResultDataOnCollectionChanged;
-        }
-
-        private void ResultDataOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
-        {
-            RaisePropertyChanged("ResultData");
-        }
-    }
-
-    [Serializable]
-    public class CategoryData : NotificationObject, ICategoryData
-    {
-        private bool _shouldRun = true;
-        public virtual string Name { get; set; }
-        public ObservableCollection<ITestData> Tests { get; set; }
-        public IAssemblyData Assembly { get; set; }
-
-        public bool IsNodeExpanded { get; set; }
-
-        public bool ShouldRun
-        {
-            get { return _shouldRun; }
-            set
-            {
-                _shouldRun = value;
-
-                foreach(var test in Tests)
-                {
-
-                    test.ShouldRun = _shouldRun;
-                }
-
-                RaisePropertyChanged("ShouldRun");
-            }
-        }
-
-        public string Summary
-        {
-            get
-            {
-                return string.Format("{0} Tests", Tests.Count);
-            }
-        }
-
-        public CategoryData(){}
-
-        public CategoryData(IAssemblyData assembly, string name)
-        {
-            Name = name;
-            Tests = new ObservableCollection<ITestData>();
-            Assembly = assembly;
-        }
-    }
-
-    [Serializable]
-    public class ResultData : NotificationObject, IResultData
-    {
-        private string _message = "";
-        private string _stackTrace = "";
-
-        public bool IsNodeExpanded { get; set; }
-
-        public string Message
-        {
-            get { return _message; }
-            set
-            {
-                _message = value;
-                RaisePropertyChanged("Message");
-            }
-        }
-
-        public string StackTrace
-        {
-            get { return _stackTrace; }
-            set
-            {
-                _stackTrace = value;
-                RaisePropertyChanged("StackTrace");
-            }
+            AssemblyName = asmName;
+            FixtureName = fixName;
+            TestName = testName;
         }
     }
 }

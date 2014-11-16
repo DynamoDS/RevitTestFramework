@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyLoader.cs" />
+    <Compile Include="DataTypes.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="NUnitResultTypes.cs">
       <DependentUpon>NUnitResultTypes.xsd</DependentUpon>
@@ -69,6 +70,12 @@
     <None Include="NUnitResultTypes.xsd">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RevitTestFramework\RevitTestFrameworkTypes.csproj">
+      <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
+      <Name>RevitTestFrameworkTypes</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

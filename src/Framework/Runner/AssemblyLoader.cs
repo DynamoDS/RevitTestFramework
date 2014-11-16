@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using Microsoft.Practices.Prism.Modularity;
 
 namespace RTF.Framework
 {
@@ -13,10 +15,10 @@ namespace RTF.Framework
     [Serializable]
     public class AssemblyLoader : MarshalByRefObject
     {
-        public AssemblyLoader(string assemblyPath)
-        {
+        public AssemblyLoader(string assemblyPath, RTFAssemblyResolver resolver)
+        {  
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve +=
-                    (object s, ResolveEventArgs a) => AssemblyLoader.tempDomain_ReflectionOnlyAssemblyResolve(s, a, assemblyPath);
+                    resolver.Resolve;
         }
 
         public AssemblyData ReadAssembly(string assemblyPath, GroupingType groupType, string workingDirectory)
@@ -126,32 +128,6 @@ namespace RTF.Framework
             }
 
             return true;
-        }
-
-        public static Assembly tempDomain_ReflectionOnlyAssemblyResolve(object sender, ResolveEventArgs args, string assemblyPath)
-        {
-            var dir = Path.GetDirectoryName(assemblyPath);
-            var testFile = Path.Combine(dir, new AssemblyName(args.Name).Name + ".dll");
-            if (File.Exists(testFile))
-            {
-                return Assembly.ReflectionOnlyLoadFrom(testFile);
-            }
-
-            // Search around and upstream of the test assembly
-            var dirInfo = new DirectoryInfo(dir);
-            for (int i = 0; i < 3; i++)
-            {
-                dirInfo = dirInfo.Parent;
-                testFile = Path.Combine(dirInfo.FullName, new AssemblyName(args.Name).Name + ".dll");
-                if (File.Exists(testFile))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(testFile);
-                }
-            }
-
-            // If the above fail, attempt to load from the GAC
-            var gacAssembly = Assembly.ReflectionOnlyLoad(args.Name);
-            return gacAssembly ?? null;
         }
     }
 }

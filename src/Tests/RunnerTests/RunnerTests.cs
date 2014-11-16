@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Autodesk.RevitAddIns;
 using Moq;
 using NUnit.Framework;
 using RTF.Framework;
@@ -16,6 +15,8 @@ namespace RTF.Tests
     /// </summary>
     public class TestRunner : Runner
     {
+        public TestRunner(){}
+
         public TestRunner(IRunnerSetupData setupData) : base(setupData){}
 
         public override IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory,
@@ -93,13 +94,13 @@ namespace RTF.Tests
             Assert.DoesNotThrow(()=>new TestRunner(setupData));
         }
 
-        [Test]
-        public void CannotConstructRunnerWithoutRevit()
-        {
-            var mockSetup = new Mock<RunnerSetupData>();
-            mockSetup.Setup(x => x.Products).Returns(new List<RevitProduct>{});
-            Assert.Throws(typeof(ArgumentException), () => new TestRunner(mockSetup.Object));
-        }
+        //[Test]
+        //public void CannotConstructRunnerWithoutRevit()
+        //{
+        //    var mockSetup = new Mock<RunnerSetupData>();
+        //    mockSetup.Setup(x => x.Products).Returns(new List<RevitProduct>{});
+        //    Assert.Throws(typeof(ArgumentException), () => new TestRunner(mockSetup.Object));
+        //}
 
         [Test]
         public void CannotConstructRunnerWithBadWorkingDirectory()
@@ -121,6 +122,7 @@ namespace RTF.Tests
         public void RunByCategorySetup_Smoke()
         {
             var runner = new TestRunner(TestSetupData());
+            
             var assData = runner.Assemblies.First();
             assData.ShouldRun = false;
 
@@ -295,6 +297,50 @@ namespace RTF.Tests
                 Where(t => t.Name == "TestA");
 
             Assert.AreEqual(test.Count(),2);
+        }
+
+        [Test]
+        public void CanSerializeAndDeserialize()
+        {
+            var tmpResultsPath = Path.GetTempFileName();
+
+            var setupData = new RunnerSetupData
+            {
+                WorkingDirectory = workingDir,
+                DryRun = true,
+                Results = tmpResultsPath,
+                Continuous = false,
+                IsTesting = true,
+                Fixture = "FixtureA",
+                Timeout = 5,
+            };
+
+            var runner = new Runner(setupData);
+
+            var testPath = Path.GetTempFileName();
+
+            Runner.Save(testPath, runner);
+
+            var newRunner = Runner.Load(testPath);
+
+            Assert.AreEqual(newRunner.WorkingDirectory, workingDir);
+            Assert.AreEqual(newRunner.DryRun, true);
+            Assert.AreEqual(newRunner.Results, tmpResultsPath);
+            Assert.AreEqual(newRunner.Continuous, false);
+            Assert.AreEqual(newRunner.IsTesting, true);
+            Assert.AreEqual(newRunner.Fixture, "FixtureA");
+            Assert.AreEqual(newRunner.Timeout, 5);
+
+            newRunner.Timeout = 10;
+
+            var testPath2 = Path.GetTempFileName();
+
+            Runner.Save(testPath2, newRunner);
+
+            var newRunner2 = Runner.Load(testPath2);
+
+            Assert.AreEqual(newRunner2.Timeout, 10);
+
         }
 
         #region private helper methods
