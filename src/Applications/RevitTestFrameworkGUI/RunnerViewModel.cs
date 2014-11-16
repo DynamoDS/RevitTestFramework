@@ -473,7 +473,8 @@ namespace RTF.Applications
 
         private bool CanRun(object parameter)
         {
-            return runner.GetRunnableTests().Any();
+            //return runner.GetRunnableTests().Any();
+            return true;
         }
 
         private void Run(object parameter)
