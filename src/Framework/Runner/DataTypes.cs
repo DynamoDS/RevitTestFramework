@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Serialization;
 using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
@@ -207,16 +208,25 @@ namespace RTF.Framework
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
         private bool _shouldRun = true;
+
         public virtual string Name { get; set; }
+
+        [XmlIgnore]
         public bool RunDynamo { get; set; }
+
+        [XmlIgnore]
         public virtual string ModelPath { get; set; }
+
+        [XmlIgnore]
         public bool IsNodeExpanded { get; set; }
 
+        [XmlIgnore]
         public bool ModelExists
         {
             get { return ModelPath != null && File.Exists(ModelPath); }
         }
 
+        [XmlIgnore]
         public string ModelPathMessage
         {
             get
@@ -227,6 +237,7 @@ namespace RTF.Framework
             }
         }
 
+        [XmlIgnore]
         public string ShortModelPath
         {
             get
@@ -242,6 +253,7 @@ namespace RTF.Framework
             }
         }
 
+        [XmlIgnore]
         public virtual TestStatus TestStatus
         {
             get { return _testStatus; }
@@ -266,10 +278,13 @@ namespace RTF.Framework
             }
         }
 
+        [XmlIgnore]
         public ObservableCollection<IResultData> ResultData { get; set; }
 
+        [XmlIgnore]
         public string JournalPath { get; set; }
 
+        [XmlIgnore]
         public virtual IFixtureData Fixture { get; set; }
 
         public TestData() { }

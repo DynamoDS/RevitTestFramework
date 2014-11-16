@@ -68,6 +68,7 @@ namespace RTF.Framework
         private bool journalInitialized = false;
         private bool journalFinished;
         private GroupingType groupingType = GroupingType.Fixture;
+        private List<SelectionHint> selectionHints = new List<SelectionHint>(); 
 
         #endregion
 
@@ -280,6 +281,18 @@ namespace RTF.Framework
         {
             get { return continuous; }
             set { continuous = value; }
+        }
+
+        public List<SelectionHint> SelectionHints
+        {
+            get
+            {
+                return selectionHints;
+            }
+            set
+            {
+                selectionHints = value;
+            }
         }
 
         public GroupingType GroupingType
@@ -637,6 +650,14 @@ namespace RTF.Framework
 
         public static void Save(string filePath, Runner runner)
         {
+            var selectedTests =
+                runner.Assemblies.SelectMany(
+                    a =>
+                        a.Fixtures.Cast<FixtureData>()
+                            .SelectMany(f => f.Tests.Cast<TestData>().Where(t => t.ShouldRun))).ToList();
+            
+            runner.SelectionHints = selectedTests.Select(t => new SelectionHint(t.Fixture.Assembly.Name, t.Fixture.Name, t.Name)).ToList();
+
             using (var writer = new StreamWriter(filePath))
             {
                 var serializer = new XmlSerializer(typeof(Runner));
@@ -656,12 +677,57 @@ namespace RTF.Framework
 
             runner.Initialize();
 
+            runner.SetSelectionsFromHints();
+
             return runner;
         }
 
         #endregion
 
         #region private methods
+
+        private void SetSelectionsFromHints()
+        {
+            if (!SelectionHints.Any())
+            {
+                return;
+            }
+
+            Assemblies.ToList().ForEach(a=>a.ShouldRun = false);
+
+            // The SelectionHints that are deserialized are only hints.
+            // There's a chance the assembly no longer contains a fixture
+            // or a test that is specified to run. So we walk over
+            // the selection hints by groups, attempting to find the
+            // test which we want to enable.
+
+            var asmHints = SelectionHints.GroupBy(x => x.AssemblyName);
+            foreach (var asmHintGroup in asmHints)
+            {
+                var foundAsm = Assemblies.FirstOrDefault(a => a.Name == asmHintGroup.Key);
+                if(foundAsm == null)
+                    continue;
+
+                var fixHints = asmHintGroup.GroupBy(g => g.FixtureName);
+                foreach (var fixHintGroup in fixHints)
+                {
+                    var foundFix = foundAsm.Fixtures.FirstOrDefault(f => f.Name == fixHintGroup.Key);
+                    if (foundFix == null)
+                        continue;
+
+                    foreach (var fixHint in fixHintGroup)
+                    {
+                        var foundTest = foundFix.Tests.FirstOrDefault(t => t.Name == fixHint.TestName);
+                        if (foundTest == null)
+                            continue;
+
+                        foundTest.ShouldRun = true;
+                    }
+                }
+            }
+
+            SelectionHints.Clear();
+        }
 
         private void ConductInitializationChecks()
         {
@@ -1399,5 +1465,24 @@ namespace RTF.Framework
         }
 
         #endregion
+    }
+
+    public class SelectionHint
+    {
+        public string AssemblyName { get; set; }
+        public string FixtureName { get; set; }
+        public string TestName { get; set; }
+
+        public SelectionHint()
+        {
+            // used for serialization
+        }
+
+        public SelectionHint(string asmName, string fixName, string testName)
+        {
+            AssemblyName = asmName;
+            FixtureName = fixName;
+            TestName = testName;
+        }
     }
 }
