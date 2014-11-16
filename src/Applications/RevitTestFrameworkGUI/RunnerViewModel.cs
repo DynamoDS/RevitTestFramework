@@ -621,6 +621,8 @@ namespace RTF.Applications
 
         private void SaveRecentFile(string fileName)
         {
+            // Clear the recent files list
+            // and add this file to the top.
             RecentFiles.Clear();
             RecentFiles.Add(fileName);
 
@@ -629,13 +631,22 @@ namespace RTF.Applications
                 Settings.Default.recentFiles != null &&
                 Settings.Default.recentFiles.Count > i)
             {
-                RecentFiles.Add(Settings.Default.recentFiles[i]);
+                var recentPath = Settings.Default.recentFiles[i];
+
+                // Only add the path if it isn't already
+                // in the list.
+                if (!RecentFiles.Contains(recentPath))
+                {
+                    RecentFiles.Add(Settings.Default.recentFiles[i]);
+                }
+                
                 i++;
             }
 
             var sc = new StringCollection();
             sc.AddRange(RecentFiles.ToArray());
             Settings.Default.recentFiles = sc;
+            Settings.Default.Save();
         }
 
         private bool CanOpenFile(object parameter)
