@@ -323,6 +323,8 @@ namespace RTF.Applications
         {
             runner = new Runner();
 
+            runner.Initialize();
+
             if (runner != null) return;
 
             MessageBox.Show("The runner could not be created with the specified inputs.");
@@ -720,7 +722,7 @@ namespace RTF.Applications
             var index = (int) obj;
             if (index != -1 && index < runner.Products.Count)
             {
-                runner.RevitPath = runner.Products[index].InstallLocation;
+                runner.RevitPath = Path.Combine(runner.Products[index].InstallLocation, "revit.exe");
             }
         }
 
