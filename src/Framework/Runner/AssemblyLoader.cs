@@ -90,7 +90,18 @@ namespace RTF.Framework
                 //overwrite the model path with the one
                 //specified in the test model attribute
                 var relModelPath = testModelAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-                modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath));
+                if (workingDirectory == null)
+                {
+                    // If the working directory is not specified.
+                    // Add the relative path to the assembly's path.
+                    modelPath =
+                        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                            relModelPath));
+                }
+                else
+                {
+                    modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath)); 
+                }
             }
 
             var runDynamoAttrib =
