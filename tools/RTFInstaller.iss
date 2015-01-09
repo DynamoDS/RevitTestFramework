@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Revit Test Framework"
-#define MyAppVersion "2015"
+#define MyAppVersion "2016"
 #define MyAppPublisher "Dynamo"
 #define MyAppExeName "RevitTestFrameworkGUI.exe"
 
@@ -10,14 +10,14 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{5204b00f-328e-49c5-ab93-6288908a1ef2}
+AppId={{FD9627CA-0968-4568-B1E4-22BE5B9CE8D4}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={pf}\{#MyAppName}\2015
+DefaultDirName={pf}\{#MyAppName}\2016
 DefaultGroupName={#MyAppName}
-OutputBaseFilename=RevitTestFrameworkInstaller2015
+OutputBaseFilename=RevitTestFrameworkInstaller2016
 Compression=lzma
 SolidCompression=yes
 
