@@ -325,6 +325,8 @@ namespace RTF.Applications
 
             runner.Initialize();
 
+            InitializeEventHandlers();
+
             if (runner != null) return;
 
             MessageBox.Show("The runner could not be created with the specified inputs.");
