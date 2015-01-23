@@ -328,8 +328,6 @@ namespace RTF.Framework
         public Runner()
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-
-            InitializeProducts();
         }
 
         public Runner(IRunnerSetupData setupData)
@@ -383,10 +381,6 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
-
-            InitializeProducts();
-
-            InitializeTests();
         }
 
         #endregion
