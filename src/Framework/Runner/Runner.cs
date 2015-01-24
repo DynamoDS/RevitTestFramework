@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
 using Microsoft.Practices.Prism;
-using Microsoft.Practices.Prism.Logging;
-using Microsoft.Practices.Prism.ViewModel;
 using NDesk.Options;
 
 namespace RTF.Framework
@@ -614,7 +610,7 @@ namespace RTF.Framework
         {
             var runnable = Assemblies.
                 SelectMany(a => a.Fixtures.SelectMany(f=>f.Tests)).
-                Where(t => t.ShouldRun);
+                Where(t => t.ShouldRun == true);
 
             return runnable;
         }
@@ -640,6 +636,11 @@ namespace RTF.Framework
         public void Dispose()
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve -= CurrentDomain_ReflectionOnlyAssemblyResolve;
+
+            foreach (var a in Assemblies.Select(ad => ad as AssemblyData))
+            {
+                a.Dispose();
+            }
         }
 
         public static void Save(string filePath, Runner runner)
@@ -648,7 +649,7 @@ namespace RTF.Framework
                 runner.Assemblies.SelectMany(
                     a =>
                         a.Fixtures.Cast<FixtureData>()
-                            .SelectMany(f => f.Tests.Cast<TestData>().Where(t => t.ShouldRun))).ToList();
+                            .SelectMany(f => f.Tests.Cast<TestData>().Where(t => t.ShouldRun == true))).ToList();
             
             runner.SelectionHints = selectedTests.Select(t => new SelectionHint(t.Fixture.Assembly.Name, t.Fixture.Name, t.Name)).ToList();
 
