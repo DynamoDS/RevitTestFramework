@@ -695,6 +695,7 @@ namespace RTF.Applications
             {
                 DeinitializeFileWatcher();
                 RemoveEventHandlers();
+                runner.Dispose();
                 runner = null;
             }
 

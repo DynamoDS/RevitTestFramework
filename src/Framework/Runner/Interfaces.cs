@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Autodesk.RevitAddIns;
 
 namespace RTF.Framework
@@ -22,10 +24,11 @@ namespace RTF.Framework
 
     public interface IExcludable
     {
-        bool ShouldRun { get; set; }
+        bool? ShouldRun { get; set; }
+        void SetChildrenShouldRunWithoutRaise(bool? shouldRun);
     }
 
-    public interface IAssemblyData:IExcludable
+    public interface IAssemblyData:IExcludable, IDisposable, INotifyPropertyChanged
     {
         string Path { get; set; }
         string Name { get; set; }
@@ -35,12 +38,12 @@ namespace RTF.Framework
         GroupingType GroupingType { get; set; }
     }
 
-    public interface IFixtureData:ITestGroup,IExcludable
+    public interface IFixtureData : ITestGroup, IExcludable, IDisposable, INotifyPropertyChanged
     {
         FixtureStatus FixtureStatus { get; set; }
     }
 
-    public interface ITestData:IExcludable
+    public interface ITestData : IExcludable, INotifyPropertyChanged
     {
         IFixtureData Fixture { get; set; }
         string Name { get; set; }
@@ -52,13 +55,13 @@ namespace RTF.Framework
         string JournalPath { get; set; }
     }
 
-    public interface IResultData
+    public interface IResultData: INotifyPropertyChanged
     {
         string Message { get; set; }
         string StackTrace { get; set; }
     }
 
-    public interface ICategoryData : ITestGroup,IExcludable
+    public interface ICategoryData : ITestGroup,IExcludable, IDisposable, INotifyPropertyChanged
     {}
 
     public interface IRunnerSetupData
