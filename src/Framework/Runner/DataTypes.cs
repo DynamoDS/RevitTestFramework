@@ -1,19 +1,24 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Xml.Serialization;
 using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
 {
     [Serializable]
-    public class AssemblyData : NotificationObject, IAssemblyData
+    public class AssemblyData : IAssemblyData
     {
-        private bool _shouldRun = true;
+        private bool? _shouldRun = true;
         private ObservableCollection<ITestGroup> _sortingGroup;
         public virtual string Path { get; set; }
         public virtual string Name { get; set; }
@@ -47,30 +52,14 @@ namespace RTF.Framework
             }
         }
 
-        public bool ShouldRun
+        public bool? ShouldRun
         {
             get { return _shouldRun; }
             set
             {
                 _shouldRun = value;
-
-                // Set nothing to run.
-                foreach (var test in Fixtures.SelectMany(f => f.Tests))
-                {
-                    test.ShouldRun = false;
-                }
-
-                // Set all the categories or fixtures to run
-                foreach (var item in SortingGroup)
-                {
-                    var group = item as IExcludable;
-                    if (group != null)
-                    {
-                        group.ShouldRun = _shouldRun;
-                    }
-                }
-
-                RaisePropertyChanged("ShouldRun");
+                SetChildrenShouldRunWithoutRaise(_shouldRun);
+                OnPropertyChanged("ShouldRun");
             }
         }
 
@@ -89,13 +78,126 @@ namespace RTF.Framework
 
             Path = path;
             Name = name;
+
+            Fixtures.CollectionChanged += Fixtures_CollectionChanged;
+            Categories.CollectionChanged += Categories_CollectionChanged;
+        }
+
+        void Categories_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var cd in from object item in e.NewItems select item as CategoryData)
+                    {
+                        cd.PropertyChanged += fd_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var cd in from object item in e.OldItems select item as CategoryData)
+                    {
+                        cd.PropertyChanged -= fd_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    foreach (var cd in from object item in e.OldItems select item as CategoryData)
+                    {
+                        cd.PropertyChanged -= fd_PropertyChanged;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void Fixtures_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var fd in from object item in e.NewItems select item as FixtureData)
+                    {
+                        fd.PropertyChanged += fd_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var fd in from object item in e.OldItems select item as FixtureData)
+                    {
+                        fd.PropertyChanged -= fd_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    foreach (var fd in from object item in e.OldItems select item as FixtureData)
+                    {
+                        fd.PropertyChanged -= fd_PropertyChanged;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void fd_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "ShouldRun":
+                    if (SortingGroup.All(f => ((IExcludable)f).ShouldRun == true))
+                    {
+                        _shouldRun = true;
+                    }
+                    else if (SortingGroup.All(f => ((IExcludable) f).ShouldRun == false))
+                    {
+                        _shouldRun = false;
+                    }
+                    else
+                    {
+                        _shouldRun = null;
+                    }
+                    
+                    OnPropertyChanged("ShouldRun");
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var fd in Fixtures.Select(item => item as FixtureData))
+            {
+                fd.PropertyChanged -= fd_PropertyChanged;
+            }
+
+            foreach (var f in Fixtures.Select(fd => fd as FixtureData))
+            {
+                f.Dispose();
+            }
+
+            foreach (var c in Categories.Select(cd => cd as CategoryData))
+            {
+                c.Dispose();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
+        {
+            foreach (var ex in SortingGroup.Select(sg => sg as IExcludable))
+            {
+                ex.SetChildrenShouldRunWithoutRaise(shouldRun);
+            }
         }
     }
 
     [Serializable]
-    public class FixtureData : NotificationObject, IFixtureData
+    public class FixtureData : IFixtureData
     {
-        private bool _shouldRun = true;
+        private bool? _shouldRun = true;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
@@ -121,19 +223,14 @@ namespace RTF.Framework
             }
         }
 
-        public bool ShouldRun
+        public bool? ShouldRun
         {
             get { return _shouldRun; }
             set
             {
                 _shouldRun = value;
-
-                foreach (var test in Tests)
-                {
-                    test.ShouldRun = _shouldRun;
-                }
-
-                RaisePropertyChanged("ShouldRun");
+                SetChildrenShouldRunWithoutRaise(_shouldRun);
+                OnPropertyChanged("ShouldRun");
             }
         }
 
@@ -154,23 +251,20 @@ namespace RTF.Framework
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    foreach (var item in e.NewItems)
+                    foreach (var td in from object item in e.NewItems select item as TestData)
                     {
-                        var td = item as TestData;
                         td.PropertyChanged += td_PropertyChanged;
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    foreach (var item in e.OldItems)
+                    foreach (var td in from object item in e.OldItems select item as TestData)
                     {
-                        var td = item as TestData;
                         td.PropertyChanged -= td_PropertyChanged;
                     }
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    foreach (var item in e.OldItems)
+                    foreach (var td in from object item in e.OldItems select item as TestData)
                     {
-                        var td = item as TestData;
                         td.PropertyChanged -= td_PropertyChanged;
                     }
                     break;
@@ -181,33 +275,82 @@ namespace RTF.Framework
 
         void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "TestStatus" || e.PropertyName == "ResultData")
+            switch (e.PropertyName)
             {
-                if (Tests.All(t => t.TestStatus == TestStatus.Success))
-                {
-                    FixtureStatus = FixtureStatus.Success;
-                }
-                else if (Tests.Any(t => t.TestStatus == TestStatus.Failure))
-                {
-                    FixtureStatus = FixtureStatus.Failure;
-                }
-                else
-                {
-                    FixtureStatus = FixtureStatus.Mixed;
-                }
+                case "TestStatus":
+                case "ResultData":
+                    if (Tests.All(t => t.TestStatus == TestStatus.Success))
+                    {
+                        FixtureStatus = FixtureStatus.Success;
+                    }
+                    else if (Tests.Any(t => t.TestStatus == TestStatus.Failure))
+                    {
+                        FixtureStatus = FixtureStatus.Failure;
+                    }
+                    else
+                    {
+                        FixtureStatus = FixtureStatus.Mixed;
+                    }
 
-                RaisePropertyChanged("FixtureStatus");
-                RaisePropertyChanged("FixtureSummary");
+                    OnPropertyChanged("FixtureStatus");
+                    OnPropertyChanged("FixtureSummary");
+                    break;
+                case "ShouldRun":
+                    
+                    if (Tests.All(t => t.ShouldRun == true))
+                    {
+                        _shouldRun = true;
+                    }
+                    else if (Tests.All(t => t.ShouldRun == false))
+                    {
+                        _shouldRun = false;
+                    }
+                    else
+                    {
+                        _shouldRun = null; 
+                    }
+                    
+                    OnPropertyChanged("ShouldRun");
+                    break;
             }
         }
+
+        public void Dispose()
+        {
+            foreach (var td in Tests.Select(item => item as TestData))
+            {
+                td.PropertyChanged -= td_PropertyChanged;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
+        {
+            if (shouldRun == null) return;
+
+            _shouldRun = shouldRun;
+            foreach (var t in Tests)
+            {
+                t.SetChildrenShouldRunWithoutRaise(shouldRun);
+            }
+
+            OnPropertyChanged("ShouldRun");
+        }
+
     }
 
     [Serializable]
-    public class TestData : NotificationObject, ITestData
+    public class TestData : ITestData
     {
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
-        private bool _shouldRun = true;
+        private bool? _shouldRun = true;
 
         public virtual string Name { get; set; }
 
@@ -260,21 +403,17 @@ namespace RTF.Framework
             set
             {
                 _testStatus = value;
-                RaisePropertyChanged("TestStatus");
+                OnPropertyChanged("TestStatus");
             }
         }
 
-        public bool ShouldRun
+        public bool? ShouldRun
         {
             get { return _shouldRun; }
             set
             {
-                //Debug.WriteLine(value
-                //    ? string.Format("{0} should run.", Name)
-                //    : string.Format("{0} should not run.", Name));
-
                 _shouldRun = value;
-                RaisePropertyChanged("ShouldRun");
+                OnPropertyChanged("ShouldRun");
             }
         }
 
@@ -303,35 +442,58 @@ namespace RTF.Framework
 
         private void ResultDataOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
         {
-            RaisePropertyChanged("ResultData");
+            OnPropertyChanged("ResultData");
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
+        {
+            if (shouldRun == null) return;
+            _shouldRun = shouldRun;
+
+            OnPropertyChanged("ShouldRun");
+        }
+
     }
 
     [Serializable]
-    public class CategoryData : NotificationObject, ICategoryData
+    public class CategoryData : ICategoryData
     {
-        private bool _shouldRun = true;
+        private bool? _shouldRun = true;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public IAssemblyData Assembly { get; set; }
 
         public bool IsNodeExpanded { get; set; }
 
-        public bool ShouldRun
+        public bool? ShouldRun
         {
             get { return _shouldRun; }
             set
             {
                 _shouldRun = value;
-
-                foreach (var test in Tests)
-                {
-
-                    test.ShouldRun = _shouldRun;
-                }
-
-                RaisePropertyChanged("ShouldRun");
+                SetChildrenShouldRunWithoutRaise(_shouldRun);
+                OnPropertyChanged("ShouldRun");
             }
+        }
+
+        public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
+        {
+            if (shouldRun == null) return;
+
+            foreach (var t in Tests)
+            {
+                t.SetChildrenShouldRunWithoutRaise(shouldRun);
+            }
+
+            OnPropertyChanged("ShouldRun");
         }
 
         public string Summary
@@ -349,11 +511,78 @@ namespace RTF.Framework
             Name = name;
             Tests = new ObservableCollection<ITestData>();
             Assembly = assembly;
+
+            Tests.CollectionChanged += Tests_CollectionChanged;
+        }
+
+        void Tests_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var td in from object item in e.NewItems select item as TestData)
+                    {
+                        td.PropertyChanged += td_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var td in from object item in e.OldItems select item as TestData)
+                    {
+                        td.PropertyChanged -= td_PropertyChanged;
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    foreach (var td in from object item in e.OldItems select item as TestData)
+                    {
+                        td.PropertyChanged -= td_PropertyChanged;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void td_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "ShouldRun":
+
+                    if (Tests.All(t => t.ShouldRun == true))
+                    {
+                        _shouldRun = true;
+                    }
+                    else if (Tests.All(t => t.ShouldRun == false))
+                    {
+                        _shouldRun = false;
+                    }
+                    else
+                    {
+                        _shouldRun = null;
+                    }
+
+                    OnPropertyChanged("ShouldRun");
+                    break;
+            }
+        }
+
+
+        public void Dispose()
+        {
+            // Nothing to do for categories yet.
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
     [Serializable]
-    public class ResultData : NotificationObject, IResultData
+    public class ResultData : IResultData
     {
         private string _message = "";
         private string _stackTrace = "";
@@ -366,7 +595,7 @@ namespace RTF.Framework
             set
             {
                 _message = value;
-                RaisePropertyChanged("Message");
+                OnPropertyChanged("Message");
             }
         }
 
@@ -376,8 +605,16 @@ namespace RTF.Framework
             set
             {
                 _stackTrace = value;
-                RaisePropertyChanged("StackTrace");
+                OnPropertyChanged("StackTrace");
             }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
