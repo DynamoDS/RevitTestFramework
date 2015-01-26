@@ -321,11 +321,24 @@ namespace RTF.Framework
 
         #region constructors
 
+        /// <summary>
+        /// Default Runner constructor. This constructor does not initialize
+        /// any properties. If you'd like to construct a runner with property
+        /// values (ex. from parsing the command line), use the other constructor.
+        /// </summary>
         public Runner()
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
+
+            Initialize();
         }
 
+        /// <summary>
+        /// Constructs a runner given a SetupData object containing property values.
+        /// Use this constructor if you'd like to construct a runner and know some,
+        /// or all, of the property values.
+        /// </summary>
+        /// <param name="setupData"></param>
         public Runner(IRunnerSetupData setupData)
         {
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
@@ -377,23 +390,18 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
+
+            Initialize();
         }
 
         #endregion
 
         #region public methods
 
-        public void Initialize()
-        {
-            ConductInitializationChecks();
-
-            InitializeProducts();
-
-            InitializeTests();
-        }
-
         /// <summary>
-        /// Setup all runnable tests.
+        /// Setup all tests, creating journal files, the addin file,
+        /// and copying the addins from the addins folder on the
+        /// testing machine.
         /// </summary>
         /// <param name="parameter"></param>
         public void SetupTests()
@@ -680,6 +688,15 @@ namespace RTF.Framework
         #endregion
 
         #region private methods
+
+        private void Initialize()
+        {
+            ConductInitializationChecks();
+
+            InitializeProducts();
+
+            InitializeTests();
+        }
 
         private void SetSelectionsFromHints()
         {
