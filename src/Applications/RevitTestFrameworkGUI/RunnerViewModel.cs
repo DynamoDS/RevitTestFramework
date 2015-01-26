@@ -319,8 +319,6 @@ namespace RTF.Applications
         {
             runner = new Runner();
 
-            runner.Initialize();
-
             InitializeEventHandlers();
 
             if (runner != null) return;
