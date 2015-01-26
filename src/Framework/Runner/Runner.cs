@@ -442,6 +442,9 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// Run all tests that are selected for running.
+        /// </summary>
         public void RunAllTests()
         {
             if (dryRun) return;
@@ -489,6 +492,10 @@ namespace RTF.Framework
             OnTestRunsComplete();
         }
 
+        /// <summary>
+        /// Read the selected assembly and generate assembly data,
+        /// fixture data, and test data.
+        /// </summary>
         public void InitializeTests()
         {
             Assemblies.Clear();
@@ -554,6 +561,10 @@ namespace RTF.Framework
             OnInitialized();
         }
 
+        /// <summary>
+        /// Cleanup after a run. This method handles deletion of 
+        /// journal files and addins created for a test run.
+        /// </summary>
         public void Cleanup()
         {
             if (!CleanUp)
@@ -605,6 +616,10 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// Get all tests.
+        /// </summary>
+        /// <returns>A list of ITestDataObjects</returns>
         public IEnumerable<ITestData> GetAllTests()
         {
             var tests = Assemblies.
@@ -614,6 +629,10 @@ namespace RTF.Framework
             return tests;
         }
 
+        /// <summary>
+        /// Get all tests that are selected to run.
+        /// </summary>
+        /// <returns>A list of ITestData objects.</returns>
         public IEnumerable<ITestData> GetRunnableTests()
         {
             var runnable = Assemblies.
