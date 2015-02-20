@@ -1425,27 +1425,28 @@ namespace RTF.Framework
 
             var p = new OptionSet()
             {
-                {"dir=","The path to the working directory.", v=> setupData.WorkingDirectory = Path.GetFullPath(v)},
-                {"a=|assembly=", "The path to the test assembly.", v => setupData.TestAssembly = Path.GetFullPath(v)},
-                {"r=|results=", "The path to the results file.", v=>setupData.Results = Path.GetFullPath(v)},
-                {"f:|fixture:", "The full name (with namespace) of the test fixture.", v => setupData.Fixture = v},
-                {"t:|testName:", "The name of a test to run", v => setupData.Test = v},
-                {"category:", "The name of a test category to run.", v=> setupData.Category = v},
-                {"exclude:", "The name of a test category to exclude.", v=> setupData.ExcludedCategory = v},
-                {"c|concatenate", "Concatenate results with existing results file.", v=> setupData.Concat = v != null},
-                {"revit:", "The path to Revit.", v=> setupData.RevitPath = v},
-                {"copyAddins", "Specify whether to copy the addins from the Revit folder to the current working directory",
+                {"dir=","The full path to the working directory. The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.", v=> setupData.WorkingDirectory = Path.GetFullPath(v)},
+                {"a=|assembly=", "The full path to the assembly containing your tests.", v => setupData.TestAssembly = Path.GetFullPath(v)},
+                {"r=|results=", "The full path to an .xml file that will contain the results. ", v=>setupData.Results = Path.GetFullPath(v)},
+                {"f:|fixture:", "The full name (with namespace) of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.(OPTIONAL)", v => setupData.Fixture = v},
+                {"t:|testName:", "The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)", v => setupData.Test = v},
+                {"category:", "The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)", v=> setupData.Category = v},
+                {"exclude:", "The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases that belongs to that category will not be run. (OPTIONAL)", v=> setupData.ExcludedCategory = v},
+                {"c|concatenate", "Concatenate the results from this run of RTF with an existing results file if one exists at the path specified. The default behavior is to replace the existing results file. (OPTIONAL)", v=> setupData.Concat = v != null},
+                {"revit:", "The Revit executable to be used for testing. If no executable is specified, RTF will use the first version of Revit that is found on the machine using the RevitAddinUtility. (OPTIONAL)", v=> setupData.RevitPath = v},
+                {"copyAddins", "Specify whether to copy the addins from the Revit folder to the current working directory. Copying the addins from the Revit folder will cause the test process to simulate the typical setup on your machine. (OPTIONAL)",
                     v=> setupData.CopyAddins = v != null},
-                {"dry", "Conduct a dry run.", v=> setupData.DryRun = v != null},
-                {"x|clean", "Cleanup journal files after test completion", v=> setupData.CleanUp = v != null},
-                {"continuous", "Run all selected tests in one Revit session.", v=> setupData.Continuous = v != null},
-                {"d|debug", "Run in debug mode.", v=>setupData.IsDebug = v != null},
-                {"h|help", "Show this message and exit.", v=> showHelp = v != null}
+                {"dry", "Conduct a dry run. (OPTIONAL)", v=> setupData.DryRun = v != null},
+                {"x|clean", "Cleanup journal files after test completion. (OPTIONAL)", v=> setupData.CleanUp = v != null},
+                {"continuous", "Run all selected tests in one Revit session. (OPTIONAL)", v=> setupData.Continuous = v != null},
+                {"time", "The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)", v=>setupData.Timeout = Int32.Parse(v)},
+                {"d|debug", "Should RTF attempt to attach to a debugger?. (OPTIONAL)", v=>setupData.IsDebug = v != null},
+                {"h|help", "Show this message and exit. (OPTIONAL)", v=> showHelp = v != null}
             };
 
             var notParsed = new List<string>();
 
-            const string helpMessage = "Try 'DynamoTestFrameworkRunner --help' for more information.";
+            const string helpMessage = "Try 'RevitTestFrameworkConsole --help' for more information.";
 
             try
             {
@@ -1462,6 +1463,12 @@ namespace RTF.Framework
                 throw new ArgumentException(String.Join(" ", notParsed.ToArray()));
             }
 
+            if (showHelp)
+            {
+                ShowHelp(p);
+                throw new Exception();
+            }
+
             if (string.IsNullOrEmpty(setupData.WorkingDirectory))
             {
                 throw new Exception("You must specify a working directory.");
@@ -1475,12 +1482,6 @@ namespace RTF.Framework
             if (string.IsNullOrEmpty(setupData.Results))
             {
                 throw new Exception("You must specify a results file.");
-            }
-
-            if (showHelp)
-            {
-                ShowHelp(p);
-                throw new Exception();
             }
 
             return setupData;
