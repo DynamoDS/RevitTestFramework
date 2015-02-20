@@ -479,7 +479,7 @@ namespace RTF.Framework
                         // Don't attempt to run a test without a journal.
                         if (string.IsNullOrEmpty(test.JournalPath))
                         {
-                            continue;
+                            throw new Exception("Journal file is missing. This could be the result of a bad model path.");
                         }
 
                         ProcessTest(test, test.JournalPath);
