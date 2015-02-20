@@ -7,23 +7,24 @@ RTF has two executables.
 RevitTestFrameworkGUI.exe allows you to choose tests from a treeview and to visualize the results of the tests as they are run.
 
 RevitTestFrameworkConsole.exe is a console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
-
-    Usage: RevitTestFrameworkConsole [OPTIONS]
-    Run a test or a fixture of tests from an assembly.
-
-    Options:
-          --dir[=VALUE]             The path to the working directory.
-      -a, --assembly[=VALUE]        The path to the test assembly.
-      -r, --results[=VALUE]         The path to the results file.
-      -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
-          --category[=VALUE]        The name of the test category.
-          --exclude[=VALUE]         The name of the test category to exclude.
-      -t, --testName[=VALUE]        The name of a test to run
-      -c, --concatenate[=VALUE]     Concatenate results with existing results file.
-          --revit[=VALUE]           The Revit executable.
-          --copyAddins[=VALUE]      Copy addins from the Revit addins folder.
-      -d, --debug                   Run in debug mode.
-      -h, --help                    Show this message and exit.
+```
+  Options:   
+         --dir=[VALUE]            The path to the working directory.  
+    -a,  --assembly=[VALUE]       The path to the test assembly.  
+    -r,  --results=[VALUE]        The path to the results file.  
+    -f,  --fixture=[VALUE]      The full name (with namespace) of the test fixture.  
+    -t,  --testName[=VALUE]     The name of a test to run.  
+         --category[=VALUE]     The name of a test category to run.  
+         --exclude[=VALUE]      The name of a test category to exclude.  
+    -c,  --concatenate          Concatenate results with existing results file.  
+         --revit[=VALUE]        The path to Revit.
+         --copyAddins           Specify whether to copy the addins from the Revit folder to the current working directory.  
+         --dry                  Conduct a dry run.  
+    -x,  --clean                Cleanup journal files after test completion.  
+         --continuous           Run all selected tests in one Revit session.  
+    -d,  --debug                Run in debug mode.  
+    -h,  --help                 Show this message and exit.
+```
 
 ##Results  
 
