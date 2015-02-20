@@ -47,6 +47,26 @@ The output file from a test run is an nunit-formatted results file compatible wi
 
 RTF comes with an assembly containing sample tests called SampleTests.dll. These sample tests can be used to ensure that RTF is setup and running properly on your machine. The code for these sample tests is also available in the repo.
 
+##Example  
+The following is an example of a simple test that can run with RTF. The `[Test]` attribute marks this method as an NUnit test. The `[TestModel(...)]` attribute, is an attribute belonging to RTF, which tells RTF which Revit model to open prior to running the test.
+```c#
+[Test]
+[TestModel(@"./bricks.rfa")]
+public void ModelHasTheCorrectNumberOfBricks()
+{
+    var doc = RevitTestExecutive.CommandData.Application.ActiveUIDocument.Document;
+
+    var fec = new FilteredElementCollector(doc);
+    fec.OfClass(typeof(FamilyInstance));
+
+    var bricks = fec.ToElements()
+        .Cast<FamilyInstance>()
+        .Where(fi => fi.Symbol.Family.Name == "brick");
+
+    Assert.AreEqual(bricks.Count(), 4);
+}
+```
+
 ##Revit Versions
 
 This repo maintains branches to track the two most recently released versions of Revit and one un-released version of Revit. When new versions of Revit are released, branches tracking the oldest version of Revit supported will no longer be maintained. For example, when Revit 2016 is released, the Revit 2014 branch of RTF will no longer be maintained.  
