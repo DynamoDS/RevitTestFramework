@@ -23,6 +23,11 @@ namespace RTF.Tests
             //shutdown logic executed after every test
         }
 
+        /// <summary>
+        /// This is the Hello World of Revit testing. Here we
+        /// simply call the Revit API to create a new ReferencePoint
+        /// in the default empty.rfa file.
+        /// </summary>
         [Test]
         public void CanCreateAReferencePoint()
         {
@@ -53,6 +58,11 @@ namespace RTF.Tests
             Assert.AreEqual(1, collector.ToElements().Count);
         }
 
+        /// <summary>
+        /// Using the TestModel parameter, you can specify a Revit model
+        /// to be opened prior to executing the test. The model path specified
+        /// in this attribute is relative to the working directory.
+        /// </summary>
         [Test]
         [TestModel(@"./bricks.rfa")]
         public void ModelHasTheCorrectNumberOfBricks()
@@ -69,24 +79,21 @@ namespace RTF.Tests
             Assert.AreEqual(bricks.Count(), 4);
         }
 
-        [Test]
-        public void TestThree()
-        {
-            //this will pass.
-            Assert.AreEqual(0,0);
-        }
-
-        [Test]
-        public void LeaveAMessage()
-        {
-            Assert.Pass("This test passed. Hooray!");
-        }
-
+        /// <summary>
+        /// NUnit allows the creation of a parameterized test. The SetupManyTests
+        /// method is responsible for creating sets of parameter that are then
+        /// passed into this test method, one by one. This could be used, for example,
+        /// to iterate over all the Revit files in a folder, and pass the path to the
+        /// model into the test as a parameter.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
         [Test] 
         [TestCaseSource("SetupManyTests")]
         public void RunManyTests(object a, object b)
         {
-            Assert.IsTrue((int)a+(int)b <= 4);
+            Assert.IsTrue((int)a > 0);
+            Assert.IsTrue((int)b > 0);
         }
 
         private static List<object[]> SetupManyTests()
