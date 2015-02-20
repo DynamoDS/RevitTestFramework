@@ -48,9 +48,6 @@
       <HintPath>$(REVITAPI)\RevitAPIUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="RevitServices">
-      <HintPath>..\..\..\lib\RevitServices.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
@@ -68,6 +65,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Applications\RTFRevit\RTFRevit.csproj">
+      <Project>{61eaf84c-49d2-4cdf-a4f9-ceac6b6f2166}</Project>
+      <Name>RTFRevit</Name>
+      <Private>False</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Framework\RevitTestFramework\RevitTestFrameworkTypes.csproj">
       <Project>{745cca0f-549e-4756-a31e-41bf7f905b8a}</Project>
       <Name>RevitTestFrameworkTypes</Name>

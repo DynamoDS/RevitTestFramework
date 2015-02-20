@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB;
 using NUnit.Framework;
-using RevitServices.Persistence;
+using RTF.Applications;
 using RTF.Framework;
 
 namespace RTF.Tests
@@ -26,12 +26,14 @@ namespace RTF.Tests
         [Test]
         public void CanCreateAReferencePoint()
         {
-            using (var t = new Transaction(DocumentManager.Instance.CurrentDBDocument))
+            var doc = RevitTestExecutive.CommandData.Application.ActiveUIDocument.Document;
+
+            using (var t = new Transaction(doc))
             {
                 if (t.Start("Test one.") == TransactionStatus.Started)
                 {
                     //create a reference point
-                    var pt = DocumentManager.Instance.CurrentDBDocument.FamilyCreate.NewReferencePoint(new XYZ(5, 5, 5));
+                    var pt = doc.FamilyCreate.NewReferencePoint(new XYZ(5, 5, 5));
 
                     if (t.Commit() != TransactionStatus.Committed)
                     {
@@ -45,7 +47,7 @@ namespace RTF.Tests
             }
 
             //verify that the point was created
-            var collector = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
+            var collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof (ReferencePoint));
 
             Assert.AreEqual(1, collector.ToElements().Count);
@@ -55,7 +57,9 @@ namespace RTF.Tests
         [TestModel(@"./bricks.rfa")]
         public void ModelHasTheCorrectNumberOfBricks()
         {
-            var fec = new FilteredElementCollector(DocumentManager.Instance.CurrentDBDocument);
+            var doc = RevitTestExecutive.CommandData.Application.ActiveUIDocument.Document;
+
+            var fec = new FilteredElementCollector(doc);
             fec.OfClass(typeof(FamilyInstance));
 
             var bricks = fec.ToElements()
@@ -102,9 +106,11 @@ namespace RTF.Tests
         /// </summary>
         private void SwapCurrentModel(string modelPath)
         {
-            Document initialDoc = DocumentManager.Instance.CurrentUIDocument.Document;
-            DocumentManager.Instance.CurrentUIApplication.OpenAndActivateDocument(modelPath);
-            initialDoc.Close(false);
+            var app = RevitTestExecutive.CommandData.Application;
+            var doc = RevitTestExecutive.CommandData.Application.ActiveUIDocument.Document;
+
+            app.OpenAndActivateDocument(modelPath);
+            doc.Close(false);
         }
     }
 }
