@@ -1,6 +1,6 @@
 ##Revit Test Framework
 
-The Revit Test Framework (RTF) allows you to conduct unit testing on Revit. RTF allows you to run NUnit tests of your Revit API. It does this by generating journal files to create sessions of revit. A small Revit addin runs the test specified in the journal and writes the results to a file. Additionally, you can attach an attribute to your test which specifies a Revit model to open when Revit starts.
+The Revit Test Framework (RTF) allows you to conduct unit testing on Revit. RTF allows you to run NUnit tests of your Revit API code. It does this by generating journal files to create sessions of Revit. A small Revit addin runs the test specified in the journal and writes the results to a file. Additionally, you can attach an attribute to your test which specifies a Revit model to open when Revit starts.
 
 ##Installation  
 
