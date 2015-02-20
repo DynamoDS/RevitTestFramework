@@ -160,9 +160,13 @@
                             <TextBlock Text="The path of the assembly (.dll, .exe) which contains test fixtures."></TextBlock>
                         </TextBlock.ToolTip>
                 </TextBlock>
-                    <TextBox Text="{Binding Path=TestAssembly, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" 
-                         IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                             TextChanged="UpdateRequired"/>
+                    <TextBox Name="AssemblyPathTextBox" 
+                             Text="{Binding Path=TestAssembly, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" 
+                             IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                             TextChanged="UpdateRequired" 
+                             PreviewDragOver="OnPreviewDragOver"
+                             AllowDrop="True" 
+                             Drop="Assembly_OnDrop"/>
                 </StackPanel>
 
                 <Button Grid.Column="1" Grid.Row="0" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
@@ -178,7 +182,8 @@
                 </TextBlock>
                     <TextBox  Text="{Binding Path=Results, Converter={StaticResource ResultsPathConverter}, Mode=TwoWay}"
                           IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                              TextChanged="UpdateRequired"/>
+                              TextChanged="UpdateRequired"
+                              PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Results_OnDrop"/>
                 </StackPanel>
 
                 <Button Grid.Row="1" Grid.Column="1" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
@@ -193,8 +198,11 @@
                         </TextBlock.ToolTip>
                 </TextBlock>
                     <TextBox Text="{Binding Path=WorkingDirectory, Converter={StaticResource WorkingPathConverter}, Mode=TwoWay}"
-                         IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                             TextChanged="UpdateRequired"/>
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                            TextChanged="UpdateRequired"
+                            PreviewDragOver="OnPreviewDragOver"
+                            AllowDrop="True"
+                            Drop="WorkingDir_OnDrop"/>
                 </StackPanel>
 
                 <Button Grid.Column="1" Grid.Row="2" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
@@ -257,7 +265,8 @@
                       VirtualizingStackPanel.VirtualizationMode="Recycling" 
                       Name="TestDataTreeView" 
                       SelectedItemChanged="TestDataTreeView_OnSelectedItemChanged"
-                      IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
+                      IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                        PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Assembly_OnDrop">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="{x:Type TreeViewItem}">
                         <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded}">

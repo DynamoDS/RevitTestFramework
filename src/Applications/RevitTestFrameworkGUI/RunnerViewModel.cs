@@ -14,6 +14,7 @@ using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
+using Microsoft.Win32.SafeHandles;
 using RTF.Applications.Properties;
 using RTF.Framework;
 using MessageBox = System.Windows.MessageBox;
@@ -289,9 +290,9 @@ namespace RTF.Applications
 
         #region commands
 
-        public DelegateCommand SetAssemblyPathCommand { get; set; }
-        public DelegateCommand SetResultsPathCommand { get; set; }
-        public DelegateCommand SetWorkingPathCommand { get; set; }
+        public DelegateCommand<string> SetAssemblyPathCommand { get; set; }
+        public DelegateCommand<string> SetResultsPathCommand { get; set; }
+        public DelegateCommand<string> SetWorkingPathCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
@@ -383,9 +384,9 @@ namespace RTF.Applications
 
         private void InitializeCommands()
         {
-            SetAssemblyPathCommand = new DelegateCommand(SetAssemblyPath, CanSetAssemblyPath);
-            SetResultsPathCommand = new DelegateCommand(SetResultsPath, CanSetResultsPath);
-            SetWorkingPathCommand = new DelegateCommand(SetWorkingDirectory, CanSetWorkingPath);
+            SetAssemblyPathCommand = new DelegateCommand<string>(SetAssemblyPath, CanSetAssemblyPath);
+            SetResultsPathCommand = new DelegateCommand<string>(SetResultsPath, CanSetResultsPath);
+            SetWorkingPathCommand = new DelegateCommand<string>(SetWorkingDirectory, CanSetWorkingPath);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
@@ -504,65 +505,115 @@ namespace RTF.Applications
             IsRunning = false;
         }
 
-        private bool CanSetWorkingPath()
+        private bool CanSetWorkingPath(string path)
         {
             return true;
         }
 
-        private void SetWorkingDirectory()
+        private void SetWorkingDirectory(string path)
         {
-            var dirs = new FolderBrowserDialog();
-
-            if (dirs.ShowDialog() == DialogResult.OK)
+            if (string.IsNullOrEmpty(path))
             {
-                WorkingDirectory = dirs.SelectedPath;
+                var dirs = new FolderBrowserDialog();
+
+                if (dirs.ShowDialog() == DialogResult.OK)
+                {
+                    WorkingDirectory = dirs.SelectedPath;
+                }
+            }
+            else
+            {
+                if (File.Exists(path))
+                {
+                    // You've been given a file. Use its directory.
+                    var fi = new FileInfo(path);
+                    WorkingDirectory = fi.DirectoryName;
+                    return;
+                }
+
+                if (!Directory.Exists(path))
+                {
+                    return;
+                }
+
+                WorkingDirectory = path;
             }
         }
 
-        private bool CanSetResultsPath()
+        private bool CanSetResultsPath(string path)
         {
             return true;
         }
 
-        private void SetResultsPath()
+        private void SetResultsPath(string path)
         {
-            var files = new SaveFileDialog()
+            if (string.IsNullOrEmpty(path))
             {
-                InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                Filter = "xml files (*.xml) | *.xml",
-                RestoreDirectory = true,
-                DefaultExt = ".xml"
-            };
+                var files = new SaveFileDialog()
+                {
+                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    Filter = "xml files (*.xml) | *.xml",
+                    RestoreDirectory = true,
+                    DefaultExt = ".xml"
+                };
 
-            var filesResult = files.ShowDialog();
+                var filesResult = files.ShowDialog();
 
-            if (filesResult != null && filesResult == true)
+                if (filesResult != null && filesResult == true)
+                {
+                    Results = files.FileName;
+                    RunCommand.RaiseCanExecuteChanged();
+                }
+            }
+            else
             {
-               Results = files.FileName;
-               RunCommand.RaiseCanExecuteChanged();
+                if (!File.Exists(path))
+                {
+                    return;
+                }
+
+                var fi = new FileInfo(path);
+                if (fi.Extension != ".xml")
+                {
+                    return;
+                }
+
+                Results = path;
             }
         }
 
-        private bool CanSetAssemblyPath()
+        private bool CanSetAssemblyPath(string path)
         {
             return true;
         }
 
-        private void SetAssemblyPath()
+        private void SetAssemblyPath(string path)
         {
-            var files = new OpenFileDialog
+            if (string.IsNullOrEmpty(path))
             {
-                InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                Filter = "assembly files (*.dll)|*.dll| executable files (*.exe)|*.exe",
-                RestoreDirectory = true,
-                DefaultExt = ".dll"
-            };
+                var files = new OpenFileDialog
+                {
+                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    Filter = "assembly files (*.dll)|*.dll| executable files (*.exe)|*.exe",
+                    RestoreDirectory = true,
+                    DefaultExt = ".dll"
+                };
 
-            var filesResult = files.ShowDialog();
+                var filesResult = files.ShowDialog();
 
-            if (filesResult != null && filesResult == true)
+                if (filesResult != null && filesResult == true)
+                {
+                    TestAssembly = files.FileName;
+                }
+            }
+            else
             {
-                TestAssembly = files.FileName;
+                if (!File.Exists(path))
+                {
+                    return;
+                }
+
+                TestAssembly = path;
             }
         }
 

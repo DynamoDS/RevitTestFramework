@@ -2,76 +2,45 @@
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
-RTF has two executables. 
+##Applications
 
-RevitTestFrameworkGUI.exe allows you to choose tests from a treeview and to visualize the results of the tests as they are run.
+#####RevitTestFrameworkConsole.exe  
+A console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
+```
+  Options:   
+         --dir=[VALUE]          The full path to the working directory. The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.  
+    -a,  --assembly=[VALUE]     The full path to the assembly containing your tests.  
+    -r,  --results=[VALUE]      This is the full path to an .xml file that will contain the results. 
+    -f,  --fixture=[VALUE]      The full name (with namespace) of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.(OPTIONAL)  
+    -t,  --testName[=VALUE]     The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)    
+         --category[=VALUE]     The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)   
+         --exclude[=VALUE]      The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases that belongs to that category will not be run. (OPTIONAL)  
+    -c,  --concatenate          Concatenate the results from this run of RTF with an existing results file if one exists at the path specified. The default behavior is to replace the existing results file. (OPTIONAL)  
+         --revit[=VALUE]        The Revit executable to be used for testing. If no executable is specified, RTF will use the first version of Revit that is found on the machine using the RevitAddinUtility. (OPTIONAL)  
+         --copyAddins           Specify whether to copy the addins from the Revit folder to the current working directory. Copying the addins from the Revit folder will cause the test process to simulate the typical setup on your machine. (OPTIONAL)  
+         --dry                  Conduct a dry run. (OPTIONAL)  
+    -x,  --clean                Cleanup journal files after test completion. (OPTIONAL)   
+         --continuous           Run all selected tests in one Revit session. (OPTIONAL)  
+         --time                 The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)  
+    -d,  --debug                Should RTF attempt to attach to a debugger?. (OPTIONAL)  
+    -h,  --help                 Show this message and exit. (OPTIONAL)  
+```
 
-RevitTestFrameworkConsole.exe is a console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
+#####RevitTestFrameworkGUI.exe   
+Provides a visual interface for you to choose tests from a treeview and to visualize the results of the tests as they are run. The same settings provided in the command line argument help above are available in the UI. The UI also allows you to save your testing session.
 
-    Usage: RevitTestFrameworkConsole [OPTIONS]
-    Run a test or a fixture of tests from an assembly.
+The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
-    Options:
-          --dir[=VALUE]             The path to the working directory.
-      -a, --assembly[=VALUE]        The path to the test assembly.
-      -r, --results[=VALUE]         The path to the results file.
-      -f, --fixture[=VALUE]         The full name (with namespace) of the test fixture.
-          --category[=VALUE]        The name of the test category.
-          --exclude[=VALUE]         The name of the test category to exclude.
-      -t, --testName[=VALUE]        The name of a test to run
-      -c, --concatenate[=VALUE]     Concatenate results with existing results file.
-          --revit[=VALUE]           The Revit executable.
-          --copyAddins[=VALUE]      Copy addins from the Revit addins folder.
-      -d, --debug                   Run in debug mode.
-      -h, --help                    Show this message and exit.
+![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
 
 ##Results  
 
 The output file from a test run is an nunit-formatted results file compatible with many CI systems.
 
-##Command Line Parameters
-
-**--dir**
-
-The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.
-
-**--assembly**  
-This is the full path to the assembly that contains your tests.
-
-**--results**  
-This is the full path to an .xml file that will contain the results.
-
-**--fixture** (Optional)  
-The name of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
-
-**--category** (Optional)  
-The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
-
-**--exclude** (Optional)  
-The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases
-that belongs to that category will not run.
-
-**--testName** (Optional)  
-The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.
-
-**--concatenate** (Optional)  
-Should the results from this run of RTF be added to an existing results file if one exists at the path specified. The default behavior is to replace the existing results file.
-
-**--revit** (Optional)  
-Specify a Revit executable to use for testing. **You should ensure that you specify the correct version of Revit and are running the correct version of RTF (See "Revit Versions" below.)**
-
-**--copyAddins** (Optional)  
-Specified whether to copy addins from the Revit addins folder to the current working directory.
-
-**--debug** (Optional)  
-Should RTF attempt to attach to a debugger?
-
-**--help**  
-Help!
-
 ##Revit Versions
 
-There are two branches in this repository which track two versions of Revit. The master branch tracks Revit 2014, while the Revit2015 branch tracks Revit 2015. This will, most likely, change in the future. When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
+This repo maintains branches to track the two most recently released versions of Revit and one un-released version of Revit. When new versions of Revit are released, branches tracking the oldest version of Revit supported will no longer be maintained. For example, when Revit 2016 is released, the Revit 2014 branch of RTF will no longer be maintained.  
+When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
 
 ##License
 
