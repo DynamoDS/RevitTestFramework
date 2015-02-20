@@ -7,12 +7,12 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
+using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Dynamo.NUnit.Tests;
 using NUnit.Core;
 using NUnit.Core.Filters;
-using RevitServices.Persistence;
 using RTF.Framework;
 
 
@@ -73,9 +73,6 @@ namespace RTF.Applications
             {
                 CommandData = revit;
 
-                var docManager = DocumentManager.Instance;
-                docManager.CurrentUIApplication = revit.Application;
-
                 //Get the data map from the running journal file.
                 IDictionary<string, string> dataMap = revit.JournalData;
 
@@ -92,8 +89,6 @@ namespace RTF.Applications
                 {
                     throw new Exception("You must supply a path for the results file.");
                 }
-
-                DocumentManager.Instance.CurrentUIDocument = revit.Application.ActiveUIDocument;
 
                 // Start the test thread for queuing.
                 //var testThread = new Thread(TestThread);
