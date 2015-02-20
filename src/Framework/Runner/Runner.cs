@@ -476,6 +476,12 @@ namespace RTF.Framework
 
                     try
                     {
+                        // Don't attempt to run a test without a journal.
+                        if (string.IsNullOrEmpty(test.JournalPath))
+                        {
+                            continue;
+                        }
+
                         ProcessTest(test, test.JournalPath);
                     }
                     catch (Exception ex)
@@ -1142,7 +1148,8 @@ namespace RTF.Framework
             {
                 if (!File.Exists(td.ModelPath))
                 {
-                    throw new Exception(String.Format("Specified model path: {0} does not exist.", td.ModelPath));
+                    var message = String.Format("Specified model path: {0} does not exist.", td.ModelPath);
+                    throw new Exception(message);
                 }
 
                 if (!File.Exists(td.Fixture.Assembly.Path))
