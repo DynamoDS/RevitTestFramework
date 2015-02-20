@@ -1,12 +1,12 @@
-##Revit Test Framework
+###Revit Test Framework
 
 The Revit Test Framework (RTF) allows you to conduct unit testing on Revit. RTF allows you to run NUnit tests of your Revit API code. It does this by generating journal files to create sessions of Revit. A small Revit addin runs the test specified in the journal and writes the results to a file. Additionally, you can attach an attribute to your test which specifies a Revit model to open when Revit starts.
 
-##Installation  
+###Installation  
 
 The Revit Test Framework can be run using any of the installers available in the repo. Like [this one](https://github.com/DynamoDS/RevitTestFramework/blob/master/tools/Output/RevitTestFrameworkInstaller2014.exe). The executables are in the repo, so if you want to download them, just click on the "Raw" button on the file's page.
 
-##Applications
+###Applications
 
 RTF has two applications which, under the hood, do exactly the same thing. The console application can be used in scenarios like running tests on a CI system, while the GUI application can be used for daily testing during development. 
 
@@ -39,15 +39,15 @@ The input fields to set the test assembly, the working directory, and the result
 
 ![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
 
-##Results  
+###Results  
 
 The output file from a test run is an nunit-formatted results file compatible with many CI systems.
 
-##Samples
+###Samples
 
 RTF comes with an assembly containing sample tests called SampleTests.dll. These sample tests can be used to ensure that RTF is setup and running properly on your machine. The code for these sample tests is also available in the repo.
 
-##Example  
+###Example  
 The following is an example of a simple test that can run with RTF. The `[Test]` attribute marks this method as an NUnit test. The `[TestModel(...)]` attribute, is an attribute belonging to RTF, which tells RTF which Revit model to open prior to running the test.
 ```c#
 [Test]
@@ -67,12 +67,12 @@ public void ModelHasTheCorrectNumberOfBricks()
 }
 ```
 
-##Revit Versions
+###Revit Versions
 
 This repo maintains branches to track the two most recently released versions of Revit and one un-released version of Revit. When new versions of Revit are released, branches tracking the oldest version of Revit supported will no longer be maintained. For example, when Revit 2016 is released, the Revit 2014 branch of RTF will no longer be maintained.  
 When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
 
-##License
+###License
 
 Copyright 2014 Autodesk
 
