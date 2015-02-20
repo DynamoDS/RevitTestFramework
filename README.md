@@ -2,11 +2,10 @@
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
-RTF has two executables. 
+##Applications
 
-RevitTestFrameworkGUI.exe allows you to choose tests from a treeview and to visualize the results of the tests as they are run.
-
-RevitTestFrameworkConsole.exe is a console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
+#####RevitTestFrameworkConsole.exe  
+A console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
 ```
   Options:   
          --dir=[VALUE]          The full path to the working directory. The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.  
@@ -26,6 +25,9 @@ RevitTestFrameworkConsole.exe is a console application which allows running RTF 
     -d,  --debug                Should RTF attempt to attach to a debugger?. (OPTIONAL)  
     -h,  --help                 Show this message and exit. (OPTIONAL)  
 ```
+
+#####RevitTestFrameworkGUI.exe   
+Provides a visual interface for you to choose tests from a treeview and to visualize the results of the tests as they are run. The same settings provided in the command line argument help above are available in the UI. The UI also allows you to save your testing session.
 
 ##Results  
 
