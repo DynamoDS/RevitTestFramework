@@ -29,6 +29,10 @@ A console application which allows running RTF without a user interface. If you'
 #####RevitTestFrameworkGUI.exe   
 Provides a visual interface for you to choose tests from a treeview and to visualize the results of the tests as they are run. The same settings provided in the command line argument help above are available in the UI. The UI also allows you to save your testing session.
 
+The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
+
+![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
+
 ##Results  
 
 The output file from a test run is an nunit-formatted results file compatible with many CI systems.
