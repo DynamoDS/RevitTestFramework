@@ -22,6 +22,7 @@ RevitTestFrameworkConsole.exe is a console application which allows running RTF 
          --dry                  Conduct a dry run. (OPTIONAL)  
     -x,  --clean                Cleanup journal files after test completion. (OPTIONAL)   
          --continuous           Run all selected tests in one Revit session. (OPTIONAL)  
+         --time                 The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)  
     -d,  --debug                Should RTF attempt to attach to a debugger?. (OPTIONAL)  
     -h,  --help                 Show this message and exit. (OPTIONAL)  
 ```
