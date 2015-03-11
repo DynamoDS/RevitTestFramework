@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
@@ -90,6 +92,8 @@ namespace RTF.Applications
                     throw new Exception("You must supply a path for the results file.");
                 }
 
+                RunSetupMethod();
+
                 // Start the test thread for queuing.
                 //var testThread = new Thread(TestThread);
                 //testThread.Start(canReadData);
@@ -119,6 +123,42 @@ namespace RTF.Applications
             }
 
             return Result.Succeeded;
+        }
+
+        private void RunSetupMethod()
+        {
+            Configuration config;
+            // Find the test assembly path
+            try
+            {
+                config = ConfigurationManager.OpenExeConfiguration(testAssembly);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+            
+            var element = config.AppSettings.Settings["TestSetupAssemblyPath"];
+            if (element == null) return;
+
+            var testAssemblySetup = element.Value;
+            var dir = Path.GetDirectoryName(testAssembly);
+            var testAssemblySetupPath = Path.Combine(dir, testAssemblySetup);
+
+            if (!File.Exists(testAssemblySetupPath)) return;
+
+            var assembly = Assembly.LoadFrom(testAssemblySetupPath);
+            var setupType = assembly.GetTypes().FirstOrDefault(t => typeof (IRTFSetup).IsAssignableFrom(t));
+            if (setupType == null) return;
+
+            // Construct the setup object
+            var constructor = setupType.GetConstructor(new Type[] {});
+            var setupObject = (IRTFSetup) constructor.Invoke(null);
+            if (setupObject != null)
+            {
+                setupObject.Setup();
+            }
         }
 
         private void TestThread(object canReadData)
