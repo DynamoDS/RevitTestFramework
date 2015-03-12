@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
@@ -48,6 +49,7 @@ namespace RTF.Framework
         private bool _gui = true;
         private string _revitPath;
         private bool _copyAddins = true;
+        private bool _copyUserAddins = true;
         private int _timeout = 120000;
         private bool _concat;
         private List<string> _copiedAddins = new List<string>();
@@ -209,6 +211,16 @@ namespace RTF.Framework
         {
             get { return _copyAddins; }
             set { _copyAddins = value; }
+        }
+
+        /// <summary>
+        /// Specified whether to copy addins from the 
+        /// User App Data Revit addin folder to the current working directory
+        /// </summary>
+        public bool CopyUserAddins
+        {
+            get { return _copyUserAddins; }
+            set { _copyUserAddins = value; }
         }
 
         /// <summary>
@@ -434,12 +446,68 @@ namespace RTF.Framework
                 {
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
                     {
-                        var fileName = Path.GetFileName(file);
-                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
-                        CopiedAddins.Add(fileName);
+                        if(ShouldCopyAddin(file))
+                        {
+                            var fileName = Path.GetFileName(file);
+                            File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                            CopiedAddins.Add(fileName);
+                        } 
                     }
                 }
             }
+            if (CopyUserAddins)
+            {
+                var files = Directory.GetFiles(GetRevitUserAddinFolder());
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if(ShouldCopyAddin(file))
+                        {
+                            var fileName = Path.GetFileName(file);
+                            File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                            CopiedAddins.Add(fileName);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Detect if any of the <Assembly> nodes within the .addin file start with
+        /// a period ("."). If so, return false.
+        /// </summary>
+        private bool ShouldCopyAddin(string addinPath)
+        {
+            // Load the add-in as an XmlDocument.
+            XmlDocument doc = new XmlDocument();
+            try
+            {
+                using (StreamReader sr = new StreamReader(addinPath, true))
+                {
+                    doc.Load(sr);
+                }
+            }
+            catch (Exception e)
+            {
+                // Something went wrong while trying to load the addin as XML
+                Console.WriteLine(e.Message);
+            }
+
+            // Load all the "Assembly" nodes in the .addin file.
+            XmlNodeList elementList = doc.GetElementsByTagName("Assembly");
+            foreach (XmlElement element in elementList)
+            {
+                string assemblyPath = element.InnerText;
+                // Check if the path starts with a period, meaning that it's a relative path and
+                // we should ignore those addins since the DLL will not be visible from the working
+                // path of the Runner.
+                if (assemblyPath.StartsWith("."))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -1196,8 +1264,28 @@ namespace RTF.Framework
         /// <summary>
         /// This function returns the current Revit addin folder
         /// </summary>
-        /// <returns></returns>
+        /// <returns>string RevitProduct.AllUsersAddinFolder</returns>
         private string GetRevitAddinFolder()
+        {
+            var prod = GetRevitProduct();
+            return prod.AllUsersAddInFolder;
+        }
+
+        /// <summary>
+        /// This function returns the current user's Revit addin folder
+        /// </summary>
+        /// <returns>string RevitProduct.CurrentUserAddinFolder</returns>
+        private string GetRevitUserAddinFolder()
+        {
+            var prod = GetRevitProduct();
+            return prod.CurrentUserAddInFolder;
+        }
+
+        /// <summary>
+        /// This function returns the current user's Revit addin folder
+        /// </summary>
+        /// <returns></returns>
+        private RevitProduct GetRevitProduct()
         {
             var prod =
                     Products.FirstOrDefault(
@@ -1205,7 +1293,7 @@ namespace RTF.Framework
                             System.String.CompareOrdinal(
                             Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
                             0);
-            return prod.AllUsersAddInFolder;
+            return prod;
         }
 
         /// <summary>
