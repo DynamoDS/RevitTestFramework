@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
@@ -445,9 +446,12 @@ namespace RTF.Framework
                 {
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
                     {
-                        var fileName = Path.GetFileName(file);
-                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
-                        CopiedAddins.Add(fileName);
+                        if(ShouldCopyAddin(file))
+                        {
+                            var fileName = Path.GetFileName(file);
+                            File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                            CopiedAddins.Add(fileName);
+                        } 
                     }
                 }
             }
@@ -458,12 +462,48 @@ namespace RTF.Framework
                 {
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
                     {
-                        var fileName = Path.GetFileName(file);
-                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
-                        CopiedAddins.Add(fileName);
+                        if(ShouldCopyAddin(file))
+                        {
+                            var fileName = Path.GetFileName(file);
+                            File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                            CopiedAddins.Add(fileName);
+                        }
                     }
                 }
             }
+        }
+
+        private bool ShouldCopyAddin(string addinPath)
+        {
+            // Load the add-in as an XmlDocument.
+            XmlDocument doc = new XmlDocument();
+            try
+            {
+                using (StreamReader sr = new StreamReader(addinPath, true))
+                {
+                    doc.Load(sr);
+                }
+            }
+            catch (Exception e)
+            {
+                // Something went wrong while trying to load the addin as XML
+                Console.WriteLine(e.Message);
+            }
+
+            // Load all the "Assembly" nodes in the .addin file.
+            XmlNodeList elementList = doc.GetElementsByTagName("Assembly");
+            foreach (XmlElement element in elementList)
+            {
+                string assemblyPath = element.InnerText;
+                // Check if the path starts with a period, meaning that it's a relative path and
+                // we should ignore those addins since the DLL will not be visible from the working
+                // path of the Runner.
+                if (assemblyPath.StartsWith("."))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
