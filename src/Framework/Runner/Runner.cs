@@ -473,6 +473,10 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// Detect if any of the <Assembly> nodes within the .addin file start with
+        /// a period ("."). If so, return false.
+        /// </summary>
         private bool ShouldCopyAddin(string addinPath)
         {
             // Load the add-in as an XmlDocument.
