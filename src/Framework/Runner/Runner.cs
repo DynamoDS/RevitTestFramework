@@ -215,7 +215,7 @@ namespace RTF.Framework
 
         /// <summary>
         /// Specified whether to copy addins from the 
-        /// Revit addin folder to the current working directory
+        /// User App Data Revit addin folder to the current working directory
         /// </summary>
         public bool CopyUserAddins
         {
