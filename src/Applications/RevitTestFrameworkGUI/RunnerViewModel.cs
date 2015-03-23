@@ -286,6 +286,25 @@ namespace RTF.Applications
             }
         }
 
+        public string AdditionalResolutionDirectoriesText
+        {
+            get
+            {
+                return string.Join(";", runner.AdditionalResolutionDirectories);
+            }
+            set
+            {
+                var splits = value.Split(new []{';'}, StringSplitOptions.RemoveEmptyEntries);
+                if (!splits.Any()) return;
+
+                runner.AdditionalResolutionDirectories.Clear();
+                foreach (var split in splits)
+                {
+                    runner.AdditionalResolutionDirectories.Add(split);
+                }
+                RaisePropertyChanged("AdditionalResolutionDirectoriesText");
+            }
+        } 
         #endregion
 
         #region commands

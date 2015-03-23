@@ -151,6 +151,7 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <!--TEST ASSEMBLY-->
@@ -208,6 +209,22 @@
                 <Button Grid.Column="1" Grid.Row="2" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
                     Command="{Binding SetWorkingPathCommand}"
                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
+
+                <!--ADDITIONAL DIRECTORY PATHS-->
+                <StackPanel Grid.Column="0" Grid.Row="3" Margin="5">
+                    <TextBlock Text="Additional Resolution Directories:">
+                        <TextBlock.ToolTip>
+                            <TextBlock Text="Additional directories which will be used during assembly resolution. Separate directory names with a ;"></TextBlock>
+                        </TextBlock.ToolTip>
+                </TextBlock>
+                    <TextBox Text="{Binding Path=AdditionalResolutionDirectoriesText, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                            TextChanged="UpdateRequired"
+                            PreviewDragOver="OnPreviewDragOver" 
+                             Height="50" 
+                             VerticalScrollBarVisibility="Auto" 
+                             TextWrapping="Wrap" KeyDown="UIElement_OnKeyDown" LostFocus="UIElement_OnLostFocus"/>
+                </StackPanel>
 
             </Grid>
 

@@ -65,7 +65,8 @@ namespace RTF.Framework
         private bool journalFinished;
         private GroupingType groupingType = GroupingType.Fixture;
         private List<SelectionHint> selectionHints = new List<SelectionHint>(); 
-
+        private List<string> additionalResolutionDirectories = new List<string>();
+ 
         #endregion
 
         #region internal properties
@@ -316,6 +317,15 @@ namespace RTF.Framework
         }
 
         public bool IsTesting { get; set; }
+
+        /// <summary>
+        /// A list of folders to add to the assembly resolution step.
+        /// </summary>
+        public List<string> AdditionalResolutionDirectories
+        {
+            get { return additionalResolutionDirectories; }
+            set { additionalResolutionDirectories = value; }
+        } 
 
         #endregion
 
@@ -1376,20 +1386,20 @@ namespace RTF.Framework
 
                 var product = _products[_selectedProduct];
                 var revitDirectory = product.InstallLocation;
-                var resolver = new DefaultAssemblyResolver(revitDirectory);
+                var resolver = new DefaultAssemblyResolver(revitDirectory, AdditionalResolutionDirectories);
 
                 if (!isTesting)
                 {
                     // Create a temporary application domain to load the assembly.
                     var tempDomain = AppDomain.CreateDomain("RTF_Domain");
-                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { assemblyPath, resolver }, CultureInfo.InvariantCulture, null);
+                    loader = (AssemblyLoader)tempDomain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, "RTF.Framework.AssemblyLoader", false, 0, null, new object[] { resolver }, CultureInfo.InvariantCulture, null);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                     AppDomain.Unload(tempDomain);
                 }
                 else
                 {
-                    loader = new AssemblyLoader(assemblyPath, resolver);
+                    loader = new AssemblyLoader(resolver);
                     assData = loader.ReadAssembly(assemblyPath, groupType, workingDirectory);
                     data.Add(assData);
                 }
