@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,7 +16,7 @@ namespace RTF.Framework
     [Serializable]
     public class AssemblyLoader : MarshalByRefObject
     {
-        public AssemblyLoader(string assemblyPath, RTFAssemblyResolver resolver)
+        public AssemblyLoader(RTFAssemblyResolver resolver)
         {  
             AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve +=
                     resolver.Resolve;

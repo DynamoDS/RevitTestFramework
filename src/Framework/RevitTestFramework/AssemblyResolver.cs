@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -7,6 +8,7 @@ namespace RTF.Framework
     public interface RTFAssemblyResolver
     {
         Assembly Resolve(object sender, ResolveEventArgs args);
+        List<string> AdditionalResolutionDirectories { get; set; }
     }
 
     [Serializable]
@@ -14,9 +16,18 @@ namespace RTF.Framework
     {
         private string revitDirectory;
 
+        public List<string> AdditionalResolutionDirectories { get; set; }
+
         public DefaultAssemblyResolver(string revitDirectory)
         {
             this.revitDirectory = revitDirectory;
+            AdditionalResolutionDirectories = new List<string>();
+        }
+
+        public DefaultAssemblyResolver(string revitDirectory, List<string> additionalDirectories)
+        {
+            this.revitDirectory = revitDirectory;
+            AdditionalResolutionDirectories = additionalDirectories;
         }
 
         public virtual Assembly Resolve(object sender, ResolveEventArgs args)
@@ -33,6 +44,14 @@ namespace RTF.Framework
             if (assembly != null)
             {
                 return assembly;
+            }
+
+            // Search each of the additional load paths
+            foreach (var path in AdditionalResolutionDirectories)
+            {
+                var result = AttemptLoadFromDirectory(args, path);
+                if (result != null)
+                    return result;
             }
 
             // Search upstream of the test assembly
@@ -67,6 +86,17 @@ namespace RTF.Framework
             {
                 return null;
             }
+        }
+
+        private Assembly AttemptLoadFromDirectory(ResolveEventArgs args, string directory)
+        {
+            if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+                return null;
+
+            var dirInfo = new DirectoryInfo(directory);
+
+            var testFile = Path.Combine(dirInfo.FullName, new AssemblyName(args.Name).Name + ".dll");
+            return !File.Exists(testFile) ? null : Assembly.ReflectionOnlyLoadFrom(testFile);
         }
 
         private static Assembly SearchChildren(ResolveEventArgs args, DirectoryInfo dirInfo)

@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Input;
 
 namespace RTF.Applications
 {
@@ -82,6 +84,29 @@ namespace RTF.Applications
         private void Results_OnDrop(object sender, DragEventArgs e)
         {
             vm.SetResultsPathCommand.Execute(GetFirstFileFromDropPackage(e));
+        }
+
+        private void UIElement_OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+
+            UpdateTbBinding(sender);
+        }
+
+        private void UIElement_OnLostFocus(object sender, RoutedEventArgs e)
+        {
+            UpdateTbBinding(sender);
+        }
+
+        private static void UpdateTbBinding(object sender)
+        {
+            var tBox = (TextBox) sender;
+
+            var be = BindingOperations.GetBindingExpression(tBox, TextBox.TextProperty);
+            if (be != null)
+            {
+                be.UpdateSource();
+            }
         }
     }
 }
