@@ -769,6 +769,13 @@ namespace RTF.Applications
 
             runner = Runner.Load(fileName);
 
+            if (runner == null)
+            {
+                Console.WriteLine("Test session could not be opened.");
+                runner = new Runner();
+                return;
+            }
+
             InitializeFileWatcher();
 
             InitializeEventHandlers();

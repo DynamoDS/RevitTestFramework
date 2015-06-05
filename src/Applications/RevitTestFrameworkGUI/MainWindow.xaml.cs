@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +24,16 @@ namespace RTF.Applications
             DataContext = vm;
 
             Closing += View_Closing;
+            Loaded += MainWindow_Loaded;
+        }
+
+        void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // When running with a UI, we redirect the console output
+            // to a text box in the application's interface.
+
+            var outputter = new TextBoxOutputter(ConsoleTextBlock);
+            Console.SetOut(outputter);
         }
 
         private void View_Closing(object sender, CancelEventArgs e)

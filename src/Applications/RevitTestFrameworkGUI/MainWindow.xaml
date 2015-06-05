@@ -120,6 +120,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height ="Auto"/>
         </Grid.RowDefinitions>
         
         <StackPanel Grid.Row="0">
@@ -275,7 +276,7 @@
 
         </StackPanel>
         
-        <TreeView Grid.Row="1" Margin="5"
+        <TreeView Grid.Row="1" Margin="5" MinHeight="200"
                       ItemsSource="{Binding Path=Assemblies}"
                       ItemTemplate="{StaticResource AssemblyTemplate}"
                       VirtualizingStackPanel.IsVirtualizing="True"
@@ -292,7 +293,7 @@
                 </TreeView.ItemContainerStyle>
             </TreeView>
 
-        <StackPanel Grid.Row="2">
+        <StackPanel Grid.Row="3">
             
             <!--RUN BUTTONS-->
             <Grid Margin="0">
@@ -318,7 +319,7 @@
             </Grid>
             
         </StackPanel>
-
+        <TextBox Grid.Row="2" x:Name="ConsoleTextBlock" Height="100" Margin="5"/>
     </Grid>
 
 </Window>
