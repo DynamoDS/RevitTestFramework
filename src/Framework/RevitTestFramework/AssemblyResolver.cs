@@ -32,10 +32,13 @@ namespace RTF.Framework
 
         public virtual Assembly Resolve(object sender, ResolveEventArgs args)
         {
+            Console.WriteLine("Attempting to resolve referenced assembliy: {0}", args.Name);
+
             var dir = Path.GetDirectoryName(args.RequestingAssembly.Location);
             var testFile = Path.Combine(dir, new AssemblyName(args.Name).Name + ".dll");
             if (File.Exists(testFile))
             {
+                Console.WriteLine("Found assembly:{0}", testFile);
                 return Assembly.ReflectionOnlyLoadFrom(testFile);
             }
 
@@ -43,6 +46,7 @@ namespace RTF.Framework
             var assembly = SearchChildren(args, dirInfo);
             if (assembly != null)
             {
+                Console.WriteLine("Found assembly:{0}", assembly.Location);
                 return assembly;
             }
 
@@ -51,7 +55,10 @@ namespace RTF.Framework
             {
                 var result = AttemptLoadFromDirectory(args, path);
                 if (result != null)
+                {
+                    Console.WriteLine("Found assembly:{0}", result.Location);
                     return result;
+                }
             }
 
             // Search upstream of the test assembly
@@ -61,6 +68,7 @@ namespace RTF.Framework
                 assembly = SearchChildren(args, dirInfo);
                 if (assembly != null)
                 {
+                    Console.WriteLine("Found assembly:{0}", assembly.Location);
                     return assembly;
                 }
 
@@ -74,6 +82,7 @@ namespace RTF.Framework
             testFile = Path.Combine(revitDirectory, new AssemblyName(args.Name).Name + ".dll");
             if (File.Exists(testFile))
             {
+                Console.WriteLine("Found assembly:{0}", testFile);
                 return Assembly.ReflectionOnlyLoadFrom(testFile);
             }
 
@@ -82,8 +91,9 @@ namespace RTF.Framework
             {
                 return Assembly.ReflectionOnlyLoad(args.Name);
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return null;
             }
         }
