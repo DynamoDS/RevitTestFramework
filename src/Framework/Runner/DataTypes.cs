@@ -461,6 +461,10 @@ namespace RTF.Framework
             OnPropertyChanged("ShouldRun");
         }
 
+        public override string ToString()
+        {
+            return string.Format("Name: {0}, Model Path: {1}", Name, ModelPath);
+        }
     }
 
     [Serializable]

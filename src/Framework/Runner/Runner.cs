@@ -703,21 +703,35 @@ namespace RTF.Framework
             }
         }
 
+        /// <summary>
+        /// Load a test runner from a file.
+        /// </summary>
+        /// <param name="filePath">The path to the saved test runner.</param>
+        /// <returns>The test runner or null if initialization fails.</returns>
         public static Runner Load(string filePath)
         {
-            Runner runner;
-
-            using (var reader = new StreamReader(filePath))
+            try
             {
-                var serializer = new XmlSerializer(typeof(Runner));
-                runner = (Runner)serializer.Deserialize(reader);
+                Runner runner;
+
+                using (var reader = new StreamReader(filePath))
+                {
+                    var serializer = new XmlSerializer(typeof (Runner));
+                    runner = (Runner) serializer.Deserialize(reader);
+                }
+
+                runner.Initialize();
+
+                runner.SetSelectionsFromHints();
+
+                return runner;
             }
-
-            runner.Initialize();
-
-            runner.SetSelectionsFromHints();
-
-            return runner;
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to initialize test runner.");
+                Console.WriteLine(ex.Message);
+                return null;
+            }
         }
 
         #endregion
@@ -953,6 +967,8 @@ namespace RTF.Framework
             {
                 OnTestComplete(td);
             }
+
+            Console.WriteLine();
         }
 
         private void ProcessBatchTests(string journalPath)
@@ -1376,6 +1392,8 @@ namespace RTF.Framework
 
         public virtual IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType, bool isTesting)
         {
+            Console.WriteLine("Reading assembly: {0}", assemblyPath);
+
             IList<IAssemblyData> data = new List<IAssemblyData>();
 
             try
@@ -1406,7 +1424,8 @@ namespace RTF.Framework
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                Console.WriteLine("The specified assembly could not be loaded for testing.");
+                Console.WriteLine("The specified assembly could not be loaded for testing. Try adding some additonal resolution paths so RTF can find referenced assemblies.");
+                
                 return null;
             }
 

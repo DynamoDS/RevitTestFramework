@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using Microsoft.Practices.Prism.Modularity;
 
 namespace RTF.Framework
 {
@@ -28,16 +25,27 @@ namespace RTF.Framework
 
             var data = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
 
-            foreach (var fixtureType in assembly.GetTypes())
+            try
             {
-                if (!ReadFixture(fixtureType, data, workingDirectory))
+                foreach (var fixtureType in assembly.GetTypes())
                 {
-                    //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
+                    if (!ReadFixture(fixtureType, data, workingDirectory))
+                    {
+                        //Console.WriteLine(string.Format("Journals could not be created for {0}", fixtureType.Name));
+                    }
                 }
+
+                data.Fixtures = data.Fixtures.Sorted(x => x.Name);
+                return data;
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.LoaderExceptions);
+                throw new Exception("A referenced type could not be loaded.");
             }
 
-            data.Fixtures = data.Fixtures.Sorted(x => x.Name);
-            return data;
+            return null;
         }
 
         public static bool ReadFixture(Type fixtureType, IAssemblyData data, string workingDirectory)
@@ -138,6 +146,8 @@ namespace RTF.Framework
                     }
                 }
             }
+
+            Console.WriteLine("Loaded test: {0}", testData);
 
             return true;
         }
