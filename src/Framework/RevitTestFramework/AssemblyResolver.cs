@@ -34,20 +34,13 @@ namespace RTF.Framework
         {
             Console.WriteLine("Attempting to resolve referenced assembliy: {0}", args.Name);
 
+            // Search the local directory
             var dir = Path.GetDirectoryName(args.RequestingAssembly.Location);
             var testFile = Path.Combine(dir, new AssemblyName(args.Name).Name + ".dll");
             if (File.Exists(testFile))
             {
                 Console.WriteLine("Found assembly:{0}", testFile);
                 return Assembly.ReflectionOnlyLoadFrom(testFile);
-            }
-
-            var dirInfo = new DirectoryInfo(dir);
-            var assembly = SearchChildren(args, dirInfo);
-            if (assembly != null)
-            {
-                Console.WriteLine("Found assembly:{0}", assembly.Location);
-                return assembly;
             }
 
             // Search each of the additional load paths
@@ -59,31 +52,6 @@ namespace RTF.Framework
                     Console.WriteLine("Found assembly:{0}", result.Location);
                     return result;
                 }
-            }
-
-            // Search upstream of the test assembly
-            for (var i = 0; i < 3; i++)
-            {
-                dirInfo = dirInfo.Parent;
-                assembly = SearchChildren(args, dirInfo);
-                if (assembly != null)
-                {
-                    Console.WriteLine("Found assembly:{0}", assembly.Location);
-                    return assembly;
-                }
-
-                testFile = Path.Combine(dirInfo.FullName, new AssemblyName(args.Name).Name + ".dll");
-                if (File.Exists(testFile))
-                {
-                    return Assembly.ReflectionOnlyLoadFrom(testFile);
-                }
-            }
-
-            testFile = Path.Combine(revitDirectory, new AssemblyName(args.Name).Name + ".dll");
-            if (File.Exists(testFile))
-            {
-                Console.WriteLine("Found assembly:{0}", testFile);
-                return Assembly.ReflectionOnlyLoadFrom(testFile);
             }
 
             // If the above fail, attempt to load from the GAC
