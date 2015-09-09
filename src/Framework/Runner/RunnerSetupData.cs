@@ -41,10 +41,12 @@ namespace RTF.Framework
         {
             var products = RevitProductUtility.GetAllInstalledRevitProducts();
 
-            if (products.Any())
-            {
-                products = products.Where(x => x.Version == RevitVersion.Revit2015 || x.Version==RevitVersion.Revit2016 || x.Version==RevitVersion.Revit2017).ToList();
-            }
+            //For now let's return all the installed products. Sometimes the products in development
+            //might return Unknown version.
+            //if (products.Any())
+            //{
+            //    products = products.Where(x => x.Version == RevitVersion.Revit2015 || x.Version==RevitVersion.Revit2016 || x.Version==RevitVersion.Revit2017).ToList();
+            //}
 
             return products;
         }
