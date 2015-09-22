@@ -53,6 +53,7 @@ namespace RTF.Framework
         TestStatus TestStatus { get; set; }
         ObservableCollection<IResultData> ResultData { get; set; }
         string JournalPath { get; set; }
+        bool Completed { get; set; }
     }
 
     public interface IResultData: INotifyPropertyChanged
