@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Xml;
 using System.Xml.Serialization;
 using Autodesk.RevitAddIns;
 using Dynamo.NUnit.Tests;
@@ -26,7 +28,7 @@ namespace RTF.Framework
     /// </summary>
     [Serializable]
     [XmlRoot]
-    public class Runner : IRunner, IDisposable
+    public partial class Runner : IRunner, IDisposable
     {
         #region events
 
@@ -42,6 +44,10 @@ namespace RTF.Framework
 
         private const string _pluginGuid = "487f9ff0-5b34-4e7e-97bf-70fbff69194f";
         private const string _pluginClass = "RTF.Applications.RevitTestFramework";
+        private const string _clientStartPluginGuid = "8F372D6C-ECAA-4669-939E-2CD21C1F1E70";
+        private const string _clientStartPluginClass = "RTF.Applications.RTFClientStartCmd";
+        private const string _clientEndPluginGuid = "7CF281FA-D8C0-499E-AA60-7A1CF582129F";
+        private const string _clientEndPluginClass = "RTF.Applications.RTFClientEndCmd";
         private const string _appGuid = "c950020f-3da0-4e48-ab82-5e30c3f4b345";
         private const string _appClass = "RTF.Applications.RevitTestFrameworkExternalApp";
         private string _workingDirectory;
@@ -66,6 +72,7 @@ namespace RTF.Framework
         private GroupingType groupingType = GroupingType.Fixture;
         private List<SelectionHint> selectionHints = new List<SelectionHint>(); 
         private List<string> additionalResolutionDirectories = new List<string>();
+        private List<ITestData> completedTestCases = new List<ITestData>();
  
         #endregion
 
@@ -79,6 +86,26 @@ namespace RTF.Framework
         internal static string PluginClass
         {
             get { return _pluginClass; }
+        }
+
+        internal static string ClientStartPluginGuid
+        {
+            get { return _clientStartPluginGuid; }
+        }
+
+        internal static string ClientStartPluginClass
+        {
+            get { return _clientStartPluginClass; }
+        }
+
+        internal static string ClientEndPluginGuid
+        {
+            get { return _clientEndPluginGuid; }
+        }
+
+        internal static string ClientEndPluginClass
+        {
+            get { return _clientEndPluginClass; }
         }
 
         #endregion
@@ -408,6 +435,23 @@ namespace RTF.Framework
 
         #region public methods
 
+        public void StartServer()
+        {
+            // If dryRun is true, the server won't be started
+            if (continuous && !dryRun)
+            {
+                RevitTestServer.Instance.Start(Timeout);
+            }
+        }
+
+        public void EndServer()
+        {
+            if (continuous && !dryRun)
+            {
+                RevitTestServer.Instance.End();
+            }
+        }
+
         /// <summary>
         /// Setup all tests, creating journal files, the addin file,
         /// and copying the addins from the addins folder on the
@@ -416,24 +460,14 @@ namespace RTF.Framework
         /// <param name="parameter"></param>
         public void SetupTests()
         {
-            journalInitialized = false;
-            journalFinished = false;
-
             var runnable = GetRunnableTests();
-            foreach (var test in runnable)
-            {
-                SetupIndividualTest(test, Continuous);
-            }
-
-            if (continuous && !journalFinished)
-            {
-                FinishJournal(BatchJournalPath);
-            }
 
             if (!File.Exists(AddinPath))
             {
                 CreateAddin(AddinPath, AssemblyPath);
             }
+
+            CreateJournalForTestCases(runnable);
 
             // Copy addins from the Revit addin folder to the current working directory
             // so that they can be loaded.
@@ -449,6 +483,25 @@ namespace RTF.Framework
                         CopiedAddins.Add(fileName);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Create journal files for a given set of test cases
+        /// </summary>
+        /// <param name="runnableTests"></param>
+        private void CreateJournalForTestCases(IEnumerable<ITestData> runnableTests)
+        {
+            journalInitialized = false;
+            journalFinished = false;
+            foreach (var test in runnableTests)
+            {
+                SetupIndividualTest(test, Continuous);
+            }
+
+            if (continuous && !journalFinished)
+            {
+                FinishJournal(BatchJournalPath);
             }
         }
 
@@ -971,7 +1024,15 @@ namespace RTF.Framework
             Console.WriteLine();
         }
 
-        private void ProcessBatchTests(string journalPath)
+        /// <summary>
+        /// Run tests through only on journal file.
+        /// There may be one test case to cause the running process hang.
+        /// Then the journal file will be recreated based on the remaining test cases
+        /// and this function will be called for the new journaling file.
+        /// </summary>
+        /// <param name="journalPath"></param>
+        /// <param name="firstCall"></param>
+        private void ProcessBatchTests(string journalPath, bool firstCall = true)
         {
             var startInfo = new ProcessStartInfo()
             {
@@ -984,15 +1045,159 @@ namespace RTF.Framework
             Console.WriteLine("Running {0}", journalPath);
             var process = new Process { StartInfo = startInfo };
             process.Start();
-
-            var timedOut = false;
-
-            process.WaitForExit();
-
-            if (!timedOut)
+            
+            if (!WaitForTestsToComplete(process))
             {
+                var tests = GetRunnableTests();
+                var remainingTests = tests.Where(x => !x.Completed);
+                if (remainingTests.Any())
+                {
+                    CreateJournalForTestCases(remainingTests);
+                    ProcessBatchTests(journalPath, false);
+                }
+            }
+
+            if (firstCall)
+            {
+                // If there are any test cases which are timed out, write them to the result file
+                var runnableTests = GetRunnableTests();
+                var timedoutTests = runnableTests.Where(x => x.TestStatus == TestStatus.TimedOut);
+                if (timedoutTests.Any())
+                {
+                    WriteTestResultForTestCases(timedoutTests, Results, TestAssembly);
+                }
+
                 OnTestComplete(GetRunnableTests());
             }
+        }
+
+        /// <summary>
+        /// Wait for the process to complete the test cases.
+        /// If the result is true, this means that all the tests have completed or the test has been cancelled.
+        /// If the result is false, this means tests have not completed and need to start a new process to
+        /// continue running the remaining test cases.
+        /// </summary>
+        /// <param name="process"></param>
+        /// <returns></returns>
+        private bool WaitForTestsToComplete(Process process)
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            List<string> completedTestCaseNames = new List<string>();
+            string runningTestCaseName = string.Empty;
+            string runningFixtureName = string.Empty;
+            ITestData runningTestCase = null;
+            while (true)
+            {
+                MessageResult msgResult = RevitTestServer.Instance.GetNextMessageResult();
+                if (watch.ElapsedMilliseconds > Timeout || msgResult.Status != MessageStatus.Success)
+                {
+                    // If the test case has timed out or there are errors when getting the next message
+                    if (process != null && !(process.HasExited))
+                    {
+                        process.Kill();
+                    }
+                    RevitTestServer.Instance.ResetWorkingSocket();
+                    if (runningTestCase != null)
+                    {
+                        runningTestCase.Completed = true;
+                        runningTestCase.TestStatus = TestStatus.TimedOut;
+                        OnTestTimedOut(runningTestCase);
+                    }
+                    return false;
+                }
+                else if (cancelRequested)
+                {
+                    // If the cancel button has been clicked
+                    cancelRequested = false;
+                    if (process != null && !(process.HasExited))
+                    {
+                        process.Kill();
+                    }
+                    RevitTestServer.Instance.ResetWorkingSocket();
+                    Console.WriteLine("Test is cancelled");
+                    return true;
+                }
+
+                var ctrlMessage = msgResult.Message as ControlMessage;
+                var dataMessage = msgResult.Message as DataMessage;
+
+                if (ctrlMessage != null || dataMessage != null)
+                {
+                    if (!string.IsNullOrEmpty(runningTestCaseName))
+                    {
+                        completedTestCaseNames.Add(runningTestCaseName);
+                        if (runningTestCase != null)
+                        {
+                            runningTestCase.Completed = true;
+                        }
+                    }
+                }
+
+                if (ctrlMessage != null)
+                {
+                    if (ctrlMessage.Type == ControlType.NotificationOfEnd)
+                    {
+                        // Wait for the process to exit so that the temporary journaling files
+                        // can be deleted successfully in the cleanup stage later
+                        process.WaitForExit();
+                        return true;
+                    }
+                }
+
+                if (dataMessage != null)
+                {
+                    runningTestCaseName = dataMessage.TestCaseName;
+                    runningFixtureName = dataMessage.FixtureName;
+                    runningTestCase = FindTestCase(runningTestCaseName, runningFixtureName);
+                    Console.WriteLine("Running {0} in {1}", runningTestCaseName, runningFixtureName);
+
+                    watch.Reset();
+                    watch.Start();
+                }
+            }
+        }
+
+        private ITestData FindTestCase(string testCaseName, string fixtureName)
+        {
+            var tests = GetRunnableTests().Where(x => string.CompareOrdinal(x.Name, testCaseName) == 0 &&
+                            string.CompareOrdinal(x.Fixture.Name, fixtureName) == 0);
+            return tests.First();
+        }
+
+        private static testsuiteType CreateTestSuiteType(string suiteName)
+        {
+            return new testsuiteType
+            {
+                name = suiteName,
+                description = "Unit tests in Revit.",
+                time = "0.0",
+                type = "TestFixture",
+                result = "Success",
+                executed = "True",
+                results = new resultsType { Items = new object[] { } }
+            };
+        }
+
+        private static resultType GetInitializedResultType(string testAssembly)
+        {
+            var result = new resultType
+                                {
+                                    name = testAssembly,
+                                    testsuite = CreateTestSuiteType("DynamoTestFrameworkTests")
+                                };
+
+            result.date = DateTime.Now.ToString("yyyy-MM-dd");
+            result.time = DateTime.Now.ToString("HH:mm:ss");
+            result.failures = 0;
+            result.ignored = 0;
+            result.notrun = 0;
+            result.errors = 0;
+            result.skipped = 0;
+            result.inconclusive = 0;
+            result.invalid = 0;
+
+            return result;
         }
 
         private void OnInitialized()
@@ -1063,15 +1268,18 @@ namespace RTF.Framework
             }
         }
 
-        private void InitializeJournal(string path)
+        private void InitializeJournal(string path, int port)
         {
             if (journalInitialized) return;
 
             using (var tw = new StreamWriter(path, false))
             {
-                var journal = @"'" +
-                              "Dim Jrn \n" +
-                              "Set Jrn = CrsJournalScript \n";
+                var journal = String.Format(@"'" +
+                                             "Dim Jrn \n" +
+                                             "Set Jrn = CrsJournalScript \n" +
+                                             "Jrn.RibbonEvent \"Execute external command:{0}:{1}\" \n" +
+                                             "Jrn.Data \"APIStringStringMapJournalData\", 1, \"Port\", \"{2}\" \n",
+                                             ClientStartPluginGuid, ClientStartPluginClass, port);
 
                 tw.Write(journal);
                 tw.Flush();
@@ -1103,7 +1311,9 @@ namespace RTF.Framework
 
             using (var tw = new StreamWriter(path, true))
             {
-                var journal = "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"";
+                var journal = String.Format("Jrn.RibbonEvent \"Execute external command:{0}:{1}\" \n" +
+                                            "Jrn.Command \"SystemMenu\" , \"Quit the application; prompts to save projects , ID_APP_EXIT\"",
+                              ClientEndPluginGuid, ClientEndPluginClass);
 
                 tw.Write(journal);
                 tw.Flush();
@@ -1203,7 +1413,7 @@ namespace RTF.Framework
 
                 if (continuous)
                 {
-                    InitializeJournal(journalPath);
+                    InitializeJournal(journalPath, RevitTestServer.Instance.Port);
                     AddToJournal(journalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, Results, td.ModelPath);
                 }
                 else
@@ -1279,8 +1489,28 @@ namespace RTF.Framework
                     "<VendorDescription>Dynamo</VendorDescription>\n" +
                     "</AddIn>\n" +
 
+                    "<AddIn Type=\"Command\">\n" +
+                    "<Name>Start Test Framework Client</Name>\n" +
+                    "<Assembly>\"{0}\"</Assembly>\n" +
+                    "<AddInId>{5}</AddInId>\n" +
+                    "<FullClassName>{6}</FullClassName>\n" +
+                    "<VendorId>Dynamo</VendorId>\n" +
+                    "<VendorDescription>Dynamo</VendorDescription>\n" +
+                    "</AddIn>\n" +
+
+                    "<AddIn Type=\"Command\">\n" +
+                    "<Name>End Test Framework Client</Name>\n" +
+                    "<Assembly>\"{0}\"</Assembly>\n" +
+                    "<AddInId>{7}</AddInId>\n" +
+                    "<FullClassName>{8}</FullClassName>\n" +
+                    "<VendorId>Dynamo</VendorId>\n" +
+                    "<VendorDescription>Dynamo</VendorDescription>\n" +
+                    "</AddIn>\n" +
+
                     "</RevitAddIns>",
-                    assemblyPath, _appGuid, _appClass, _pluginGuid, _pluginClass
+                    assemblyPath, _appGuid, _appClass, _pluginGuid, _pluginClass,
+                    _clientStartPluginGuid, _clientStartPluginClass,
+                    _clientEndPluginGuid, _clientEndPluginClass
                     );
 
                 tw.Write(addin);
@@ -1300,6 +1530,7 @@ namespace RTF.Framework
             data.ResultData.Add(new ResultData() { Message = message, StackTrace = stackTrace });
         }
 
+        #region XML reading and writing
         public static resultType TryParseResultsOrEmitError(string resultsPath)
         {
             try
@@ -1324,22 +1555,9 @@ namespace RTF.Framework
             {
                 td.ResultData.Clear();
 
-                //find our results in the results
-                var ourSuite =
-                    results.testsuite.results.Items
-                        .Cast<testsuiteType>()
-                        .FirstOrDefault(s => s.name == td.Fixture.Name);
+                var ourTests = FindOutTestCasesRelatedToTestData(results, td);
 
-                if (ourSuite == null)
-                {
-                    return;
-                }
-
-                // parameterized tests will have multiple results
-                var ourTests = ourSuite.results.Items
-                    .Cast<testcaseType>().Where(t => t.name.Contains(td.Name));
-
-                if (!ourTests.Any())
+                if (ourTests==null || !ourTests.Any())
                 {
                     return;
                 }
@@ -1359,6 +1577,9 @@ namespace RTF.Framework
                             break;
                         case "Ignored":
                             td.TestStatus = TestStatus.Ignored;
+                            break;
+                        case "Timedout":
+                            td.TestStatus = TestStatus.TimedOut;
                             break;
                         case "Inconclusive":
                             td.TestStatus = TestStatus.Inconclusive;
@@ -1389,6 +1610,98 @@ namespace RTF.Framework
             }
 
         }
+
+        public static void WriteTestResultForTestCases(IEnumerable<ITestData> data, string resultsPath, string testAssembly)
+        {
+            var results = TryParseResultsOrEmitError(resultsPath);
+            if (results == null)
+            {
+                // In case, there is no other test case which has run yet
+                results = GetInitializedResultType(testAssembly);
+            }
+
+            List<ITestData> timedoutTests = new List<ITestData>();
+            foreach (var td in data)
+            {
+                if (td.TestStatus == TestStatus.TimedOut)
+                {
+                    timedoutTests.Add(td);
+                }
+            }
+
+            foreach (var td in timedoutTests)
+            {
+                var tests = FindOutTestCasesRelatedToTestData(results, td);
+                if (tests != null && tests.Any())
+                {
+                    // update the test result
+                    foreach (var test in tests)
+                    {
+                        test.executed = "True";
+                        test.success = "False";
+                        test.result = "Timedout";
+                    }
+                }
+                else
+                {
+                    var suite =
+                        results.testsuite.results.Items
+                            .Cast<testsuiteType>()
+                            .FirstOrDefault(s => s.name == td.Fixture.Name);
+
+                    // To expand the existing array, for now it is to create a new array.
+                    // We need to find a way to replace array with list.
+                    if (suite == null)
+                    {
+                        var subSuite = CreateTestSuiteType(td.Fixture.Name);
+                        int newSize = results.testsuite.results.Items.Length + 1;
+                        object[] newArray = new object[newSize];
+                        Array.Copy(results.testsuite.results.Items, newArray, newSize - 1);
+                        newArray[newSize - 1] = subSuite;
+                        results.testsuite.results.Items = newArray;
+                        suite = subSuite;
+                    }
+
+                    int size = suite.results.Items.Length + 1;
+                    object[] array = new object[size];
+                    Array.Copy(suite.results.Items, array, size - 1);
+                    array[size - 1] = new testcaseType() { name = td.Name, executed = "True", success = "False", result = "Timedout" };
+                    suite.results.Items = array;
+                }
+            }
+
+            //update the file
+            var serializer = new XmlSerializer(typeof(resultType));
+            var dir = Path.GetDirectoryName(resultsPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            using (var tw = XmlWriter.Create(resultsPath, new XmlWriterSettings() { Indent = true }))
+            {
+                tw.WriteComment("This file represents the results of running a test suite");
+                var ns = new XmlSerializerNamespaces();
+                ns.Add("", "");
+                serializer.Serialize(tw, results, ns);
+            }
+        }
+
+        private static IEnumerable<testcaseType> FindOutTestCasesRelatedToTestData(resultType results, ITestData td)
+        {
+            var ourSuite =
+                results.testsuite.results.Items
+                    .Cast<testsuiteType>()
+                    .FirstOrDefault(s => s.name == td.Fixture.Name);
+
+            if (ourSuite == null)
+            {
+                return null;
+            }
+
+            // parameterized tests will have multiple results
+            return ourSuite.results.Items.Cast<testcaseType>()
+                .Where(t => string.CompareOrdinal(t.name, td.Name) == 0);
+        }
+
+        #endregion
 
         public virtual IList<IAssemblyData> ReadAssembly(string assemblyPath, string workingDirectory, GroupingType groupType, bool isTesting)
         {
