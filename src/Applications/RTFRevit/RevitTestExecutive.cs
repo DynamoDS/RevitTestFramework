@@ -427,6 +427,9 @@ namespace RTF.Applications
 
         private testcaseType RunTest(TestMethod t, MethodInfo[] setupMethods = null)
         {
+            //Send information about the test case to be run to the server
+            RTFClientStartCmd.SendTestInformation(t.TestName.Name, fixtureName);
+
             TestFilter filter = new NameFilter(t.TestName);
 
             var result = t.Run(new TestListener(), filter);
