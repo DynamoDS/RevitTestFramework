@@ -49,7 +49,7 @@ namespace RTF.Framework
         /// <param name="timeout"></param>
         public void Start(int timeout)
         {
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse(CommonData.LocalIPAddress);
             serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             serverSocket.Bind(new IPEndPoint(ipAddress, 0));
 
@@ -160,7 +160,8 @@ namespace RTF.Framework
             {
                 handlerSocket = serverSocket.Accept();
                 var endPoint = handlerSocket.RemoteEndPoint as IPEndPoint;
-                if (endPoint != null && string.CompareOrdinal(endPoint.Address.ToString(), "127.0.0.1") == 0)
+                if (endPoint != null && 
+                    string.CompareOrdinal(endPoint.Address.ToString(), CommonData.LocalIPAddress) == 0)
                 {
                     break;
                 }
