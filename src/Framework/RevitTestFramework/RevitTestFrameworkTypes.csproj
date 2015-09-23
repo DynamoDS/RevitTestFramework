@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="AssemblyResolver.cs" />
+    <Compile Include="CommonData.cs" />
     <Compile Include="IRTFSetup.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="TestListener.cs" />

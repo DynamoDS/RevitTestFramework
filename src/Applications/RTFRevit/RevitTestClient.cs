@@ -36,7 +36,7 @@ namespace RTF.Applications
                 return Result.Failed;
             }
 
-            ipAddress = IPAddress.Parse("127.0.0.1");
+            ipAddress = IPAddress.Parse(CommonData.LocalIPAddress);
             endPoint = new IPEndPoint(ipAddress, iPort);
             clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
