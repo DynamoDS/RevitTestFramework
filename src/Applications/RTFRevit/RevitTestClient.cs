@@ -53,12 +53,11 @@ namespace RTF.Applications
         /// <returns></returns>
         private bool ReadDataFromJournal(IDictionary<string, string> dataMap)
         {
-            if (!dataMap.ContainsKey("Port"))
+            string strPort;
+            if (!dataMap.TryGetValue("Port", out strPort))
             {
                 return false;
             }
-
-            string strPort = dataMap["Port"];
 
             if (!int.TryParse(strPort, out iPort))
             {
