@@ -60,6 +60,7 @@
       <DependentUpon>NUnitResultTypes.xsd</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RevitTestClient.cs" />
     <Compile Include="RevitTestFramework.cs" />
     <Compile Include="RevitTestExecutive.cs" />
   </ItemGroup>
