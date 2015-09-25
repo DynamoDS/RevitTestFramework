@@ -85,7 +85,9 @@ namespace RTF.Applications
                 case TestStatus.None:
                     return Brushes.Transparent;
                 case TestStatus.Cancelled:
-                    return  new SolidColorBrush(Colors.DarkGray);
+                    return new SolidColorBrush(Colors.DarkGray);
+                case TestStatus.TimedOut:
+                    return new SolidColorBrush(Colors.Orange);
                 case TestStatus.Error:
                     return new SolidColorBrush(Colors.OrangeRed);
                 case TestStatus.Failure:

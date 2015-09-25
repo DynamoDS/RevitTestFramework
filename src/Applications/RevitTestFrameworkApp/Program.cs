@@ -33,8 +33,10 @@ namespace RTF.Applications
                 return;
             }
 
+            runner.StartServer();
             runner.SetupTests();
             runner.RunAllTests();
+            runner.EndServer();
         }
     }
 }

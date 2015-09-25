@@ -518,8 +518,10 @@ namespace RTF.Applications
         {
             IsRunning = true;
 
+            runner.StartServer();
             runner.SetupTests();
             runner.RunAllTests();
+            runner.EndServer();
 
             IsRunning = false;
         }
