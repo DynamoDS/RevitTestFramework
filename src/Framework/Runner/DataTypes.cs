@@ -426,6 +426,9 @@ namespace RTF.Framework
         [XmlIgnore]
         public virtual IFixtureData Fixture { get; set; }
 
+        [XmlIgnore]
+        public bool Completed { get; set; }
+
         public TestData() { }
 
         public TestData(IFixtureData fixture, string name, string modelPath, bool runDynamo)
