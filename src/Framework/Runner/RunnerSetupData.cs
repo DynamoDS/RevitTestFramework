@@ -29,6 +29,7 @@ namespace RTF.Framework
         public bool CopyAddins { get; set; }
         public bool IsTesting { get; set; }
         public int SelectedProduct { get; set; }
+        public string AdditionalResolutionDirectories { get; set; }
 
         public RunnerSetupData()
         {

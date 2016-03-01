@@ -378,8 +378,6 @@ namespace RTF.Framework
         /// <param name="setupData"></param>
         public Runner(IRunnerSetupData setupData)
         {
-            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_ReflectionOnlyAssemblyResolve;
-
             if (!String.IsNullOrEmpty(setupData.TestAssembly) && !File.Exists(setupData.TestAssembly))
             {
                 throw new ArgumentException("The specified test assembly does not exist.");
@@ -427,6 +425,20 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
+
+            if(!string.IsNullOrEmpty(setupData.AdditionalResolutionDirectories))
+            {
+                var splits = setupData.AdditionalResolutionDirectories.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                if (!splits.Any()) return;
+
+                this.AdditionalResolutionDirectories.Clear();
+                foreach (var split in splits)
+                {
+                    this.AdditionalResolutionDirectories.Add(split);
+                }
+            }
+            var resolver = new DefaultAssemblyResolver(RevitPath, AdditionalResolutionDirectories);
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += resolver.Resolve;
 
             Initialize();
         }
@@ -1784,6 +1796,7 @@ namespace RTF.Framework
                 {"exclude:", "The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases that belongs to that category will not be run. (OPTIONAL)", v=> setupData.ExcludedCategory = v},
                 {"c|concatenate", "Concatenate the results from this run of RTF with an existing results file if one exists at the path specified. The default behavior is to replace the existing results file. (OPTIONAL)", v=> setupData.Concat = v != null},
                 {"revit:", "The Revit executable to be used for testing. If no executable is specified, RTF will use the first version of Revit that is found on the machine using the RevitAddinUtility. (OPTIONAL)", v=> setupData.RevitPath = v},
+                {"add:", @"Additional path resolution directories as a string separated by ';'", v=>setupData.AdditionalResolutionDirectories=v},
                 {"copyAddins", "Specify whether to copy the addins from the Revit folder to the current working directory. Copying the addins from the Revit folder will cause the test process to simulate the typical setup on your machine. (OPTIONAL)",
                     v=> setupData.CopyAddins = v != null},
                 {"dry", "Conduct a dry run. (OPTIONAL)", v=> setupData.DryRun = v != null},

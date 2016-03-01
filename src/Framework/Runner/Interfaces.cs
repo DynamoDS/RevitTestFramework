@@ -85,6 +85,7 @@ namespace RTF.Framework
         bool IsTesting { get; set; }
         string ExcludedCategory { get; set; }
         int SelectedProduct { get; set; }
+        string AdditionalResolutionDirectories { get; set; }
     }
 
     public interface IRunner
