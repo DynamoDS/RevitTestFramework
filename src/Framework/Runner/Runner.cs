@@ -479,8 +479,13 @@ namespace RTF.Framework
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
                     {
                         var fileName = Path.GetFileName(file);
-                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                        var destination = Path.Combine(WorkingDirectory, fileName);
+                        File.Copy(file,destination , true);
                         CopiedAddins.Add(fileName);
+
+                        //modify the copied addin so that the assembly paths are fully qualified
+                        var addinCopy = new FileInfo(destination);
+                        AddinHelpers.FullyQualifyAddinPaths(addinCopy);
                     }
                 }
             }
