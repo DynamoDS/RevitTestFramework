@@ -53,6 +53,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddinHelpers.cs" />
     <Compile Include="AssemblyLoader.cs" />
     <Compile Include="DataTypes.cs" />
     <Compile Include="Interfaces.cs" />
