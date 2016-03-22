@@ -485,7 +485,7 @@ namespace RTF.Framework
 
                         //modify the copied addin so that the assembly paths are fully qualified
                         var addinCopy = new FileInfo(destination);
-                        AddinHelpers.FullyQualifyAddinPaths(addinCopy);
+                        AddinHelpers.FullyQualifyAddinPaths(addinCopy, new FileInfo(file));
                     }
                 }
             }
