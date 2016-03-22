@@ -12,31 +12,42 @@ namespace RTF.Framework
     static class AddinHelpers
     {
         /// <summary>
-        /// this method modifies Addin files so that their assembly paths
-        /// are fully qualified
+        /// this method modifies the copied addin so that its assembly is fully pathed to the location
+        /// where the original addin pointed, in the case where the assembly path was already a full path, nothing is done
         /// </summary>
-        /// <param name="addinFile"></param>
-        /// <returns></returns>
-        public static void FullyQualifyAddinPaths (FileInfo addinFile)
+        /// <param name="copiedAddinFile"></param>
+        /// <param name="originalAddin"></param>
+        public static void FullyQualifyAddinPaths (FileInfo copiedAddinFile, FileInfo originalAddin)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(addinFile.FullName);
+            doc.Load(copiedAddinFile.FullName);
 
             foreach(XmlElement addinElement in doc.DocumentElement.ChildNodes)
             {
                 //if this element is an addin attempt to make the assembly path a full path
-             if (addinElement.LocalName != "Addin")
+             if (addinElement.LocalName != "AddIn")
                 {
                     continue; 
                 }
                 var assemblies = addinElement.ChildNodes.OfType<XmlElement>().Where(x => x.LocalName == "Assembly");
-                var paths = assemblies.Select(x => x.InnerText);
-                var files = paths.Select(x => new FileInfo(x));
-                var fullpaths = files.Select(x => x.FullName);
+                var paths = assemblies.Select(x => x.InnerText.Replace("\"", ""));
+                var fullpaths = paths.Select(x =>
+                {
+                    if (!System.IO.Path.IsPathRooted(x))
+                    {
+                        x = Path.Combine(Path.GetDirectoryName(originalAddin.FullName), x);
+                    }
+                    if (!File.Exists(x))
+                    {
+                        throw new System.IO.FileNotFoundException(addinElement.LocalName +
+                            "contained an assembly that did not exist, at: " + x);
+                    }
+                    return x;
+                });
 
                 assemblies.ToList().Zip(fullpaths, (asm, path) => asm.InnerText = path).ToList();
             }
-            doc.Save(addinFile.FullName);
+            doc.Save(copiedAddinFile.FullName);
         }
     }
 }
