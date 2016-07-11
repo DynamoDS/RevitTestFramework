@@ -347,7 +347,7 @@ namespace RTF.Applications
             var cases = suiteItems.Where(x => x.GetType() == typeof(testcaseType)).Cast<testcaseType>();
             suite.asserts = cases.Sum(x => Convert.ToInt16(x.asserts)).ToString();
             suite.result = cases.Any(x => x.result == "Failure") ? "Failure" : "Success";
-            suite.time = cases.Sum(x => Convert.ToDouble(x.time)).ToString();
+            suite.time = cases.Sum(x => Convert.ToDouble(x.time, CultureInfo.InvariantCulture)).ToString();
             //suite.executed = cases.All(x => x.executed == "False") ? "False" : "True";
             suite.executed = true.ToString();
         }
