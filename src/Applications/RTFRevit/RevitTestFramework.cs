@@ -6,7 +6,7 @@ using Autodesk.Revit.UI;
 
 namespace RTF.Applications
 {
-    [Transaction(Autodesk.Revit.Attributes.TransactionMode.Automatic)]
+    [Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public class RevitTestFrameworkExternalApp : IExternalApplication
     {
