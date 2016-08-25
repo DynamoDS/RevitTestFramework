@@ -1697,7 +1697,7 @@ namespace RTF.Framework
                     .Cast<testsuiteType>()
                     .FirstOrDefault(s => s.name == td.Fixture.Name);
 
-            if (ourSuite == null)
+            if (ourSuite == null || (ourSuite.results.Items == null))
             {
                 return null;
             }
