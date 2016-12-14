@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Reflection;
 
@@ -15,6 +16,7 @@ namespace RTF.Framework
     public class DefaultAssemblyResolver : RTFAssemblyResolver
     {
         private string revitDirectory;
+        private string dynamoRuntimeDirectory;
 
         public List<string> AdditionalResolutionDirectories { get; set; }
 
@@ -48,6 +50,16 @@ namespace RTF.Framework
             {
                 Console.WriteLine("Found assembly:{0}", assembly.Location);
                 return assembly;
+            }
+
+            //Try to get DynamoRuntimeDirectory and include it to addtion resolution paths
+            if(string.IsNullOrEmpty(dynamoRuntimeDirectory))
+            {
+                dynamoRuntimeDirectory = TryGetDynamoCoreRuntimeFromConfig(dirInfo, true);
+                if(!string.IsNullOrEmpty(dynamoRuntimeDirectory))
+                {
+                    AdditionalResolutionDirectories.Add(dynamoRuntimeDirectory);
+                }
             }
 
             // Search each of the additional load paths
@@ -121,6 +133,34 @@ namespace RTF.Framework
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Tries to get Dynamo Core Runtime path from Dynamo.config file, given 
+        /// a directory. This method searches for Dynamo.config file in the 
+        /// given folder, if present returns DynamoRuntime app setting value from config.
+        /// </summary>
+        /// <param name="directory">DirectoryInfo to locate Dynamo.config file</param>
+        /// <param name="searchParent">Whether to search in parent folder</param>
+        /// <returns>Returns Dynamo Runtime path if successful, else string.Empty</returns>
+        private static string TryGetDynamoCoreRuntimeFromConfig(DirectoryInfo directory, bool searchParent)
+        {
+            var configPath = Path.Combine(directory.FullName, "Dynamo.config");
+            if (!File.Exists(configPath))
+            {
+                return searchParent ? TryGetDynamoCoreRuntimeFromConfig(directory.Parent, false) : string.Empty;
+            }
+        
+            // Get DynamoCore path from the Dynamo.config file, if it exists
+            var map = new ExeConfigurationFileMap() { ExeConfigFilename = configPath };
+
+            var config = ConfigurationManager.OpenMappedExeConfiguration(map, ConfigurationUserLevel.None);
+            var runtime = config.AppSettings.Settings["DynamoRuntime"];
+            if (runtime != null)
+            {
+                return runtime.Value;
+            }
+            return string.Empty;
         }
     }
 }
