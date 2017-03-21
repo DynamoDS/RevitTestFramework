@@ -91,6 +91,13 @@ namespace RTF.Framework
 
             var testAttribs = CustomAttributeData.GetCustomAttributes(test);
 
+            var ignoreAttrib =
+                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "IgnoreAttribute");
+            if (ignoreAttrib != null)
+            {
+                return false;
+            }
+
             var testModelAttrib =
                 testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "TestModelAttribute");
 
