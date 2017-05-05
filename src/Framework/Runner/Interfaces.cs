@@ -80,6 +80,7 @@ namespace RTF.Framework
         bool CleanUp { get; set; }
         bool Continuous { get; set; }
         bool IsDebug { get; set; }
+        bool CopyAddin { get; set; }
         GroupingType GroupingType { get; set; }
         int Timeout { get; set; }
         bool IsTesting { get; set; }

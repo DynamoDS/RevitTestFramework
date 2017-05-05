@@ -423,6 +423,7 @@ namespace RTF.Framework
             CleanUp = setupData.CleanUp;
             Continuous = setupData.Continuous;
             IsDebug = setupData.IsDebug;
+            CopyAddins = setupData.CopyAddin;
             GroupingType = setupData.GroupingType;
             Timeout = setupData.Timeout;
             IsTesting = setupData.IsTesting;
