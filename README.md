@@ -1,10 +1,10 @@
-##RevitTestFramework
+## RevitTestFramework
 
 The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well. 
 
-##Applications
+## Applications
 
-#####RevitTestFrameworkConsole.exe  
+##### RevitTestFrameworkConsole.exe  
 A console application which allows running RTF without a user interface. If you'd like to learn more about the command line options for RTF, you can simply type "RevitTestFrameworkConsole -h" and you'll get something like this:
 ```
   Options:   
@@ -26,23 +26,23 @@ A console application which allows running RTF without a user interface. If you'
     -h,  --help                 Show this message and exit. (OPTIONAL)  
 ```
 
-#####RevitTestFrameworkGUI.exe   
+##### RevitTestFrameworkGUI.exe   
 Provides a visual interface for you to choose tests from a treeview and to visualize the results of the tests as they are run. The same settings provided in the command line argument help above are available in the UI. The UI also allows you to save your testing session.
 
 The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
 ![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
 
-##Results  
+## Results  
 
 The output file from a test run is an nunit-formatted results file compatible with many CI systems.
 
-##Revit Versions
+## Revit Versions
 
 This repo maintains branches to track the two most recently released versions of Revit and one un-released version of Revit. When new versions of Revit are released, branches tracking the oldest version of Revit supported will no longer be maintained. For example, when Revit 2016 is released, the Revit 2014 branch of RTF will no longer be maintained.  
 When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.
 
-##License
+## License
 
 Copyright 2014 Autodesk
 
