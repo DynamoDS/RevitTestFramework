@@ -33,6 +33,18 @@ The input fields to set the test assembly, the working directory, and the result
 
 ![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
 
+`File` - For saving and loading your local RTF config.
+
+`Test Assembly` - Path to assembly containing the tests to run. E.g. RevitNodesTests.dll, RevitSystemTests.dll, RevitServicesTests.dll.
+
+`Results File Path` - Path to the xml file containing the tests results. If it's an existing file, RTF will replace it.
+
+`Working Directory` - Path to where the testing Revit files are.
+
+`Additional Resolution Directories` - Path to find Dynamo Core location when it is not set in the `Dynamo.Config` in DynamoRevit bin folder.
+
+`Debug` - Check this if you decide to launch a debug session.
+
 ## Results  
 
 The output file from a test run is an nunit-formatted results file compatible with many CI systems.
