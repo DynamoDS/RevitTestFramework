@@ -31,7 +31,7 @@ Provides a visual interface for you to choose tests from a treeview and to visua
 
 The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
-![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
+![Image](https://user-images.githubusercontent.com/3942418/28271251-0822ae5c-6ad6-11e7-8028-4f2f5c03823e.png) 
 
 `File` - For saving and loading your local RTF config.
 
