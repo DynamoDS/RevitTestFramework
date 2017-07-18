@@ -31,7 +31,19 @@ Provides a visual interface for you to choose tests from a treeview and to visua
 
 The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
-![Image](https://raw.githubusercontent.com/DynamoDS/RevitTestFramework/bfc6d0b51d08a2a1252d33b91530ba0a6700d74c/images/RTF_UI.PNG) 
+![Image](https://user-images.githubusercontent.com/3942418/28271251-0822ae5c-6ad6-11e7-8028-4f2f5c03823e.png) 
+
+`File` - For saving and loading your local RTF config.
+
+`Test Assembly` - Path to assembly containing the tests to run. E.g. RevitNodesTests.dll, RevitSystemTests.dll, RevitServicesTests.dll.
+
+`Results File Path` - Path to the xml file containing the tests results. If it's an existing file, RTF will replace it.
+
+`Working Directory` - Path to where the testing Revit files are.
+
+`Additional Resolution Directories` - Path to find Dynamo Core location when it is not set in the `Dynamo.Config` in DynamoRevit bin folder.
+
+`Debug` - Check this if you decide to launch a debug session.
 
 ## Results  
 
