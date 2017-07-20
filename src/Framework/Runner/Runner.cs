@@ -1447,7 +1447,10 @@ namespace RTF.Framework
                             System.String.CompareOrdinal(
                             Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
                             0);
-            return prod.AllUsersAddInFolder;
+            // Some builds of Revit might contain "Unknown" version makes AllUsersAddInFolder not accessible
+            // Replace Unknown with Specific Revit version number predicted from product name
+            // e.g product name "Revit 2017" turns to "2017" which replaces "Unknown"
+            return prod.AllUsersAddInFolder.Contains("Unknown") ? prod.AllUsersAddInFolder.Replace("Unknown", prod.Name.Replace("Revit ", "")) : prod.AllUsersAddInFolder;
         }
 
         /// <summary>
