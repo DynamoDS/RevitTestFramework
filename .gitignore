@@ -211,7 +211,3 @@ pip-log.txt
 #Translations
 *.mo
 
-#Mr Developer
-.mr.developer.cfg
-*.exe
-*.exe
