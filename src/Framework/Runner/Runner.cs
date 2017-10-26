@@ -54,7 +54,7 @@ namespace RTF.Framework
         private bool _gui = true;
         private string _revitPath;
         private bool _copyAddins = true;
-        private int _timeout = 120000;
+        private int _timeout = 160000;
         private bool _concat;
         private List<string> _copiedAddins = new List<string>();
         private string _assemblyPath;
