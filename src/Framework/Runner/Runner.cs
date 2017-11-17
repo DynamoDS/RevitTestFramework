@@ -28,6 +28,31 @@ namespace RTF.Framework
     /// </summary>
     [Serializable]
     [XmlRoot]
+
+    
+    public partial class SubRevitProduct    //add by Ziyun Shang on 2017.11.01
+    {
+        
+        public string AllUsersAddInFolder { get; set; }
+        public AddInArchitecture Architecture { get; }
+        public string CurrentUserAddInFolder { get; set; }
+        public string InstallLocation { get; set; }
+        public bool IsSubscriptionUpdate { get; }
+        public string Name { get; set; }
+        public ProductType Product { get; set; }
+        public Guid ProductCode { get; set; }
+        public uint Subversion { get; set; }
+        public RevitVersion Version { get; set; }
+
+        public SubRevitProduct()
+        {
+            
+        }
+        public ICollection<LanguageType> GetInstalledLanguages()
+        {
+            return null;
+        }
+    }
     public partial class Runner : IRunner, IDisposable
     {
         #region events
@@ -60,7 +85,7 @@ namespace RTF.Framework
         private string _assemblyPath;
         private int _selectedProduct;
         private ObservableCollection<IAssemblyData> _assemblies = new ObservableCollection<IAssemblyData>();
-        private ObservableCollection<RevitProduct> _products = new ObservableCollection<RevitProduct>();
+        private ObservableCollection<SubRevitProduct> _products = new ObservableCollection<SubRevitProduct>();  //change - RevitProduct ->SubRevitProduct on 2017.11.01
         private bool isRunning = false;
         private bool cancelRequested;
         private object cancelLock = new object();
@@ -159,7 +184,7 @@ namespace RTF.Framework
         /// A collection of available Revit products for testing.
         /// </summary>
         [XmlIgnore]
-        public ObservableCollection<RevitProduct> Products
+        public ObservableCollection<SubRevitProduct> Products  //change - RevitProduct -> SubRevitProduct
         {
             get { return _products; }
             set
@@ -883,8 +908,18 @@ namespace RTF.Framework
 
         private void InitializeProducts()
         {
+            SubRevitProduct productV2019=new SubRevitProduct();  //add by Ziyun Shang on 2017.11.01
+
             Products.Clear();
-            Products.AddRange(RunnerSetupData.FindRevit());
+            //Products.AddRange(RunnerSetupData.FindRevit());
+
+            //add by Ziyun Shang on 2017.11.01
+            //This would add a version to the app. 
+            productV2019.InstallLocation = "D:\\document\\Revit_2019\\Program";
+            productV2019.Name = "Revit 2019";
+            productV2019.AllUsersAddInFolder = "C:\\ProgramData\\Autodesk\\Revit\\AddIns\\2019";
+            productV2019.CurrentUserAddInFolder = "C:\\Users\\t_shanz\\AppData\\Roaming\\Autodesk\\Revit\\AddIns\\2019";
+            Products.Add(productV2019);
 
             if (Products == null || !Products.Any())
             {
@@ -1439,14 +1474,15 @@ namespace RTF.Framework
         /// This function returns the current Revit addin folder
         /// </summary>
         /// <returns></returns>
-        private string GetRevitAddinFolder()
+        private string GetRevitAddinFolder()    //revised by Ziyun Shang on 2017.11.01
         {
-            var prod =
-                    Products.FirstOrDefault(
-                        x =>
-                            System.String.CompareOrdinal(
-                            Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
-                            0);
+            /*  var prod =
+                      Products.FirstOrDefault(
+                          x =>
+                              System.String.CompareOrdinal(
+                              Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
+                              0);*///the var prod will be null if the Products set by manual.
+            var prod = Products[0];
             // Some builds of Revit might contain "Unknown" version makes AllUsersAddInFolder not accessible
             // Replace Unknown with Specific Revit version number predicted from product name
             // e.g product name "Revit 2017" turns to "2017" which replaces "Unknown"

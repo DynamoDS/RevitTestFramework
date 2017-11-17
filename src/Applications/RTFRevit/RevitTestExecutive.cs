@@ -127,6 +127,7 @@ namespace RTF.Applications
 
         private void RunSetupMethod()
         {
+            /*
             Configuration config;
             // Find the test assembly path
             try
@@ -141,8 +142,9 @@ namespace RTF.Applications
             
             var element = config.AppSettings.Settings["TestSetupAssemblyPath"];
             if (element == null) return;
-
-            var testAssemblySetup = element.Value;
+            */
+            //var testAssemblySetup = element.Value;
+            var testAssemblySetup = Path.GetFileName(testAssembly); //revised by Ziyun Shang on 2017.11.06
             var dir = Path.GetDirectoryName(testAssembly);
             var testAssemblySetupPath = Path.Combine(dir, testAssemblySetup);
 
@@ -195,8 +197,8 @@ namespace RTF.Applications
 
             var package = new TestPackage("RevitTestFramework", new List<string>() { testAssemblyLoc });
             //runner.Load(package);
-            TestSuite suite = builder.Build(package);
-
+            TestSuite suite = builder.Build(package);   //this Build will make an issue that can't succeed to create result file -- Ziyun Shang on 2017.11.07
+                                                        //the issue is the references that test Assembly depends don't in path 'testAssemblyLoc'.
             TestFixture fixture = null;
             FindFixtureByName(out fixture, suite, fixtureName);
             if (fixture == null)
@@ -275,13 +277,39 @@ namespace RTF.Applications
             {
                 fixtureName = dataMap["fixtureName"];
             }
+            if (dataMap.ContainsKey("workingDirectory"))
+            {
+                WorkingDirectory = dataMap["workingDirectory"];
+                //the follow is added by Ziyun Shang on 2017.11.15
+                if(WorkingDirectory == "" || WorkingDirectory == null)
+                {
+                    WorkingDirectory = System.Environment.CurrentDirectory;
+                }
+            }
             if (dataMap.ContainsKey("testAssembly"))
             {
                 testAssembly = dataMap["testAssembly"];
+                //add by Ziyun Shang on 2017.11.03
+                String dir = Path.GetDirectoryName(testAssembly);
+                if (dir == "" && WorkingDirectory != null)         
+                {
+                    //dir = System.Environment.CurrentDirectory;
+                    dir = WorkingDirectory;
+                    testAssembly = Path.Combine(dir, testAssembly);
+                }
+                
             }
             if (dataMap.ContainsKey("resultsPath"))
             {
                 resultsPath = dataMap["resultsPath"];
+                //add by Ziyun Shang on 2017.11.03
+                String dir = Path.GetDirectoryName(resultsPath);
+                if (dir == "" && WorkingDirectory != null)
+                {
+                    dir = WorkingDirectory;
+                    resultsPath = Path.Combine(dir, resultsPath);
+                }
+                
             }
             if (dataMap.ContainsKey("debug"))
             {
@@ -294,10 +322,7 @@ namespace RTF.Applications
                     isDebug = false;
                 }
             }
-            if (dataMap.ContainsKey("workingDirectory"))
-            {
-                WorkingDirectory = dataMap["workingDirectory"];
-            }
+            
         }
 
         private void CalculateTotalsOnResultsRoot(resultType result)
@@ -533,6 +558,10 @@ namespace RTF.Applications
             //write to the file
             var x = new XmlSerializer(typeof(resultType));
             var dir = Path.GetDirectoryName(resultsPath);
+            if(dir=="")         //add by Ziyun Shang on 2017.11.03
+            {
+                dir = System.Environment.CurrentDirectory;
+            }
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
             using (var tw = XmlWriter.Create(resultsPath, new XmlWriterSettings() { Indent = true }))
