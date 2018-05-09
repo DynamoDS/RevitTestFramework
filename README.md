@@ -21,6 +21,7 @@ A console application which allows running RTF without a user interface. If you'
          --dry                  Conduct a dry run. (OPTIONAL)  
     -x,  --clean                Cleanup journal files after test completion. (OPTIONAL)   
          --continuous           Run all selected tests in one Revit session. (OPTIONAL)  
+         --groupByModel         Run tests with same model without reopening the model for faster execution, requires --continuous. (OPTIONAL)
          --time                 The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)  
     -d,  --debug                Should RTF attempt to attach to a debugger?. (OPTIONAL)  
     -h,  --help                 Show this message and exit. (OPTIONAL)  

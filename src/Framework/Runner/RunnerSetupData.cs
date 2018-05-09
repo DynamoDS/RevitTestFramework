@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Autodesk.RevitAddIns;
 
 namespace RTF.Framework
@@ -22,6 +21,7 @@ namespace RTF.Framework
         public string RevitPath { get; set; }
         public bool CleanUp { get; set; }
         public bool Continuous { get; set; }
+        public bool GroupByModel { get; set; }
         public bool IsDebug { get; set; }
         public GroupingType GroupingType { get; set; }
         public int Timeout { get; set; }

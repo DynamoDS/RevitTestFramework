@@ -34,7 +34,7 @@ namespace RTF.Framework
 
         public virtual Assembly Resolve(object sender, ResolveEventArgs args)
         {
-            Console.WriteLine("Attempting to resolve referenced assembliy: {0}", args.Name);
+            Console.WriteLine("Attempting to resolve referenced assembly: {0}", args.Name);
 
             var dir = Path.GetDirectoryName(args.RequestingAssembly.Location);
             var testFile = Path.Combine(dir, new AssemblyName(args.Name).Name + ".dll");
