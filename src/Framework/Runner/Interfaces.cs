@@ -200,7 +200,7 @@ namespace RTF.Framework
         /// <summary>
         /// Setup tests. Precedes a call to RunAllTests.
         /// </summary>
-        void SetupTests();
+        bool SetupTests();
 
         /// <summary>
         /// Re-read the selected assembly to find available tests.
