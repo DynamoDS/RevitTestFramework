@@ -34,8 +34,14 @@ namespace RTF.Applications
             }
 
             runner.StartServer();
-            runner.SetupTests();
-            runner.RunAllTests();
+            if (runner.SetupTests())
+            {
+                runner.RunAllTests();
+            }
+            else
+            {
+                Console.WriteLine("ERROR: No tests were run due to configuration problems");
+            }
             runner.EndServer();
         }
     }

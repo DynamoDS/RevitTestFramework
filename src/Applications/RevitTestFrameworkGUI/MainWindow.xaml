@@ -327,7 +327,7 @@
             </Grid>
             
         </StackPanel>
-        <TextBox Grid.Row="2" x:Name="ConsoleTextBlock" Height="100" Margin="5"/>
+        <RichTextBox Grid.Row="2" x:Name="ConsoleTextBlock" Height="100" Margin="5,3,5,7" VerticalScrollBarVisibility="Auto" IsReadOnly="True"/>
     </Grid>
 
 </Window>

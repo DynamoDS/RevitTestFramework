@@ -2,14 +2,17 @@
 using System.IO;
 using System.Text;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace RTF.Applications
 {
     public class TextBoxOutputter : TextWriter
     {
-        TextBox textBox = null;
+        RichTextBox textBox = null;
+        StringBuilder pendingText = new StringBuilder();
 
-        public TextBoxOutputter(TextBox output)
+        public TextBoxOutputter(RichTextBox output)
         {
             textBox = output;
         }
@@ -17,10 +20,32 @@ namespace RTF.Applications
         public override void Write(char value)
         {
             base.Write(value);
-            textBox.Dispatcher.BeginInvoke(new Action(() =>
+            if (value != '\n')
             {
-                textBox.AppendText(value.ToString());
-            }));
+                pendingText.Append(value);
+
+                if (value == '\r')
+                {
+                    string line = pendingText.ToString();
+                    pendingText.Clear();
+
+                    textBox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        TextRange tr = new TextRange(textBox.Document.ContentEnd, textBox.Document.ContentEnd);
+                        tr.Text = $"{DateTime.Now.ToShortTimeString()}: {line}";
+                        if (line.ToLower().StartsWith("error"))
+                        {
+                            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
+                        }
+
+                        if (line.ToLower().StartsWith("warning"))
+                        {
+                            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Orange);
+                        }
+                        textBox.ScrollToEnd();
+                    }));
+                }
+            }
         }
 
         public override Encoding Encoding

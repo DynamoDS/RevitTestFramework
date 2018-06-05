@@ -389,7 +389,7 @@ namespace RTF.Framework
         /// testing machine.
         /// </summary>
         /// <param name="parameter"></param>
-        public void SetupTests()
+        public bool SetupTests()
         {
             var runnable = GetRunnableTests();
 
@@ -398,7 +398,12 @@ namespace RTF.Framework
                 CreateAddin(AddinPath, AssemblyPath);
             }
 
-            CreateJournalForTestCases(runnable);
+            bool someTestsSetup = CreateJournalForTestCases(runnable);
+
+            if (!someTestsSetup)
+            {
+                return false;
+            }
 
             // Copy addins from the Revit addin folder to the current working directory
             // so that they can be loaded.
@@ -420,14 +425,18 @@ namespace RTF.Framework
                     }
                 }
             }
+
+            return true;
         }
 
         /// <summary>
         /// Create journal files for a given set of test cases
         /// </summary>
         /// <param name="runnableTests"></param>
-        private void CreateJournalForTestCases(IEnumerable<ITestData> runnableTests)
+        private bool CreateJournalForTestCases(IEnumerable<ITestData> runnableTests)
         {
+            int numTestsSetup = 0;
+
             journalInitialized = false;
             journalFinished = false;
 
@@ -450,7 +459,10 @@ namespace RTF.Framework
                             modelSemantics |= ModelSemantics.Close;
                         }
 
-                        SetupIndividualTest(test, Continuous, modelSemantics);
+                        if (SetupIndividualTest(test, Continuous, modelSemantics))
+                        {
+                            numTestsSetup++;
+                        }
                     }
                 }
             }
@@ -458,7 +470,10 @@ namespace RTF.Framework
             {
                 foreach (var test in runnableTests)
                 {
-                    SetupIndividualTest(test, Continuous);
+                    if (SetupIndividualTest(test, Continuous))
+                    {
+                        numTestsSetup++;
+                    }
                 }
             }
 
@@ -466,6 +481,8 @@ namespace RTF.Framework
             {
                 FinishJournal(BatchJournalPath);
             }
+
+            return numTestsSetup > 0;
         }
 
         /// <summary>
@@ -744,7 +761,7 @@ namespace RTF.Framework
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to initialize test runner.");
+                Console.WriteLine("ERROR: Failed to initialize test runner.");
                 Console.WriteLine(ex.Message);
                 return null;
             }
@@ -1335,13 +1352,13 @@ namespace RTF.Framework
         /// </summary>
         /// <param name="td"></param>
         /// <param name="continuous"></param>
-        private void SetupIndividualTest(
+        private bool SetupIndividualTest(
             ITestData td, 
             bool continuous = false, 
             ModelSemantics modelSemantics = ModelSemantics.Open | ModelSemantics.Close)
         {
             if (td.ShouldRun == false)
-                return;
+                return true;
 
             try
             {
@@ -1387,9 +1404,17 @@ namespace RTF.Framework
             }
             catch (Exception ex)
             {
-                if (td == null) return;
-                td.TestStatus = TestStatus.Failure;
+                if (td != null)
+                {
+                    td.TestStatus = TestStatus.Skipped;
+
+                    Console.WriteLine($"ERROR: Failed to configure {td.Name} with error: {ex.Message}");
+                }
+
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>
