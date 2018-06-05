@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -7,11 +6,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Xml.Serialization;
-using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
 {
@@ -26,6 +21,11 @@ namespace RTF.Framework
         public ObservableCollection<ITestGroup> Categories { get; set; }
         public bool IsNodeExpanded { get; set; }
         public GroupingType GroupingType { get; set; }
+
+        /// <summary>
+        /// Version of Revit referenced by the assembly
+        /// </summary>
+        public string ReferencedRevitVersion { get; set; }
 
         public ObservableCollection<ITestGroup> SortingGroup
         {
@@ -181,8 +181,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -326,8 +325,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -451,8 +449,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -581,8 +578,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
@@ -617,8 +613,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

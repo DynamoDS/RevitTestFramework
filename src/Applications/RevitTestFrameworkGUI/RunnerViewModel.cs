@@ -14,7 +14,6 @@ using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
-using Microsoft.Win32.SafeHandles;
 using RTF.Applications.Properties;
 using RTF.Framework;
 using MessageBox = System.Windows.MessageBox;
@@ -86,6 +85,8 @@ namespace RTF.Applications
         private ObservableCollection<string> recentFiles = new ObservableCollection<string>();
         private int selectedProductIndex;
 
+        private bool workingDirSetByUser = false;
+        private bool resultsFileSetByUser = false;
         #endregion
 
         #region public properties
@@ -96,8 +97,8 @@ namespace RTF.Applications
             set
             {
                 selectedItem = value;
-                RaisePropertyChanged("SelectedItem");
-                RaisePropertyChanged("RunText");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(RunText));
                 RunCommand.RaiseCanExecuteChanged();
             }
         }
@@ -138,7 +139,7 @@ namespace RTF.Applications
             }
             set
             {
-                RaisePropertyChanged("RunText");
+                RaisePropertyChanged();
             }
         }
         
@@ -156,7 +157,7 @@ namespace RTF.Applications
                 lock (isRunningLock)
                 {
                     isRunning = value;
-                    RaisePropertyChanged("IsRunning");
+                    RaisePropertyChanged();
                 }
             }
         }
@@ -180,8 +181,8 @@ namespace RTF.Applications
             set
             {
                 recentFiles = value;
-                RaisePropertyChanged("RecentFiles");
-                RaisePropertyChanged("HasRecentFiles");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(HasRecentFiles));
             }
         }
 
@@ -206,7 +207,7 @@ namespace RTF.Applications
             set
             {
                 runner.IsDebug = value;
-                RaisePropertyChanged("IsDebug");
+                RaisePropertyChanged();
             }
         }
 
@@ -216,7 +217,7 @@ namespace RTF.Applications
             set
             {
                 runner.Concat = value;
-                RaisePropertyChanged("Concat");
+                RaisePropertyChanged();
             }
         }
 
@@ -226,7 +227,7 @@ namespace RTF.Applications
             set
             {
                 runner.Timeout = value;
-                RaisePropertyChanged("Timeout");
+                RaisePropertyChanged();
             }
         }
 
@@ -237,8 +238,8 @@ namespace RTF.Applications
             {
                 runner.WorkingDirectory = value;
                 runner.InitializeTests();
-                RaisePropertyChanged("WorkingDirectory");
-                RaisePropertyChanged("Assemblies");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
             }
         }
 
@@ -248,7 +249,20 @@ namespace RTF.Applications
             set
             {
                 runner.Continuous = value;
-                RaisePropertyChanged("Continuous");
+                RaisePropertyChanged();
+            }
+        }
+
+        public bool GroupByModel
+        {
+            get { return runner.GroupByModel; }
+            set
+            {
+                if (runner.GroupByModel != value)
+                {
+                    runner.GroupByModel = value;
+                    RaisePropertyChanged();
+                }
             }
         }
 
@@ -259,8 +273,8 @@ namespace RTF.Applications
             {
                 runner.GroupingType = value;
                 runner.InitializeTests();
-                RaisePropertyChanged("GroupingType");
-                RaisePropertyChanged("Assemblies");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
             }
         }
 
@@ -271,8 +285,21 @@ namespace RTF.Applications
             {
                 runner.TestAssembly = value;
                 runner.InitializeTests();
-                RaisePropertyChanged("TestAssembly");
-                RaisePropertyChanged("Assemblies");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
+
+                RaisePropertyChanged(nameof(SelectedProductIndex));
+
+                // Infer working directory from assembly, if the user hasn't set it yet
+                if (!workingDirSetByUser)
+                {
+                    SetWorkingDirectory(runner.TestAssembly);
+                }
+
+                if (!resultsFileSetByUser)
+                {
+                    SetResultsPath(Path.Combine(WorkingDirectory, "results.xml"));
+                }
             }
         }
 
@@ -282,7 +309,7 @@ namespace RTF.Applications
             set
             {
                 runner.Results = value;
-                RaisePropertyChanged("Results");
+                RaisePropertyChanged();
             }
         }
 
@@ -302,7 +329,7 @@ namespace RTF.Applications
                 {
                     runner.AdditionalResolutionDirectories.Add(split);
                 }
-                RaisePropertyChanged("AdditionalResolutionDirectoriesText");
+                RaisePropertyChanged();
             }
         } 
         #endregion
@@ -333,6 +360,10 @@ namespace RTF.Applications
             InitializeRunner();
 
             InitializeCommands();
+
+            // Make some convenient defaults
+            Continuous = true;
+            GroupByModel = true;
         }
 
         private void InitializeRunner()
@@ -448,7 +479,7 @@ namespace RTF.Applications
             context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
         }
 
-        void Products_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        void Products_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // When the products collection is changed, we want to set
             // the selected product index to the first in the list
@@ -461,12 +492,12 @@ namespace RTF.Applications
             //    SelectedProductIndex = -1;
             //}
 
-            RaisePropertyChanged("Products");
+            RaisePropertyChanged(nameof(Products));
         }
 
         void Assemblies_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            RaisePropertyChanged("Assemblies");
+            RaisePropertyChanged(nameof(Assemblies));
         }
 
         #endregion
@@ -540,6 +571,7 @@ namespace RTF.Applications
                 if (dirs.ShowDialog() == DialogResult.OK)
                 {
                     WorkingDirectory = dirs.SelectedPath;
+                    workingDirSetByUser = true;
                 }
             }
             else
@@ -572,27 +604,31 @@ namespace RTF.Applications
             {
                 var files = new SaveFileDialog()
                 {
-                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                     Filter = "xml files (*.xml) | *.xml",
                     RestoreDirectory = true,
                     DefaultExt = ".xml"
                 };
+
+                if (Directory.Exists(Path.GetDirectoryName(TestAssembly)))
+                {
+                    files.InitialDirectory = TestAssembly;
+                }
+                else
+                {
+                    files.InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                }
 
                 var filesResult = files.ShowDialog();
 
                 if (filesResult != null && filesResult == true)
                 {
                     Results = files.FileName;
+                    resultsFileSetByUser = true;
                     RunCommand.RaiseCanExecuteChanged();
                 }
             }
             else
             {
-                if (!File.Exists(path))
-                {
-                    return;
-                }
-
                 var fi = new FileInfo(path);
                 if (fi.Extension != ".xml")
                 {
@@ -614,7 +650,6 @@ namespace RTF.Applications
             {
                 var files = new OpenFileDialog
                 {
-                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                     Filter = "assembly files (*.dll)|*.dll| executable files (*.exe)|*.exe",
                     RestoreDirectory = true,
                     DefaultExt = ".dll"
@@ -655,7 +690,7 @@ namespace RTF.Applications
 
         private void Update()
         {
-            RaisePropertyChanged("SelectedTestSummary");
+            RaisePropertyChanged(nameof(SelectedTestSummary));
         }
 
         private bool CanUpdate()
@@ -783,7 +818,7 @@ namespace RTF.Applications
             InitializeEventHandlers();
 
             RaisePropertyChanged("");
-            RaisePropertyChanged("SelectedProductIndex");
+            RaisePropertyChanged(nameof(SelectedProductIndex));
 
             SaveRecentFile(fileName);
         }
