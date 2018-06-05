@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+    <metadata>
+        <version>1.19.2</version>
+        <authors>Dynamo, Mark Vulfson</authors>
+        <owners>Dynamo, Mark Vulfson</owners>
+        <licenseUrl>https://github.com/marchello2000/RevitTestFramework#license</licenseUrl>
+        <projectUrl>https://github.com/marchello2000/RevitTestFramework</projectUrl>
+        <id>RevitTestFramework</id>
+        <title>RevitTestFramework</title>
+        <iconUrl>http://dynamobim.org/favicon.png</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revit. RTF takes care of creating a journal file for running revit which can specify a model to start Revit, and a specific test or fixture of tests to Run. You can even specify a model to open before testing and RTF will do that as well.</description>
+        <summary>Revit Test Framework</summary>
+        <developmentDependency>true</developmentDependency>
+        <language>en-US</language>
+        <tags>revit, autodesk, revtitestframework</tags>
+    </metadata>
+    <files>
+        <file src="..\bin\AnyCPU\Release\Microsoft.Practices.Prism.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\Moq.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\NDesk.Options.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\nunit.core.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\nunit.core.interfaces.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\nunit.framework.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RevitAddInUtility.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RevitTestFrameworkConsole.exe" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RevitTestFrameworkGUI.exe" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RevitTestFrameworkTypes.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RTFRevit.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\Runner.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\RevitTestFrameworkTypes.dll" target="lib\net47" />
+        <file src="..\bin\AnyCPU\Release\RTFRevit.dll" target="lib\net47" />
+
+        <!--
+        RevitTestFrameworkConsole.pdb
+        RevitTestFrameworkGUI.pdb
+        RevitTestFrameworkTypes.pdb
+        RTFRevit.pdb
+        Runner.pdb
+        -->
+    </files>
+</package>
