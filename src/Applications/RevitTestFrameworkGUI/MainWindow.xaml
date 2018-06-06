@@ -327,7 +327,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="2">
                     <TextBlock Text="Skipped: " FontWeight="Bold" Foreground="DarkOrange"/>
-                    <TextBlock Text="{Binding SkippedTestCount}" FontWeight="DemiBold" Foreground="DarkGreen"/>
+                    <TextBlock Text="{Binding SkippedTestCount}" FontWeight="DemiBold" Foreground="DarkOrange"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="4">
                     <TextBlock Text="Failed: " FontWeight="Bold" Foreground="DarkRed"/>
