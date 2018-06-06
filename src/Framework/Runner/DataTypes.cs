@@ -15,12 +15,29 @@ namespace RTF.Framework
     {
         private bool? _shouldRun = true;
         private ObservableCollection<ITestGroup> _sortingGroup;
+        private bool _isNodeExpanded;
+
         public virtual string Path { get; set; }
         public virtual string Name { get; set; }
         public ObservableCollection<ITestGroup> Fixtures { get; set; }
         public ObservableCollection<ITestGroup> Categories { get; set; }
-        public bool IsNodeExpanded { get; set; }
         public GroupingType GroupingType { get; set; }
+
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         /// <summary>
         /// Version of Revit referenced by the assembly
@@ -197,11 +214,27 @@ namespace RTF.Framework
     public class FixtureData : IFixtureData
     {
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
-        public bool IsNodeExpanded { get; set; }
+
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public string Summary
         {
@@ -349,6 +382,7 @@ namespace RTF.Framework
         private TestStatus _testStatus;
         private IList<IResultData> _resultData;
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
 
         public virtual string Name { get; set; }
 
@@ -359,7 +393,21 @@ namespace RTF.Framework
         public virtual string ModelPath { get; set; }
 
         [XmlIgnore]
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [XmlIgnore]
         public bool ModelExists
@@ -470,11 +518,26 @@ namespace RTF.Framework
     public class CategoryData : ICategoryData
     {
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public IAssemblyData Assembly { get; set; }
 
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public bool? ShouldRun
         {
@@ -483,7 +546,7 @@ namespace RTF.Framework
             {
                 _shouldRun = value;
                 SetChildrenShouldRunWithoutRaise(_shouldRun);
-                OnPropertyChanged("ShouldRun");
+                OnPropertyChanged();
             }
         }
 
@@ -496,7 +559,7 @@ namespace RTF.Framework
                 t.SetChildrenShouldRunWithoutRaise(shouldRun);
             }
 
-            OnPropertyChanged("ShouldRun");
+            OnPropertyChanged(nameof(ShouldRun));
         }
 
         public string Summary
@@ -587,8 +650,23 @@ namespace RTF.Framework
     {
         private string _message = "";
         private string _stackTrace = "";
+        private bool _isNodeExpanded;
 
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public string Message
         {
@@ -596,7 +674,7 @@ namespace RTF.Framework
             set
             {
                 _message = value;
-                OnPropertyChanged("Message");
+                OnPropertyChanged();
             }
         }
 
@@ -606,7 +684,7 @@ namespace RTF.Framework
             set
             {
                 _stackTrace = value;
-                OnPropertyChanged("StackTrace");
+                OnPropertyChanged();
             }
         }
 

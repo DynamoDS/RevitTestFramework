@@ -8,7 +8,7 @@
                 xmlns:System="clr-namespace:System;assembly=mscorlib"
                 mc:Ignorable="d" MinWidth="400" MinHeight="600" Height="800" Width="800" Closing="View_Closing"
                 d:DataContext="{d:DesignInstance applications:RunnerViewModel}"
-                Title="RevitTestFrameworkGUI"
+                Title="Revit Test Runner"
         >
     
     <Window.Resources>
@@ -30,7 +30,7 @@
                 <TextBlock Text="{Binding StackTrace}" HorizontalAlignment="Left"></TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
-        
+
         <HierarchicalDataTemplate x:Key="TestTemplate" 
                                   DataType="{x:Type runners:TestData}"
                                   ItemsSource="{Binding ResultData}"
@@ -43,6 +43,13 @@
                     <TextBlock Text="{Binding Name}" 
                                HorizontalAlignment="Left" 
                                Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}">
+                        <TextBlock.ToolTip>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Fixture.Name}"/>
+                                <TextBlock Text="."/>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
+                        </TextBlock.ToolTip>
                     </TextBlock>
                     <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" 
                                Foreground="{Binding ModelExists, Converter={StaticResource BoolExistsConverter}}">
@@ -51,26 +58,6 @@
                         </TextBlock.ToolTip>
                     </TextBlock>
                 </StackPanel>
-            </StackPanel>
-        </HierarchicalDataTemplate>
-        
-        <HierarchicalDataTemplate x:Key="FixtureTemplate" 
-                                  ItemsSource="{Binding Tests}" 
-                                  DataType="{x:Type runners:FixtureData}"
-                                  ItemTemplate="{StaticResource TestTemplate}">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
-                          Checked="UpdateRequired"
-                          Unchecked="UpdateRequired"></CheckBox>
-                <TextBlock Text="{Binding Name}" 
-                       VerticalAlignment="Center" 
-                       Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}"
-                       Background="{Binding FixtureStatus, Converter={StaticResource FixtureStatusToColorConverter}, Mode=OneWay}">
-                    <TextBlock.ToolTip>
-                        <TextBlock Text="{Binding Summary}"></TextBlock>
-                    </TextBlock.ToolTip>
-                </TextBlock>
-                <TextBlock Margin="5,0,0,0" Text="{Binding FixtureSummary}" HorizontalAlignment="Left" Foreground="DarkGray"></TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -295,7 +282,7 @@
                         PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Assembly_OnDrop">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="{x:Type TreeViewItem}">
-                        <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded}">
+                        <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded, Mode=TwoWay}">
                         </Setter>
                     </Style>
                 </TreeView.ItemContainerStyle>
@@ -310,20 +297,42 @@
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" Grid.Row="0" Margin="5"
-                    Content="Run Selected Tests" 
                     Command="{Binding RunCommand}" 
                     CommandParameter="{Binding SelectedItem}"
-                    IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"/>
+                    IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
+
+                    <TextBlock>
+                        <Run Text="Run"/>
+                        <Run Text="{Binding SelectedTestSummary, Mode=OneWay}"/>
+                    </TextBlock>
+                </Button>
                 <Button Grid.Column="1" Grid.Row="0" Margin="5" Height="40"
                     Content="Cancel" 
                     Command="{Binding CancelCommand}">
                 </Button>
             </Grid>
 
-            <Grid>
-                <TextBlock DockPanel.Dock="Bottom" Text="{Binding SelectedTestSummary}" 
-                       FontSize="30" 
-                       Margin="5"/>
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <TextBlock Text="Passed: " FontWeight="Bold" Foreground="DarkGreen"/>
+                    <TextBlock Text="{Binding PassedTestCount}" FontWeight="DemiBold" Foreground="DarkGreen"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="2">
+                    <TextBlock Text="Skipped: " FontWeight="Bold" Foreground="DarkOrange"/>
+                    <TextBlock Text="{Binding SkippedTestCount}" FontWeight="DemiBold" Foreground="DarkGreen"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="4">
+                    <TextBlock Text="Failed: " FontWeight="Bold" Foreground="DarkRed"/>
+                    <TextBlock Text="{Binding FailedTestCount}" FontWeight="DemiBold" Foreground="DarkRed"/>
+                </StackPanel>
             </Grid>
             
         </StackPanel>
