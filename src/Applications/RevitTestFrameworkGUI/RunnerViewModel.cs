@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -87,6 +88,11 @@ namespace RTF.Applications
 
         private bool workingDirSetByUser = false;
         private bool resultsFileSetByUser = false;
+
+        int passedTestCount;
+        int skippedTestCount;
+        int failedTestCount;
+
         #endregion
 
         #region public properties
@@ -171,7 +177,55 @@ namespace RTF.Applications
                 var allTests = runner.GetAllTests();
                 var selectedTests = runner.GetRunnableTests();
 
-                return string.Format("{0} tests selected of {1}", selectedTests.Count(), allTests.Count());
+                return string.Format($"{selectedTests.Count()} (out of {allTests.Count()})");
+            }
+        }
+
+        public int PassedTestCount
+        {
+            get
+            {
+                return passedTestCount;
+            }
+            set
+            {
+                if (passedTestCount != value)
+                {
+                    passedTestCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int SkippedTestCount
+        {
+            get
+            {
+                return skippedTestCount;
+            }
+            set
+            {
+                if (skippedTestCount != value)
+                {
+                    skippedTestCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int FailedTestCount
+        {
+            get
+            {
+                return failedTestCount;
+            }
+            set
+            {
+                if (failedTestCount != value)
+                {
+                    failedTestCount = value;
+                    RaisePropertyChanged();
+                }
             }
         }
 
@@ -466,17 +520,84 @@ namespace RTF.Applications
 
         private void runner_TestTimedOut(ITestData data)
         {
-            context.BeginInvoke(() => Runner.Runner_TestTimedOut(data));
+            context.BeginInvoke(() =>
+            {
+                Runner.Runner_TestTimedOut(data);
+                UpdateTestCounts();
+            });
         }
 
         private void runner_TestFailed(ITestData data, string message, string stackTrace)
         {
-            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
+            context.BeginInvoke(() =>
+            {
+                Runner.Runner_TestFailed(data, message, stackTrace);
+                UpdateTestCounts();
+            });
         }
 
         private void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
         {
-            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
+            context.BeginInvoke(() => 
+            {
+                Runner.GetTestResultStatus(data, resultsPath);
+                UpdateTestCounts();
+            });
+        }
+
+        private void UpdateTestCounts()
+        {
+            var runnableTests = runner.GetRunnableTests();
+
+            var successValues = new List<TestStatus>
+            {
+                TestStatus.Success
+            };
+
+            var skippedValues = new List<TestStatus>
+            {
+                TestStatus.Ignored,
+                TestStatus.Skipped,
+                TestStatus.Cancelled
+            };
+
+            var failedValues = new List<TestStatus>
+            {
+                TestStatus.Failure,
+                TestStatus.Error,
+                TestStatus.Inconclusive,
+                TestStatus.TimedOut,
+                TestStatus.NotRunnable
+            };
+
+            PassedTestCount = runnableTests.Count(x => successValues.Contains(x.TestStatus));
+            SkippedTestCount = runnableTests.Count(x => skippedValues.Contains(x.TestStatus));
+            FailedTestCount = runnableTests.Count(x => failedValues.Contains(x.TestStatus));
+
+            // Expand all the failed tests:
+            foreach (var assembly in Assemblies)
+            {
+                foreach (var category in (GroupingType == GroupingType.Fixture) ? assembly.Fixtures : assembly.Categories)
+                {
+                    foreach (var test in category.Tests)
+                    {
+                        if ((test.ShouldRun ?? false) && (!successValues.Contains(test.TestStatus)))
+                        {
+                            ((TestData)test).IsNodeExpanded = true;
+
+                            if (category is FixtureData fd)
+                            {
+                                fd.IsNodeExpanded = true;
+                            }
+                            else if (category is CategoryData cd)
+                            {
+                                cd.IsNodeExpanded = true;
+                            }
+                            ((AssemblyData)assembly).IsNodeExpanded = true;
+                        }
+                    }
+                }
+            }
         }
 
         void Products_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -522,8 +643,7 @@ namespace RTF.Applications
 
         private bool CanRun(object parameter)
         {
-            //return runner.GetRunnableTests().Any();
-            return true;
+            return !IsRunning && runner.GetRunnableTests().Any();
         }
 
         private void Run(object parameter)
@@ -538,6 +658,10 @@ namespace RTF.Applications
             {
                 File.Delete(runner.Results);
             }
+
+            PassedTestCount = 0;
+            FailedTestCount = 0;
+            SkippedTestCount = 0;
 
             var worker = new BackgroundWorker();
 
@@ -697,6 +821,7 @@ namespace RTF.Applications
         private void Update()
         {
             RaisePropertyChanged(nameof(SelectedTestSummary));
+            RunCommand.RaiseCanExecuteChanged();
         }
 
         private bool CanUpdate()
@@ -849,5 +974,10 @@ namespace RTF.Applications
         }
 
         #endregion
+
+        protected override void RaisePropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            base.RaisePropertyChanged(propertyName);
+        }
     }
 }
