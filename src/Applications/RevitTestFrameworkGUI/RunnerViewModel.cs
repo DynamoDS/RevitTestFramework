@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -843,5 +844,15 @@ namespace RTF.Applications
         }
 
         #endregion
+
+        /// <summary>
+        /// Helper method to allow simple RaisePropertyChanged() calls without 
+        /// providing property name, since the Prism's NotificationObject 
+        /// doesn't provide the CallerMemeberName attribute
+        /// </summary>
+        protected override void RaisePropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            base.RaisePropertyChanged(propertyName);
+        }
     }
 }
