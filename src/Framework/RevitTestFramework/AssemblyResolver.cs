@@ -105,7 +105,7 @@ namespace RTF.Framework
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"ERROR: Failed to resolve assembly with error: {ex.Message}");
                 return null;
             }
         }

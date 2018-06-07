@@ -661,7 +661,7 @@ namespace RTF.Framework
             }
             catch (IOException ex)
             {
-                Console.WriteLine("One or more journal files could not be deleted.");
+                Console.WriteLine("WARNING: One or more journal files could not be deleted.");
             }
         }
 
@@ -1095,7 +1095,7 @@ namespace RTF.Framework
                         process.Kill();
                     }
                     RevitTestServer.Instance.ResetWorkingSocket();
-                    Console.WriteLine("Test is cancelled");
+                    Console.WriteLine("WARNING: Test is cancelled");
                     return true;
                 }
 
@@ -1190,42 +1190,27 @@ namespace RTF.Framework
 
         private void OnTestRunsComplete()
         {
-            if (TestRunsComplete != null)
-            {
-                TestRunsComplete(null, EventArgs.Empty);
-            }
+            TestRunsComplete?.Invoke(null, EventArgs.Empty);
         }
 
         private void OnTestComplete(ITestData data)
         {
-            if (TestComplete != null)
-            {
-                TestComplete(new List<ITestData>(){data}, Results);
-            }
+            TestComplete?.Invoke(new List<ITestData>() { data }, Results);
         }
 
         private void OnTestComplete(IEnumerable<ITestData> data)
         {
-            if (TestComplete != null)
-            {
-                TestComplete(data, Results);
-            }
+            TestComplete?.Invoke(data, Results);
         }
 
         private void OnTestTimedOut(ITestData data)
         {
-            if (TestTimedOut != null)
-            {
-                TestTimedOut(data);
-            }
+            TestTimedOut?.Invoke(data);
         }
 
         private void OnTestFailed(ITestData data, string message, string stackTrace)
         {
-            if (TestFailed != null)
-            {
-                TestFailed(data, message, stackTrace);
-            }
+            TestFailed?.Invoke(data, message, stackTrace);
         }
 
         private void CreateJournal(string path, string testName, string fixtureName, string assemblyPath, string resultsPath, string modelPath)
@@ -1733,9 +1718,9 @@ namespace RTF.Framework
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine("The specified assembly could not be loaded for testing. Try adding some additional resolution paths so RTF can find referenced assemblies.");
-                
+                Console.WriteLine("ERROR: The specified assembly could not be loaded for testing. Try adding some additional resolution paths so RTF can find referenced assemblies.");
+                Console.WriteLine($"ERROR: {e.Message}");
+
                 return null;
             }
 

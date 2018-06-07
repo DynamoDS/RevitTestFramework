@@ -474,6 +474,7 @@ namespace RTF.Applications
             runner.TestFailed += runner_TestFailed;
             runner.TestTimedOut += runner_TestTimedOut;
             runner.Initialized += runner_Initialized;
+            runner.TestRunsComplete += runner_TestRunsComplete;
         }
 
         private void RemoveEventHandlers()
@@ -484,6 +485,7 @@ namespace RTF.Applications
             runner.TestFailed -= runner_TestFailed;
             runner.TestTimedOut -= runner_TestTimedOut;
             runner.Initialized -= runner_Initialized;
+            runner.TestRunsComplete -= runner_TestRunsComplete;
         }
 
         private void InitializeCommands()
@@ -542,6 +544,30 @@ namespace RTF.Applications
             {
                 Runner.GetTestResultStatus(data, resultsPath);
                 UpdateTestCounts();
+            });
+        }
+
+        private void runner_TestRunsComplete(object sender, EventArgs e)
+        {
+            context.BeginInvoke(() =>
+            {
+                UpdateTestCounts();
+
+                bool isError = (FailedTestCount > 0);
+                bool isWarning = (SkippedTestCount > 0);
+
+                if (isError)
+                {
+                    Console.WriteLine($"ERROR: Test run completed with errors: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
+                else if (isWarning)
+                {
+                    Console.WriteLine($"WARNING: Test run completed with warnings: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
+                else
+                {
+                    Console.WriteLine($"Test run completed successfully: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
             });
         }
 
@@ -939,7 +965,7 @@ namespace RTF.Applications
 
             if (runner == null)
             {
-                Console.WriteLine("Test session could not be opened.");
+                Console.WriteLine("ERROR: Test session could not be opened.");
                 runner = new Runner();
                 return;
             }
@@ -975,7 +1001,7 @@ namespace RTF.Applications
 
         #endregion
 
-        protected override void RaisePropertyChanged([CallerMemberName] string propertyName = "")
+        protected override void RaisePropertyChanged([CallerMemberName] string propertyName = null)
         {
             base.RaisePropertyChanged(propertyName);
         }

@@ -32,15 +32,22 @@ namespace RTF.Applications
                     textBox.Dispatcher.BeginInvoke(new Action(() =>
                     {
                         TextRange tr = new TextRange(textBox.Document.ContentEnd, textBox.Document.ContentEnd);
-                        tr.Text = $"{DateTime.Now.ToShortTimeString()}: {line}";
+                        tr.Text = $"{DateTime.Now.ToString("HH:mm:ss")} ";
+                        tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.DarkGray);
+
+                        tr = new TextRange(textBox.Document.ContentEnd, textBox.Document.ContentEnd);
+                        tr.Text = line;
                         if (line.ToLower().StartsWith("error"))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
                         }
-
-                        if (line.ToLower().StartsWith("warning"))
+                        else if (line.ToLower().StartsWith("warning"))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Orange);
+                        }
+                        else
+                        {
+                            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
                         }
                         textBox.ScrollToEnd();
                     }));

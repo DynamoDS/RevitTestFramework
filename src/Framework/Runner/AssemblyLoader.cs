@@ -47,8 +47,9 @@ namespace RTF.Framework
             }
             catch (ReflectionTypeLoadException ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.LoaderExceptions);
+                Console.WriteLine($"ERROR: Failed to resolve assembly:");
+                Console.WriteLine($"ERROR: {ex.Message}");
+                Console.WriteLine($"ERROR: {ex.LoaderExceptions}");
                 throw new Exception("A referenced type could not be loaded.");
             }
         }
