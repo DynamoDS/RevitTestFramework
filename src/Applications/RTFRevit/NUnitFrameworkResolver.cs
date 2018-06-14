@@ -47,7 +47,7 @@ namespace RTF.Applications
 
             if (nunitDirectories.Length == 0)
             {
-                throw new FileLoadException("You must have NUnit 2.6.2 or greater installed!  Could not find NUnit in the Program Files directory.");
+                throw new FileLoadException("You must have NUnit 2.6.3 or greater installed!  Could not find NUnit in the Program Files directory.");
             }
 
             // should return the latest version
@@ -67,7 +67,7 @@ namespace RTF.Applications
             // Fail early if we can't find the program files directory
             if (!Directory.Exists(progFilesPath))
             {
-                throw new FileLoadException("Could not find the Program Files x86 directory!  Have you installed NUnit 2.6.2 or greater?");
+                throw new FileLoadException("Could not find the Program Files x86 directory!  Have you installed NUnit 2.6.3 or greater?");
             }
 
             return progFilesPath;
