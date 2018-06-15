@@ -25,6 +25,12 @@ namespace RTF.Applications
 
             Closing += View_Closing;
             Loaded += MainWindow_Loaded;
+
+            var args = Environment.GetCommandLineArgs();
+            if (args.Length == 2)
+            {
+                vm.TestAssembly = args[1];
+            }
         }
 
         void MainWindow_Loaded(object sender, RoutedEventArgs e)

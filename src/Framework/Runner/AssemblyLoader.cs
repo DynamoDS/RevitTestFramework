@@ -27,6 +27,13 @@ namespace RTF.Framework
 
             try
             {
+                var revitReference = assembly.GetReferencedAssemblies().FirstOrDefault(x => x.Name.Contains("RevitAPI"));
+
+                if (revitReference != null)
+                {
+                    data.ReferencedRevitVersion = $"{(revitReference.Version.Major + 2000)}";
+                }
+
                 foreach (var fixtureType in assembly.GetTypes())
                 {
                     if (!ReadFixture(fixtureType, data, workingDirectory))
@@ -44,8 +51,6 @@ namespace RTF.Framework
                 Console.WriteLine(ex.LoaderExceptions);
                 throw new Exception("A referenced type could not be loaded.");
             }
-
-            return null;
         }
 
         public static bool ReadFixture(Type fixtureType, IAssemblyData data, string workingDirectory)
@@ -132,31 +137,48 @@ namespace RTF.Framework
             var testData = new TestData(data, test.Name, modelPath, runDynamo);
             data.Tests.Add(testData);
 
+            const string EmptyCategory = "[NO CATEGORY]";
+
             var category = string.Empty;
             var categoryAttribs =
                 testAttribs.Where(x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
-            foreach (var categoryAttrib in categoryAttribs)
+
+            if (categoryAttribs.Any())
             {
-                category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-                if (!String.IsNullOrEmpty(category))
+                foreach (var categoryAttrib in categoryAttribs)
                 {
-                    var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
-                    if (cat != null)
+                    category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+                    if (String.IsNullOrEmpty(category))
                     {
-                        cat.Tests.Add(testData);
+                        category = EmptyCategory;
                     }
-                    else
-                    {
-                        var catData = new CategoryData(data.Assembly, category);
-                        catData.Tests.Add(testData);
-                        data.Assembly.Categories.Add(catData);
-                    }
+
+                    AddWithCategory(data, category, testData);
                 }
+            }
+            else
+            {
+                AddWithCategory(data, EmptyCategory, testData);
             }
 
             Console.WriteLine("Loaded test: {0}", testData);
 
             return true;
+        }
+
+        private static void AddWithCategory(IFixtureData data, string category, TestData testData)
+        {
+            var cat = data.Assembly.Categories.FirstOrDefault(x => x.Name == category);
+            if (cat != null)
+            {
+                cat.Tests.Add(testData);
+            }
+            else
+            {
+                var catData = new CategoryData(data.Assembly, category);
+                catData.Tests.Add(testData);
+                data.Assembly.Categories.Add(catData);
+            }
         }
     }
 }

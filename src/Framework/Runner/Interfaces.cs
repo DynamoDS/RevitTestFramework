@@ -79,6 +79,7 @@ namespace RTF.Framework
         string RevitPath { get; set; }
         bool CleanUp { get; set; }
         bool Continuous { get; set; }
+        bool GroupByModel { get; set; }
         bool IsDebug { get; set; }
         GroupingType GroupingType { get; set; }
         int Timeout { get; set; }
