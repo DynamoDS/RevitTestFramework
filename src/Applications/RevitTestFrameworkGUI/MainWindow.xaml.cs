@@ -125,5 +125,10 @@ namespace RTF.Applications
                 be.UpdateSource();
             }
         }
+
+        private void ClearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleTextBlock.Document.Blocks.Clear();
+        }
     }
 }

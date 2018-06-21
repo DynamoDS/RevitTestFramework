@@ -114,11 +114,23 @@ namespace RTF.Applications
         /// <param name="fixtureName"></param>
         public static void SendTestInformation(string testName, string fixtureName)
         {
-            if (clientSocket != null)
-            {
-                DataMessage msg = new DataMessage(testName, fixtureName);
-                SendMessage(msg);
-            }
+            DataMessage msg = new DataMessage(testName, fixtureName);
+            SendMessage(msg);
+        }
+
+        internal static void SendTestResultInformation(string testName, string fixtureName, string result, string stackTrace)
+        {
+            TestResultMessage msg = new TestResultMessage(testName, fixtureName, result, stackTrace);
+            SendMessage(msg);
+        }
+
+        /// <summary>
+        /// Sends a message with a line of console text that the text produces
+        /// </summary>
+        public static void SendConsoleMessage(string text, ConsoleMessageType messageType = ConsoleMessageType.ConsoleOut)
+        {
+            ConsoleOutMessage msg = new ConsoleOutMessage(messageType, text);
+            SendMessage(msg);
         }
 
         /// <summary>
@@ -128,7 +140,7 @@ namespace RTF.Applications
         /// <param name="msg"></param>
         private static void SendMessage(Message msg)
         {
-            RTFClientStartCmd.ClientSocket.Send(MessageHelper.AddHeader(Message.ToBytes(msg)));
+            RTFClientStartCmd.ClientSocket?.Send(MessageHelper.AddHeader(Message.ToBytes(msg)));
         }
 
         /// <summary>

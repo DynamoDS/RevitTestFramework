@@ -11,6 +11,9 @@ Several improvements have been implemented:
   * Auto expand failing tests
   * Summarize how many tests passed/failed/etc
   * Show tests without a category
+  * Ability to clear console output
+* All console messages are marshaled back from the test and displayed by the runner
+* Test completion information is displayed in the console out as soon as the test itself is completed
 
 All these changes are based on the `Revit2019` branch.  
 Nuget package is generated from `mark/Revit2019` branch.

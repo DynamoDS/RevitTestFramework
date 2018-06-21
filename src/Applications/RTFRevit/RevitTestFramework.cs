@@ -24,14 +24,17 @@ namespace RTF.Applications
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     [Journaling(JournalingMode.UsingCommandData)]
-    public class RevitTestFramework : IExternalCommand
+    public class RevitTestFramework : IExternalCommand, IConsoleTraceListener
     {
         public Result Execute(ExternalCommandData cmdData, ref string message, ElementSet elements)
         {
-            Setup(cmdData);
+            using (var consoleInterceptor = new ConsoleOutInterceptor(this))
+            {
+                Setup(cmdData);
 
-            var exe = new RevitTestExecutive();
-            return exe.Execute(cmdData, ref message, elements);
+                var exe = new RevitTestExecutive();
+                return exe.Execute(cmdData, ref message, elements);
+            }
         }
 
         private void Setup(ExternalCommandData cmdData)
@@ -44,6 +47,16 @@ namespace RTF.Applications
             }
 
             NUnitFrameworkResolver.Setup();
+        }
+
+        public void OnConsoleOutLine(string text)
+        {
+            RTFClientStartCmd.SendConsoleMessage(text);
+        }
+
+        public void OnErrorOutLine(string text)
+        {
+            RTFClientStartCmd.SendConsoleMessage(text, Framework.ConsoleMessageType.ErrorOut);
         }
     }
 }

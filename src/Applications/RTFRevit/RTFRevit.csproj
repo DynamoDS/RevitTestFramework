@@ -56,6 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConsoleOutInterceptor.cs" />
     <Compile Include="NUnitFrameworkResolver.cs" />
     <Compile Include="NUnitResultTypes.cs">
       <DependentUpon>NUnitResultTypes.xsd</DependentUpon>

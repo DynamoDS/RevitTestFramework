@@ -37,13 +37,17 @@ namespace RTF.Applications
 
                         tr = new TextRange(textBox.Document.ContentEnd, textBox.Document.ContentEnd);
                         tr.Text = line;
-                        if (line.ToLower().StartsWith("error"))
+                        if (line.ToLower().Contains("error:"))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
                         }
-                        else if (line.ToLower().StartsWith("warning"))
+                        else if (line.ToLower().Contains("warning:"))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Orange);
+                        }
+                        else if (line.Contains("UT:"))
+                        {
+                            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.DarkBlue);
                         }
                         else
                         {

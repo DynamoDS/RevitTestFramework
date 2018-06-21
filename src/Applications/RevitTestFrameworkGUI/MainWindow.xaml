@@ -289,7 +289,15 @@
                 </TreeView.ItemContainerStyle>
             </TreeView>
 
-            <RichTextBox Grid.Row="4" x:Name="ConsoleTextBlock" Height="150" VerticalScrollBarVisibility="Auto" IsReadOnly="True"/>
+            <RichTextBox Grid.Row="4" x:Name="ConsoleTextBlock" Height="150" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas">
+                <RichTextBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="ApplicationCommands.Copy"/>
+                        <MenuItem Command="ApplicationCommands.SelectAll"/>
+                        <MenuItem Header="Clear" Click="ClearOutput_Click"/>
+                    </ContextMenu>
+                </RichTextBox.ContextMenu>
+            </RichTextBox>
             <StackPanel Grid.Row="5">
 
                 <!--RUN BUTTONS-->

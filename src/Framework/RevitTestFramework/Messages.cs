@@ -125,6 +125,63 @@ namespace RTF.Framework
     }
 
     /// <summary>
+    /// This is the class for data messages which contain result information for
+    /// a given test
+    /// </summary>
+    [Serializable]
+    public class TestResultMessage : Message
+    {
+        public TestResultMessage(string testCaseName, string fixtureName, string result, string stackTrace)
+        {
+            TestCaseName = testCaseName;
+            FixtureName = fixtureName;
+            Result = result;
+            StackTrace = stackTrace;
+        }
+
+        public TestResultMessage(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+            TestCaseName = (string)info.GetValue("TestCaseName", typeof(string));
+            FixtureName = (string)info.GetValue("FixtureName", typeof(string));
+            Result = (string)info.GetValue("Result", typeof(string));
+            StackTrace = (string)info.GetValue("StackTrace", typeof(string));
+        }
+
+        public string TestCaseName
+        {
+            get;
+            set;
+        }
+
+        public string FixtureName
+        {
+            get;
+            set;
+        }
+
+        public string Result
+        {
+            get;
+            set;
+        }
+
+        public string StackTrace
+        {
+            get;
+            set;
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("TestCaseName", TestCaseName);
+            info.AddValue("FixtureName", FixtureName);
+            info.AddValue("Result", Result);
+            info.AddValue("StackTrace", StackTrace);
+        }
+    }
+
+    /// <summary>
     /// This is the class for control messages which contain information to
     /// identify the status of the client
     /// </summary>
@@ -155,11 +212,58 @@ namespace RTF.Framework
         }
     }
 
+    /// <summary>
+    /// This is the class for console log messages
+    /// </summary>
+    [Serializable]
+    public class ConsoleOutMessage : Message
+    {
+        public ConsoleOutMessage(ConsoleMessageType type, string text)
+        {
+            Type = type;
+            Text = text;
+        }
+
+        public ConsoleOutMessage(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            Type = (ConsoleMessageType)info.GetValue("MessageType", typeof(ConsoleMessageType));
+            Text = (string)info.GetValue("MessageText", typeof(string));
+        }
+
+        public ConsoleMessageType Type
+        {
+            get;
+            set;
+        }
+
+        public string Text
+        {
+            get;
+            set;
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("MessageType", Type);
+            info.AddValue("MessageText", Text);
+        }
+    }
+
     [Serializable]
     public enum ControlType
     {
         NotificationOfStart = 0,
         NotificationOfEnd = 1
+    }
+
+    [Serializable]
+    public enum ConsoleMessageType
+    {
+        ConsoleOut = 0,
+        ErrorOut = 1,
+        DebugOut = 2,
     }
 
     /// <summary>
