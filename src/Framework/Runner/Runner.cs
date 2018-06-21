@@ -1110,6 +1110,17 @@ namespace RTF.Framework
                         Console.WriteLine($"UT: {consoleMsg.Text}");
                     }
                 }
+                else if (msgResult.Message is TestResultMessage testResultMsg)
+                {
+                    Console.WriteLine($"{testResultMsg.Result}: {testResultMsg.TestCaseName} in {testResultMsg.FixtureName}");
+
+                    if (!string.IsNullOrEmpty(testResultMsg.StackTrace))
+                    {
+                        Console.WriteLine($"{testResultMsg.StackTrace}");
+                    }
+
+                    Console.WriteLine();
+                }
                 else
                 {
                     var ctrlMessage = msgResult.Message as ControlMessage;

@@ -477,6 +477,7 @@ namespace RTF.Applications
                     break;
             }
 
+            RTFClientStartCmd.SendTestResultInformation(t.TestName.Name, fixtureName, testCase.result, result.StackTrace);
             return testCase;
         }
 
