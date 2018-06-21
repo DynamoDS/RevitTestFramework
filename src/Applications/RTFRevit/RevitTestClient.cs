@@ -122,6 +122,18 @@ namespace RTF.Applications
         }
 
         /// <summary>
+        /// Sends a message with a line of console text that the text produces
+        /// </summary>
+        public static void SendConsoleMessage(string text, ConsoleMessageType messageType = ConsoleMessageType.ConsoleOut)
+        {
+            if (clientSocket != null)
+            {
+                ConsoleOutMessage msg = new ConsoleOutMessage(messageType, text);
+                SendMessage(msg);
+            }
+        }
+
+        /// <summary>
         /// Send a message to the server. At the beginning of the message, there are 4 bytes to
         /// identify the message length
         /// </summary>

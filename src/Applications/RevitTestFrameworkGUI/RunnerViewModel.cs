@@ -82,9 +82,7 @@ namespace RTF.Applications
         private object isRunningLock = new object();
         private IContext context;
         private FileSystemWatcher watcher;
-        private string selectedTestSummary;
         private ObservableCollection<string> recentFiles = new ObservableCollection<string>();
-        private int selectedProductIndex;
 
         private bool workingDirSetByUser = false;
         private bool resultsFileSetByUser = false;

@@ -1099,41 +1099,55 @@ namespace RTF.Framework
                     return true;
                 }
 
-                var ctrlMessage = msgResult.Message as ControlMessage;
-                var dataMessage = msgResult.Message as DataMessage;
-
-                if (ctrlMessage != null || dataMessage != null)
+                if (msgResult.Message is ConsoleOutMessage consoleMsg)
                 {
-                    if (!string.IsNullOrEmpty(runningTestCaseName))
+                    if (consoleMsg.Type == ConsoleMessageType.ErrorOut)
                     {
-                        completedTestCaseNames.Add(runningTestCaseName);
-                        if (runningTestCase != null)
+                        Console.WriteLine($"UT: ERROR: {consoleMsg.Text}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"UT: {consoleMsg.Text}");
+                    }
+                }
+                else
+                {
+                    var ctrlMessage = msgResult.Message as ControlMessage;
+                    var dataMessage = msgResult.Message as DataMessage;
+
+                    if (ctrlMessage != null || dataMessage != null)
+                    {
+                        if (!string.IsNullOrEmpty(runningTestCaseName))
                         {
-                            runningTestCase.Completed = true;
+                            completedTestCaseNames.Add(runningTestCaseName);
+                            if (runningTestCase != null)
+                            {
+                                runningTestCase.Completed = true;
+                            }
                         }
                     }
-                }
 
-                if (ctrlMessage != null)
-                {
-                    if (ctrlMessage.Type == ControlType.NotificationOfEnd)
+                    if (ctrlMessage != null)
                     {
-                        // Wait for the process to exit so that the temporary journaling files
-                        // can be deleted successfully in the cleanup stage later
-                        process.WaitForExit();
-                        return true;
+                        if (ctrlMessage.Type == ControlType.NotificationOfEnd)
+                        {
+                            // Wait for the process to exit so that the temporary journaling files
+                            // can be deleted successfully in the cleanup stage later
+                            process.WaitForExit();
+                            return true;
+                        }
                     }
-                }
 
-                if (dataMessage != null)
-                {
-                    runningTestCaseName = dataMessage.TestCaseName;
-                    runningFixtureName = dataMessage.FixtureName;
-                    runningTestCase = FindTestCase(runningTestCaseName, runningFixtureName);
-                    Console.WriteLine("Running {0} in {1}", runningTestCaseName, runningFixtureName);
+                    if (dataMessage != null)
+                    {
+                        runningTestCaseName = dataMessage.TestCaseName;
+                        runningFixtureName = dataMessage.FixtureName;
+                        runningTestCase = FindTestCase(runningTestCaseName, runningFixtureName);
+                        Console.WriteLine("Running {0} in {1}", runningTestCaseName, runningFixtureName);
 
-                    watch.Reset();
-                    watch.Start();
+                        watch.Reset();
+                        watch.Start();
+                    }
                 }
             }
         }

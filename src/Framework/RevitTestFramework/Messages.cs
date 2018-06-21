@@ -155,11 +155,58 @@ namespace RTF.Framework
         }
     }
 
+    /// <summary>
+    /// This is the class for console log messages
+    /// </summary>
+    [Serializable]
+    public class ConsoleOutMessage : Message
+    {
+        public ConsoleOutMessage(ConsoleMessageType type, string text)
+        {
+            Type = type;
+            Text = text;
+        }
+
+        public ConsoleOutMessage(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            Type = (ConsoleMessageType)info.GetValue("MessageType", typeof(ConsoleMessageType));
+            Text = (string)info.GetValue("MessageText", typeof(string));
+        }
+
+        public ConsoleMessageType Type
+        {
+            get;
+            set;
+        }
+
+        public string Text
+        {
+            get;
+            set;
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("MessageType", Type);
+            info.AddValue("MessageText", Text);
+        }
+    }
+
     [Serializable]
     public enum ControlType
     {
         NotificationOfStart = 0,
         NotificationOfEnd = 1
+    }
+
+    [Serializable]
+    public enum ConsoleMessageType
+    {
+        ConsoleOut = 0,
+        ErrorOut = 1,
+        DebugOut = 2,
     }
 
     /// <summary>
