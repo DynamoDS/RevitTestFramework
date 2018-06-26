@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
-        <version>1.19.7</version>
+        <version>1.19.8</version>
         <authors>Dynamo, Mark Vulfson</authors>
         <owners>Dynamo, Mark Vulfson</owners>
         <licenseUrl>https://github.com/marchello2000/RevitTestFramework#license</licenseUrl>
@@ -29,6 +29,7 @@
         <file src="..\bin\AnyCPU\Release\RevitTestFrameworkTypes.dll" target="tools" />
         <file src="..\bin\AnyCPU\Release\RTFRevit.dll" target="tools" />
         <file src="..\bin\AnyCPU\Release\Runner.dll" target="tools" />
+        <file src="..\bin\AnyCPU\Release\empty.rfa" target="tools" />
         <file src="..\bin\AnyCPU\Release\RevitTestFrameworkTypes.dll" target="lib\net47" />
         <file src="..\bin\AnyCPU\Release\RTFRevit.dll" target="lib\net47" />
 
