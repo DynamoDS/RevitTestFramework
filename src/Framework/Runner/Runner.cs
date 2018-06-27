@@ -1422,7 +1422,7 @@ namespace RTF.Framework
                     string testError = $"ERROR: Failed to configure {td.Name} with error: {ex.Message}";
 
                     td.TestStatus = TestStatus.NotRunnable;
-                    TestFailed(td, testError, string.Empty);
+                    TestFailed?.Invoke(td, testError, string.Empty);
 
                     Console.WriteLine(testError);
                 }
