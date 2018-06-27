@@ -290,6 +290,7 @@ namespace RTF.Applications
             {
                 runner.WorkingDirectory = value;
                 runner.InitializeTests();
+                UpdateTestCounts();
                 RaisePropertyChanged();
                 RaisePropertyChanged(nameof(Assemblies));
             }
@@ -325,6 +326,7 @@ namespace RTF.Applications
             {
                 runner.GroupingType = value;
                 runner.InitializeTests();
+                UpdateTestCounts();
                 RaisePropertyChanged();
                 RaisePropertyChanged(nameof(Assemblies));
             }
@@ -337,6 +339,7 @@ namespace RTF.Applications
             {
                 runner.TestAssembly = value;
                 runner.InitializeTests();
+                UpdateTestCounts();
                 RaisePropertyChanged();
                 RaisePropertyChanged(nameof(Assemblies));
 
@@ -605,7 +608,10 @@ namespace RTF.Applications
                 {
                     foreach (var test in category.Tests)
                     {
-                        if ((test.ShouldRun ?? false) && (!successValues.Contains(test.TestStatus)))
+                        bool testFailed = (test.TestStatus != TestStatus.None) && (!successValues.Contains(test.TestStatus));
+                        bool modelMissing = !((TestData)test).ModelExists;
+
+                        if ((test.ShouldRun ?? false) && (testFailed || modelMissing))
                         {
                             ((TestData)test).IsNodeExpanded = true;
 
