@@ -1039,12 +1039,15 @@ namespace RTF.Framework
 
             if (firstCall)
             {
-                // If there are any test cases which are timed out, write them to the result file
+                // If there are any test cases which are timed out or not runnable,
+                // nunit won't write out the result for it, merge results from these tests
+                // with other tests
                 var runnableTests = GetRunnableTests();
-                var timedoutTests = runnableTests.Where(x => x.TestStatus == TestStatus.TimedOut);
-                if (timedoutTests.Any())
+                var failedTests = runnableTests
+                    .Where(x => (x.TestStatus == TestStatus.NotRunnable) || (x.TestStatus == TestStatus.TimedOut));
+                if (failedTests.Any())
                 {
-                    WriteTestResultForTestCases(timedoutTests, Results, TestAssembly);
+                    WriteTestResultForFailedTestCases(failedTests, Results, TestAssembly);
                 }
 
                 OnTestComplete(GetRunnableTests());
@@ -1416,9 +1419,12 @@ namespace RTF.Framework
             {
                 if (td != null)
                 {
-                    td.TestStatus = TestStatus.Skipped;
+                    string testError = $"ERROR: Failed to configure {td.Name} with error: {ex.Message}";
 
-                    Console.WriteLine($"ERROR: Failed to configure {td.Name} with error: {ex.Message}");
+                    td.TestStatus = TestStatus.NotRunnable;
+                    TestFailed(td, testError, string.Empty);
+
+                    Console.WriteLine(testError);
                 }
 
                 return false;
@@ -1612,7 +1618,11 @@ namespace RTF.Framework
 
         }
 
-        public static void WriteTestResultForTestCases(IEnumerable<ITestData> data, string resultsPath, string testAssembly)
+        /// <summary>
+        /// Write out test results for tests that weren't run by nunit.
+        /// E.g. ones we couldn't configure or ones that timedout
+        /// </summary>
+        public static void WriteTestResultForFailedTestCases(IEnumerable<ITestData> data, string resultsPath, string testAssembly)
         {
             var results = TryParseResultsOrEmitError(resultsPath);
             if (results == null)
@@ -1621,16 +1631,16 @@ namespace RTF.Framework
                 results = GetInitializedResultType(testAssembly);
             }
 
-            List<ITestData> timedoutTests = new List<ITestData>();
+            List<ITestData> failedTests = new List<ITestData>();
             foreach (var td in data)
             {
-                if (td.TestStatus == TestStatus.TimedOut)
+                if (td.TestStatus == TestStatus.NotRunnable || td.TestStatus == TestStatus.TimedOut)
                 {
-                    timedoutTests.Add(td);
+                    failedTests.Add(td);
                 }
             }
 
-            foreach (var td in timedoutTests)
+            foreach (var td in failedTests)
             {
                 var tests = FindOutTestCasesRelatedToTestData(results, td);
                 if (tests != null && tests.Any())
@@ -1638,9 +1648,9 @@ namespace RTF.Framework
                     // update the test result
                     foreach (var test in tests)
                     {
-                        test.executed = "True";
+                        test.executed = (td.TestStatus != TestStatus.NotRunnable) ? "True" : "False";
                         test.success = "False";
-                        test.result = "Timedout";
+                        test.result = td.TestStatus.ToString();
                     }
                 }
                 else
@@ -1666,7 +1676,23 @@ namespace RTF.Framework
                     int size = suite.results.Items.Length + 1;
                     object[] array = new object[size];
                     Array.Copy(suite.results.Items, array, size - 1);
-                    array[size - 1] = new testcaseType() { name = td.Name, executed = "True", success = "False", result = "Timedout" };
+                    var testcaseData = new testcaseType()
+                    {
+                        name = td.Name,
+                        executed = (td.TestStatus != TestStatus.NotRunnable) ? "True" : "False",
+                        success = "False",
+                        result = td.TestStatus.ToString(),
+                    };
+
+                    if (td.TestStatus == TestStatus.NotRunnable)
+                    {
+                        testcaseData.Item = new failureType()
+                        {
+                            message = td.ResultData.FirstOrDefault()?.Message
+                        };
+                    }
+
+                    array[size - 1] = testcaseData;
                     suite.results.Items = array;
                 }
             }
@@ -1675,7 +1701,10 @@ namespace RTF.Framework
             var serializer = new XmlSerializer(typeof(resultType));
             var dir = Path.GetDirectoryName(resultsPath);
             if (!Directory.Exists(dir))
+            {
                 Directory.CreateDirectory(dir);
+            }
+
             using (var tw = XmlWriter.Create(resultsPath, new XmlWriterSettings() { Indent = true }))
             {
                 tw.WriteComment("This file represents the results of running a test suite");
@@ -1729,6 +1758,17 @@ namespace RTF.Framework
                     if (revitProductReferenced != null)
                     {
                         RevitPath = Path.Combine(revitProductReferenced.InstallLocation, "revit.exe");
+                    }
+
+                    foreach (var category in (GroupingType == GroupingType.Fixture) ? assData.Fixtures : assData.Categories)
+                    {
+                        foreach (var test in category.Tests)
+                        {
+                            if (!((TestData)test).ModelExists)
+                            {
+                                Console.WriteLine($"WARNING: model {test.ModelPath} not found for test {test.Fixture}.{test.Name}");
+                            }
+                        }
                     }
 
                     data.Add(assData);
