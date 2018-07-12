@@ -1371,7 +1371,9 @@ namespace RTF.Framework
             ModelSemantics modelSemantics = ModelSemantics.Open | ModelSemantics.Close)
         {
             if (td.ShouldRun == false)
+            {
                 return true;
+            }
 
             try
             {
@@ -1766,7 +1768,7 @@ namespace RTF.Framework
                         {
                             if (!((TestData)test).ModelExists)
                             {
-                                Console.WriteLine($"WARNING: model {test.ModelPath} not found for test {test.Fixture}.{test.Name}");
+                                Console.WriteLine($"WARNING: model {test.ModelPath} not found for test {test.Fixture.Name}.{test.Name}");
                             }
                         }
                     }
