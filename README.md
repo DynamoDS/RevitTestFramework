@@ -12,6 +12,8 @@ Several improvements have been implemented:
   * Summarize how many tests passed/failed/etc
   * Show tests without a category
   * Ability to clear console output
+  * Clear indication when model files for tests can't be found
+* Ability to specify a wildcard for the model filename
 * All console messages are marshaled back from the test and displayed by the runner
 * Test completion information is displayed in the console out as soon as the test itself is completed
 
@@ -52,7 +54,7 @@ Provides a visual interface for you to choose tests from a treeview and to visua
 
 The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
-![Image](https://user-images.githubusercontent.com/3942418/28271251-0822ae5c-6ad6-11e7-8028-4f2f5c03823e.png) 
+![RTF](RTF.png) 
 
 `File` - For saving and loading your local RTF config.
 

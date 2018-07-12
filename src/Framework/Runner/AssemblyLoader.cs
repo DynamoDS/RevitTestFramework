@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -21,7 +22,7 @@ namespace RTF.Framework
 
         public AssemblyData ReadAssembly(string assemblyPath, GroupingType groupType, string workingDirectory)
         {
-            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
+            var assembly = Assembly.LoadFrom(assemblyPath);
 
             var data = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
 
@@ -93,7 +94,7 @@ namespace RTF.Framework
         public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
         {
             //set the default modelPath to the empty.rfa file that will live in the build directory
-            string modelPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa");
+            List<string> modelPaths = new List<string>();
 
             var testAttribs = CustomAttributeData.GetCustomAttributes(test);
 
@@ -104,65 +105,79 @@ namespace RTF.Framework
                 return false;
             }
 
-            var testModelAttrib =
-                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "TestModelAttribute");
+            TestModelAttribute testModelAttrib = (TestModelAttribute)test.GetCustomAttribute(typeof(TestModelAttribute));
 
             if (testModelAttrib != null)
             {
-                //overwrite the model path with the one
-                //specified in the test model attribute
-                var relModelPath = testModelAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-                if (workingDirectory == null)
+                string absolutePath;
+
+                if (Path.IsPathRooted(testModelAttrib.Path))
                 {
-                    // If the working directory is not specified.
-                    // Add the relative path to the assembly's path.
-                    modelPath =
-                        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                            relModelPath));
+                    absolutePath = testModelAttrib.Path;
                 }
                 else
                 {
-                    modelPath = Path.GetFullPath(Path.Combine(workingDirectory, relModelPath)); 
-                }
-            }
-
-            var runDynamoAttrib =
-                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "RunDynamoAttribute");
-
-            var runDynamo = false;
-            if (runDynamoAttrib != null)
-            {
-                runDynamo = Boolean.Parse(runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value.ToString());
-            }
-
-            var testData = new TestData(data, test.Name, modelPath, runDynamo);
-            data.Tests.Add(testData);
-
-            const string EmptyCategory = "[NO CATEGORY]";
-
-            var category = string.Empty;
-            var categoryAttribs =
-                testAttribs.Where(x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
-
-            if (categoryAttribs.Any())
-            {
-                foreach (var categoryAttrib in categoryAttribs)
-                {
-                    category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
-                    if (String.IsNullOrEmpty(category))
+                    if (workingDirectory == null)
                     {
-                        category = EmptyCategory;
+                        // If the working directory is not specified.
+                        // Add the relative path to the assembly's path.
+                        absolutePath = Path.GetFullPath(
+                            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), testModelAttrib.Path));
                     }
+                    else
+                    {
+                        absolutePath = Path.GetFullPath(Path.Combine(workingDirectory, testModelAttrib.Path));
+                    }
+                }
 
-                    AddWithCategory(data, category, testData);
+                if (testModelAttrib.IsWildcard)
+                {
+                    modelPaths.AddRange(Directory.GetFiles(Path.GetDirectoryName(absolutePath), Path.GetFileName(absolutePath), SearchOption.AllDirectories));
+                }
+                else
+                {
+                    modelPaths.Add(absolutePath);
                 }
             }
             else
             {
-                AddWithCategory(data, EmptyCategory, testData);
+                modelPaths.Add(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa"));
             }
 
-            Console.WriteLine("Loaded test: {0}", testData);
+            var runDynamoAttrib = (RunDynamoAttribute)test.GetCustomAttribute(typeof(RunDynamoAttribute));
+            var runDynamo = runDynamoAttrib?.RunDynamo ??  false;
+
+            foreach (string modelPath in modelPaths)
+            {
+                var testData = new TestData(data, test.Name, modelPath, runDynamo);
+                data.Tests.Add(testData);
+
+                const string EmptyCategory = "[NO CATEGORY]";
+
+                var category = string.Empty;
+                var categoryAttribs =
+                    testAttribs.Where(x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
+
+                if (categoryAttribs.Any())
+                {
+                    foreach (var categoryAttrib in categoryAttribs)
+                    {
+                        category = categoryAttrib.ConstructorArguments.FirstOrDefault().Value.ToString();
+                        if (String.IsNullOrEmpty(category))
+                        {
+                            category = EmptyCategory;
+                        }
+
+                        AddWithCategory(data, category, testData);
+                    }
+                }
+                else
+                {
+                    AddWithCategory(data, EmptyCategory, testData);
+                }
+
+                Console.WriteLine($"Loaded test: {testData} ({modelPath})");
+            }
 
             return true;
         }

@@ -338,12 +338,6 @@ namespace RTF.Applications
             set
             {
                 runner.TestAssembly = value;
-                runner.InitializeTests();
-                UpdateTestCounts();
-                RaisePropertyChanged();
-                RaisePropertyChanged(nameof(Assemblies));
-
-                RaisePropertyChanged(nameof(SelectedProductIndex));
 
                 // Infer working directory from assembly, if the user hasn't set it yet
                 if (!workingDirSetByUser)
@@ -355,6 +349,12 @@ namespace RTF.Applications
                 {
                     SetResultsPath(Path.Combine(WorkingDirectory, "results.xml"));
                 }
+
+                runner.InitializeTests();
+                UpdateTestCounts();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
+                RaisePropertyChanged(nameof(SelectedProductIndex));
             }
         }
 

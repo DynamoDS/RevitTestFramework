@@ -6,6 +6,7 @@ namespace RTF.Framework
     public class TestModelAttribute : Attribute
     {
         public string Path { get; private set; }
+        public bool IsWildcard => (Path.ToLowerInvariant().EndsWith("*.rvt") || Path.ToLowerInvariant().EndsWith("*.rfa"));
 
         public TestModelAttribute(string path)
         {
