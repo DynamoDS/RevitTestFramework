@@ -412,7 +412,22 @@ namespace RTF.Framework
         [XmlIgnore]
         public bool ModelExists
         {
-            get { return ModelPath != null && File.Exists(ModelPath); }
+            get
+            {
+                bool modelExists = false;
+
+                try
+                {
+                    modelExists = (ModelPath != null) && File.Exists(ModelPath);
+                }
+                catch
+                {
+                    // Nothing to do, just say the model isn't there (probably a wildcard in the file name
+                    // and no models were found in the give path)
+                }
+
+                return modelExists;
+            }
         }
 
         [XmlIgnore]
@@ -436,9 +451,7 @@ namespace RTF.Framework
                     return string.Empty;
                 }
 
-                var info = new FileInfo(ModelPath);
-                //return string.Format("[{0}]", info.Name);
-                return string.Format("[{0}]", info.FullName);
+                return $"[{ModelPath}]";
             }
         }
 

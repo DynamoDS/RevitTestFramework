@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
-        <version>1.19.11</version>
+        <version>1.19.12</version>
         <authors>Dynamo, Mark Vulfson</authors>
         <owners>Dynamo, Mark Vulfson</owners>
         <licenseUrl>https://github.com/marchello2000/RevitTestFramework#license</licenseUrl>

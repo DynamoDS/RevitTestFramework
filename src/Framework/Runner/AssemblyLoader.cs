@@ -132,7 +132,22 @@ namespace RTF.Framework
 
                 if (testModelAttrib.IsWildcard)
                 {
-                    modelPaths.AddRange(Directory.GetFiles(Path.GetDirectoryName(absolutePath), Path.GetFileName(absolutePath), SearchOption.AllDirectories));
+                    string[] modelFiles = null;
+                    try
+                    {
+                        modelFiles = Directory.GetFiles(Path.GetDirectoryName(absolutePath), Path.GetFileName(absolutePath), SearchOption.AllDirectories);
+                    }
+                    catch
+                    {
+                        // Means folder doesn't exist
+                    }
+
+                    if (modelFiles == null || modelFiles.Length == 0)
+                    {
+                        modelFiles = new string[] { absolutePath };
+                    }
+
+                    modelPaths.AddRange(modelFiles);
                 }
                 else
                 {
