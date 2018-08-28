@@ -54,7 +54,7 @@ Provides a visual interface for you to choose tests from a treeview and to visua
 
 The input fields to set the test assembly, the working directory, and the results file, as well as the tree view where available tests are displayed, support dragging and dropping of files and folders.
 
-![RTF](images/RTF_UI.png) 
+![RTF](images/RTF_UI.PNG) 
 
 `File` - For saving and loading your local RTF config.
 
