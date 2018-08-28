@@ -1147,7 +1147,22 @@ namespace RTF.Framework
                         {
                             // Wait for the process to exit so that the temporary journaling files
                             // can be deleted successfully in the cleanup stage later
-                            process.WaitForExit();
+                            const int maxRevitWaitSec = 45;
+                            Console.WriteLine("Waiting for Revit to terminate...");
+
+                            if (IsDebug)
+                            {
+                                process.WaitForExit();
+                            }
+                            else
+                            {
+                                if (!process.WaitForExit(maxRevitWaitSec * 1000))
+                                {
+                                    Console.WriteLine($"WARNING: Forcefully terminating Revit due to timeout of {maxRevitWaitSec}seconds");
+                                    process.Kill();
+                                }
+                            }
+
                             return true;
                         }
                     }
