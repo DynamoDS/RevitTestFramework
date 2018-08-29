@@ -45,8 +45,8 @@
     <Reference Include="Microsoft.Practices.Prism">
       <HintPath>..\..\..\lib\Microsoft.Practices.Prism.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAddInUtility">
-      <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
+    <Reference Include="RevitAddInUtility, Version=17.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Revit-2017.1.1x64-Utilities.1.0.0\lib\net452\RevitAddInUtility.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
@@ -67,9 +67,6 @@
     <Compile Include="Converters.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="NUnitResultTypes.cs">
-      <DependentUpon>NUnitResultTypes.xsd</DependentUpon>
     </Compile>
     <Compile Include="RunnerViewModel.cs" />
     <Compile Include="App.xaml.cs">
@@ -100,9 +97,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="NUnitResultTypes.xsd">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

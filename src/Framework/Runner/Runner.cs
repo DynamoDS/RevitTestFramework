@@ -659,7 +659,7 @@ namespace RTF.Framework
                     File.Delete(AddinPath);
                 }
             }
-            catch (IOException ex)
+            catch (IOException)
             {
                 Console.WriteLine("WARNING: One or more journal files could not be deleted.");
             }
@@ -1561,7 +1561,7 @@ namespace RTF.Framework
             {
                 return TestResultDeserializer.DeserializeResults(resultsPath);
             }
-            catch (InvalidOperationException e) // xml parser failure
+            catch (InvalidOperationException) // xml parser failure
             {
                 //td.TestStatus = TestStatus.Error;
                 //runner_TestFailed(td, "RevitTestExecutive failed to complete the test!", TestResultDeserializer.TryGetFailureMessage(resultsPath));

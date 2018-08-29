@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
-        <version>1.19.14</version>
-        <authors>Dynamo, Mark Vulfson</authors>
-        <owners>Dynamo, Mark Vulfson</owners>
-        <licenseUrl>https://github.com/marchello2000/RevitTestFramework#license</licenseUrl>
-        <projectUrl>https://github.com/marchello2000/RevitTestFramework</projectUrl>
+        <version>$version$</version>
+        <authors>Dynamo, UpCodes</authors>
+        <owners>Dynamo, UpCodes</owners>
+        <licenseUrl>https://github.com/UpCodes/RevitTestFramework#license</licenseUrl>
+        <projectUrl>https://github.com/UpCodes/RevitTestFramework</projectUrl>
         <id>RevitTestFramework</id>
         <title>RevitTestFramework</title>
         <iconUrl>http://dynamobim.org/favicon.png</iconUrl>
@@ -14,7 +14,7 @@
         <summary>Revit Test Framework</summary>
         <developmentDependency>true</developmentDependency>
         <language>en-US</language>
-        <tags>revit, autodesk, revtitestframework</tags>
+        <tags>revit, autodesk, revit test framework</tags>
     </metadata>
     <files>
         <file src="..\bin\AnyCPU\Release\Microsoft.Practices.Prism.dll" target="tools" />
