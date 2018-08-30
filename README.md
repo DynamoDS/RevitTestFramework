@@ -1,3 +1,4 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/oqd23280efmaimmm/branch/mark/Revit2019?svg=true)](https://ci.appveyor.com/project/marchello2000/revittestframework/branch/mark/Revit2019) 
 [![NuGet](https://img.shields.io/nuget/v/revittestframework.svg)](https://www.nuget.org/packages/revittestframework)
 
 
@@ -5,6 +6,7 @@
 This is a fork of https://github.com/DynamoDS/RevitTestFramework.  
 Several improvements have been implemented:  
 * [Nuget](https://www.nuget.org/packages/revittestframework) package has been created
+* AppVeyor build has been configured
 * `groupByModel` parameter (see below) has been added
 * Numerous UI improvements, such as
   * Better error messaging when test model isn't found

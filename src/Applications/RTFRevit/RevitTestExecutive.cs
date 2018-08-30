@@ -5,11 +5,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
-using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Dynamo.NUnit.Tests;
@@ -113,7 +111,7 @@ namespace RTF.Applications
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine("RevitTestExecutive encountered an exception trying to write the file to disk!");
+                    Debug.WriteLine("RevitTestExecutive encountered an exception trying to write the file to disk: " + e);
                 }
 
                 Debug.WriteLine(ex.ToString());

@@ -14,7 +14,6 @@ namespace RTF.Framework
     public class AssemblyData : IAssemblyData
     {
         private bool? _shouldRun = true;
-        private ObservableCollection<ITestGroup> _sortingGroup;
         private bool _isNodeExpanded;
 
         public virtual string Path { get; set; }
@@ -380,7 +379,6 @@ namespace RTF.Framework
     public class TestData : ITestData
     {
         private TestStatus _testStatus;
-        private IList<IResultData> _resultData;
         private bool? _shouldRun = true;
         private bool _isNodeExpanded;
 

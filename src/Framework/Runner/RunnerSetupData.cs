@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Autodesk.RevitAddIns;
 
 namespace RTF.Framework
@@ -37,8 +38,15 @@ namespace RTF.Framework
             Timeout = 120000;
         }
 
+        public static Func<IList<RevitProduct>> RevitLookupOverride { get; set; } = null;
+
         public static IList<RevitProduct> FindRevit()
         {
+            if (RevitLookupOverride != null)
+            {
+                return RevitLookupOverride();
+            }
+
             var products = RevitProductUtility.GetAllInstalledRevitProducts();
 
             //For now let's return all the installed products. Sometimes the products in development

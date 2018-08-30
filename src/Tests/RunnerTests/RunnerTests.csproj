@@ -43,10 +43,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\lib\NUnit\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAddInUtility, Version=2015.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="RevitAddInUtility, Version=17.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Revit-2017.1.1x64-Utilities.1.0.0\lib\net452\RevitAddInUtility.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -61,6 +59,9 @@
       <Project>{4a25bb46-081a-4acd-9c38-297cd800550f}</Project>
       <Name>Runner</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
