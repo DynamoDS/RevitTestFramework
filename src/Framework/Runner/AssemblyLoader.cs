@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using NUnit.Framework;
 
 namespace RTF.Framework
 {
@@ -16,13 +17,15 @@ namespace RTF.Framework
     {
         public AssemblyLoader(RTFAssemblyResolver resolver)
         {  
-            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve +=
-                    resolver.Resolve;
+            AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += resolver.Resolve;
         }
 
         public AssemblyData ReadAssembly(string assemblyPath, GroupingType groupType, string workingDirectory)
         {
-            var assembly = Assembly.LoadFrom(assemblyPath);
+            // NOTE: We use reflection only load here so that we don't have to resolve all binaries
+            // This is an assumption by Dynamo tests which reference assemblies that can be resolved 
+            // at runtime inside Revit.
+            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
 
             var data = new AssemblyData(assemblyPath, assembly.GetName().Name, groupType);
 
@@ -59,7 +62,7 @@ namespace RTF.Framework
         {
             var fixtureAttribs = CustomAttributeData.GetCustomAttributes(fixtureType);
 
-            if (!fixtureAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestFixtureAttribute"))
+            if (!fixtureAttribs.Any(x => x.Constructor.DeclaringType.Name == nameof(TestFixtureAttribute)))
             {
                 //Console.WriteLine("Specified fixture does not have the required TestFixture attribute.");
                 return false;
@@ -72,7 +75,7 @@ namespace RTF.Framework
             {
                 var testAttribs = CustomAttributeData.GetCustomAttributes(test);
 
-                if (!testAttribs.Any(x => x.Constructor.DeclaringType.Name == "TestAttribute"))
+                if (!testAttribs.Any(x => x.Constructor.DeclaringType.Name == nameof(TestAttribute)))
                 {
                     // skip this method
                     continue;
@@ -98,22 +101,23 @@ namespace RTF.Framework
 
             var testAttribs = CustomAttributeData.GetCustomAttributes(test);
 
-            var ignoreAttrib =
-                testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == "IgnoreAttribute");
-            if (ignoreAttrib != null)
+            if (testAttribs.Any(x => x.Constructor.DeclaringType.Name == nameof(IgnoreAttribute)))
             {
                 return false;
             }
 
-            TestModelAttribute testModelAttrib = (TestModelAttribute)test.GetCustomAttribute(typeof(TestModelAttribute));
+            var testModelAttrib = testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == nameof(TestModelAttribute));
 
             if (testModelAttrib != null)
             {
                 string absolutePath;
 
-                if (Path.IsPathRooted(testModelAttrib.Path))
+                // We can't get the instantiated attribute from the assembly because we performed a ReflectionOnly load
+                TestModelAttribute testModelAttribute = new TestModelAttribute((string)testModelAttrib.ConstructorArguments.First().Value);
+
+                if (Path.IsPathRooted(testModelAttribute.Path))
                 {
-                    absolutePath = testModelAttrib.Path;
+                    absolutePath = testModelAttribute.Path;
                 }
                 else
                 {
@@ -122,15 +126,15 @@ namespace RTF.Framework
                         // If the working directory is not specified.
                         // Add the relative path to the assembly's path.
                         absolutePath = Path.GetFullPath(
-                            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), testModelAttrib.Path));
+                            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), testModelAttribute.Path));
                     }
                     else
                     {
-                        absolutePath = Path.GetFullPath(Path.Combine(workingDirectory, testModelAttrib.Path));
+                        absolutePath = Path.GetFullPath(Path.Combine(workingDirectory, testModelAttribute.Path));
                     }
                 }
 
-                if (testModelAttrib.IsWildcard)
+                if (testModelAttribute.IsWildcard)
                 {
                     string[] modelFiles = null;
                     try
@@ -159,8 +163,13 @@ namespace RTF.Framework
                 modelPaths.Add(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa"));
             }
 
-            var runDynamoAttrib = (RunDynamoAttribute)test.GetCustomAttribute(typeof(RunDynamoAttribute));
-            var runDynamo = runDynamoAttrib?.RunDynamo ??  false;
+            var runDynamoAttrib = testAttribs.FirstOrDefault(x => x.Constructor.DeclaringType.Name == nameof(RunDynamoAttribute));
+            var runDynamo = false;
+
+            if (runDynamoAttrib != null)
+            {
+                runDynamo = (bool)runDynamoAttrib.ConstructorArguments.FirstOrDefault().Value;
+            }
 
             foreach (string modelPath in modelPaths)
             {
@@ -171,7 +180,7 @@ namespace RTF.Framework
 
                 var category = string.Empty;
                 var categoryAttribs =
-                    testAttribs.Where(x => x.Constructor.DeclaringType.Name == "CategoryAttribute");
+                    testAttribs.Where(x => x.Constructor.DeclaringType.Name == nameof(CategoryAttribute));
 
                 if (categoryAttribs.Any())
                 {
