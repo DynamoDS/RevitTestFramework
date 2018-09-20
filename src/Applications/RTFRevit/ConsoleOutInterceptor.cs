@@ -1,25 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RTF.Applications
 {
+    /// <summary>
+    /// Interface to implement to get console/error out text
+    /// </summary>
     public interface IConsoleTraceListener
     {
+        /// <summary>
+        /// Called with each complete line received on Console.Out
+        /// </summary>
+        /// <param name="text">line of text</param>
         void OnConsoleOutLine(string text);
 
+        /// <summary>
+        /// Called with each complete line received on Error.Out
+        /// </summary>
+        /// <param name="text">line of text</param>
         void OnErrorOutLine(string text);
     }
 
+    /// <summary>
+    /// Helper class to redirect and intercept Console Out and Error Out streams
+    /// This is used to shuffle all console messages from RTF client to server
+    /// </summary>
     public class ConsoleOutInterceptor : IDisposable
     {
-        LineTextWriter outWriter;
-        LineTextWriter errorWriter;
-        IConsoleTraceListener listener;
+        private LineTextWriter outWriter;
+        private LineTextWriter errorWriter;
+        private IConsoleTraceListener listener;
 
+        /// <summary>
+        /// .ctor
+        /// </summary>
+        /// <param name="listener">object that implements <see cref="IConsoleTraceListener"/> 
+        /// which will receive callbacks for each line of output intercepted</param>
         public ConsoleOutInterceptor(IConsoleTraceListener listener)
         {
             outWriter = new LineTextWriter(OnConsole);
@@ -30,11 +47,21 @@ namespace RTF.Applications
             Console.SetError(errorWriter);
         }
 
+        /// <summary>
+        /// Callback for LineTextWriter. 
+        /// Called when a line of text is received from the Console.Out stream
+        /// </summary>
+        /// <param name="line">line of text</param>
         private void OnConsole(string line)
         {
             listener?.OnConsoleOutLine(line);
         }
 
+        /// <summary>
+        /// Callback for LineTextWriter. 
+        /// Called when a line of text is received from the Console.Error stream
+        /// </summary>
+        /// <param name="line">line of text</param>
         private void OnError(string line)
         {
             listener?.OnErrorOutLine(line);
@@ -42,24 +69,40 @@ namespace RTF.Applications
 
         public void Dispose()
         {
-            outWriter?.Dispose();
-            errorWriter?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-            outWriter = null;
-            errorWriter = null;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                outWriter?.Dispose();
+                errorWriter?.Dispose();
+
+                outWriter = null;
+                errorWriter = null;
+            }
         }
     }
 
+    /// <summary>
+    /// TextWriter that produces a callback after each line of text
+    /// </summary>
     public class LineTextWriter : TextWriter
     {
-        StringBuilder pendingText = new StringBuilder();
-        Action<string> callback;
+        private StringBuilder pendingText = new StringBuilder();
+        private Action<string> callback;
 
         public LineTextWriter(Action<string> callback)
         {
             this.callback = callback;
         }
 
+        /// <summary>
+        /// Write a char to the pending buffer
+        /// This is the only overload we need since that's all that Console streams call
+        /// </summary>
         public override void Write(char value)
         {
             base.Write(value);

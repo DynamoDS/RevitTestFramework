@@ -389,6 +389,7 @@ namespace RTF.Framework
         /// testing machine.
         /// </summary>
         /// <param name="parameter"></param>
+        /// <returns>true if at least 1 test was configured successfully, false otherwise</returns>
         public bool SetupTests()
         {
             var runnable = GetRunnableTests();

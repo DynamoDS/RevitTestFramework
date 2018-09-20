@@ -87,9 +87,9 @@ namespace RTF.Applications
         private bool workingDirSetByUser = false;
         private bool resultsFileSetByUser = false;
 
-        int passedTestCount;
-        int skippedTestCount;
-        int failedTestCount;
+        private int passedTestCount;
+        private int skippedTestCount;
+        private int failedTestCount;
 
         #endregion
 
@@ -179,6 +179,9 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// Number of tests that passed from current/last run
+        /// </summary>
         public int PassedTestCount
         {
             get
@@ -195,6 +198,9 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// Number of tests that were skipped from current/last run
+        /// </summary>
         public int SkippedTestCount
         {
             get
@@ -211,6 +217,9 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// Number of tests that failed as of current/last run
+        /// </summary>
         public int FailedTestCount
         {
             get
@@ -296,6 +305,9 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// true to run tests without restarting Revit in between each tests
+        /// </summary>
         public bool Continuous
         {
             get { return runner.Continuous; }
@@ -306,6 +318,11 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// true to group tests by model path
+        /// When grouped, tests with the same model path will run without reopening the .RVT file
+        /// Requires <see cref="Continuous"/>
+        /// </summary>
         public bool GroupByModel
         {
             get { return runner.GroupByModel; }
