@@ -5,26 +5,6 @@ The Revit Test Framework (RTF) allows you to conduct remote unit testing on Revi
 [![Build status](https://ci.appveyor.com/api/projects/status/oqd23280efmaimmm/branch/mark/Revit2019?svg=true)](https://ci.appveyor.com/project/marchello2000/revittestframework/branch/mark/Revit2019) 
 [![NuGet](https://img.shields.io/nuget/v/revittestframework.svg)](https://www.nuget.org/packages/revittestframework)
 
-## Fork information
-This is a fork of https://github.com/DynamoDS/RevitTestFramework.  
-Several improvements have been implemented:  
-* [Nuget](https://www.nuget.org/packages/revittestframework) package has been created
-* AppVeyor build has been configured
-* `groupByModel` parameter (see below) has been added
-* Numerous UI improvements, such as
-  * Better error messaging when test model isn't found
-  * Auto expand failing tests
-  * Summarize how many tests passed/failed/etc
-  * Show tests without a category
-  * Ability to clear console output
-  * Clear indication when model files for tests can't be found
-* Ability to specify a wildcard for the model filename
-* All console messages are marshaled back from the test and displayed by the runner
-* Test completion information is displayed in the console out as soon as the test itself is completed
-
-All these changes are based on the `Revit2019` branch.  
-Nuget package is generated from `mark/Revit2019` branch.
-
 ## Applications
 
 There are two ways to run RTF:
