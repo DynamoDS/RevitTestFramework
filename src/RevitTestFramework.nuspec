@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
         <version>$version$</version>
-        <authors>Dynamo, UpCodes</authors>
-        <owners>Dynamo, UpCodes</owners>
-        <licenseUrl>https://github.com/UpCodes/RevitTestFramework#license</licenseUrl>
-        <projectUrl>https://github.com/UpCodes/RevitTestFramework</projectUrl>
+        <authors>Dynamo</authors>
+        <owners>Dynamo</owners>
+        <licenseUrl>https://github.com/DynamoDS/RevitTestFramework#license</licenseUrl>
+        <projectUrl>https://github.com/DynamoDS/RevitTestFramework</projectUrl>
         <id>RevitTestFramework</id>
         <title>RevitTestFramework</title>
         <iconUrl>http://dynamobim.org/favicon.png</iconUrl>
@@ -17,12 +17,6 @@
         <tags>revit, autodesk, revit test framework</tags>
     </metadata>
     <files>
-        <file src="..\bin\AnyCPU\Release\Microsoft.Practices.Prism.dll" target="tools" />
-        <file src="..\bin\AnyCPU\Release\Moq.dll" target="tools" />
-        <file src="..\bin\AnyCPU\Release\NDesk.Options.dll" target="tools" />
-        <file src="..\bin\AnyCPU\Release\nunit.core.dll" target="tools" />
-        <file src="..\bin\AnyCPU\Release\nunit.core.interfaces.dll" target="tools" />
-        <file src="..\bin\AnyCPU\Release\nunit.framework.dll" target="tools" />
         <file src="..\bin\AnyCPU\Release\RevitAddInUtility.dll" target="tools" />
         <file src="..\bin\AnyCPU\Release\RevitTestFrameworkConsole.exe" target="tools" />
         <file src="..\bin\AnyCPU\Release\RevitTestFrameworkGUI.exe" target="tools" />
