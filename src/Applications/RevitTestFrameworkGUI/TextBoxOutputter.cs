@@ -9,8 +9,8 @@ namespace RTF.Applications
 {
     public class TextBoxOutputter : TextWriter
     {
-        RichTextBox textBox = null;
-        StringBuilder pendingText = new StringBuilder();
+        private RichTextBox textBox = null;
+        private StringBuilder pendingText = new StringBuilder();
 
         public TextBoxOutputter(RichTextBox output)
         {
@@ -19,6 +19,10 @@ namespace RTF.Applications
 
         public override void Write(char value)
         {
+            const string errorSubstring = "error:";
+            const string warningSubstring = "warning:";
+            const string utSubstring = "UT:";
+
             base.Write(value);
             if (value != '\n')
             {
@@ -37,15 +41,15 @@ namespace RTF.Applications
 
                         tr = new TextRange(textBox.Document.ContentEnd, textBox.Document.ContentEnd);
                         tr.Text = line;
-                        if (line.ToLower().Contains("error:"))
+                        if (line.ToLower().Contains(errorSubstring))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
                         }
-                        else if (line.ToLower().Contains("warning:"))
+                        else if (line.ToLower().Contains(warningSubstring))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Orange);
                         }
-                        else if (line.Contains("UT:"))
+                        else if (line.Contains(utSubstring))
                         {
                             tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.DarkBlue);
                         }

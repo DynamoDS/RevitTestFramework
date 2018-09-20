@@ -1,8 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -108,25 +106,37 @@ namespace RTF.Applications
         }
 
         /// <summary>
-        /// Send the test name in a fixture (of a given name) to the server
+        /// Helper method to send the test name in a fixture (of a given name) to the server
+        /// (this is called when a tests starts)
         /// </summary>
-        /// <param name="testName"></param>
-        /// <param name="fixtureName"></param>
+        /// <param name="testName">name of test</param>
+        /// <param name="fixtureName">name of fixture (assembly)</param>
         public static void SendTestInformation(string testName, string fixtureName)
         {
             DataMessage msg = new DataMessage(testName, fixtureName);
             SendMessage(msg);
         }
 
-        internal static void SendTestResultInformation(string testName, string fixtureName, string result, string stackTrace)
+        /// <summary>
+        /// Helper method to send information about the test results to the server
+        /// e.g. did the test pass/fail/etc?
+        /// (this is called when a test completes)
+        /// </summary>
+        /// <param name="testName">name of test</param>
+        /// <param name="fixtureName">name of fixture (assembly)</param>
+        /// <param name="result">test result (<see cref="RevitTestExecutive.RunTest"/></param>
+        /// <param name="stackTrace">stack trace of failure, if any</param>
+        public static void SendTestResultInformation(string testName, string fixtureName, string result, string stackTrace)
         {
             TestResultMessage msg = new TestResultMessage(testName, fixtureName, result, stackTrace);
             SendMessage(msg);
         }
 
         /// <summary>
-        /// Sends a message with a line of console text that the text produces
+        /// Helper method to send an intercepted console out/error out line of text to the server
         /// </summary>
+        /// <param name="messageType">type of message (error or console out)</param>
+        /// <param name="text">line of text</param>
         public static void SendConsoleMessage(string text, ConsoleMessageType messageType = ConsoleMessageType.ConsoleOut)
         {
             ConsoleOutMessage msg = new ConsoleOutMessage(messageType, text);

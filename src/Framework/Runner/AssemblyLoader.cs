@@ -96,7 +96,6 @@ namespace RTF.Framework
 
         public static bool ReadTest(MethodInfo test, IFixtureData data, string workingDirectory)
         {
-            //set the default modelPath to the empty.rfa file that will live in the build directory
             List<string> modelPaths = new List<string>();
 
             var testAttribs = CustomAttributeData.GetCustomAttributes(test);
@@ -160,6 +159,7 @@ namespace RTF.Framework
             }
             else
             {
+                //set the default modelPath to the empty.rfa file that will live in the build directory
                 modelPaths.Add(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "empty.rfa"));
             }
 
