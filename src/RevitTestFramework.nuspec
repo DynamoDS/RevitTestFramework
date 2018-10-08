@@ -26,6 +26,7 @@
         <file src="..\bin\AnyCPU\Release\empty.rfa" target="tools" />
         <file src="..\bin\AnyCPU\Release\RevitTestFrameworkTypes.dll" target="lib\net47" />
         <file src="..\bin\AnyCPU\Release\RTFRevit.dll" target="lib\net47" />
+        <file src="..\licenses.txt" target="tools" />
 
         <!--
         RevitTestFrameworkConsole.pdb
