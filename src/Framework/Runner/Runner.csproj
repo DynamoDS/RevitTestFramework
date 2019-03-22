@@ -54,8 +54,8 @@
       <HintPath>..\..\..\lib\NUnit\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
-    <Reference Include="RevitAddInUtility, Version=17.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Revit-2017.1.1x64-Utilities.1.0.0\lib\net452\RevitAddInUtility.dll</HintPath>
+    <Reference Include="RevitAddInUtility">
+      <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -81,7 +81,9 @@
     <None Include="NUnitResultTypes.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RevitTestFramework\RevitTestFrameworkTypes.csproj">

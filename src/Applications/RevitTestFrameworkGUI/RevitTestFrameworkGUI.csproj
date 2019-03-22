@@ -52,8 +52,8 @@
     <Reference Include="Microsoft.Practices.Prism">
       <HintPath>..\..\..\lib\Microsoft.Practices.Prism.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAddInUtility, Version=17.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Revit-2017.1.1x64-Utilities.1.0.0\lib\net452\RevitAddInUtility.dll</HintPath>
+    <Reference Include="RevitAddInUtility">
+      <HintPath>$(REVITAPI)\RevitAddInUtility.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
@@ -104,7 +104,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
