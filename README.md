@@ -94,6 +94,10 @@ This repo maintains branches to track the two most recently released versions of
 When testing, you should run the version of RTF corresponding to the version of Revit you are running. This will ensure that tests you have created, based on one Revit API, will correspond to the version of the API running on Revit.  
 However, the current version of RTF works and can be used to test within Revit 2017, 2018, and 2019.
 
+## Build Issues
+
+If you want to build RTF on a machine that don't have a Revit installed, you can put the Revit API related dlls under folder lib\Revit $(RevitVersionNumber)\net452 which was defined in CS.props. The build can be success, but if you want to run RTF, you still need a machine with Revit installed.
+
 ## License
 
 Copyright 2014 Autodesk
