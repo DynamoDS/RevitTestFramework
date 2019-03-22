@@ -6,7 +6,10 @@
                 xmlns:applications="clr-namespace:RTF.Applications"
                 xmlns:runners="clr-namespace:RTF.Framework;assembly=Runner"
                 xmlns:System="clr-namespace:System;assembly=mscorlib"
-                mc:Ignorable="d" MinWidth="400" MinHeight="600" SizeToContent="Height" Width="800" Closing="View_Closing">
+                mc:Ignorable="d" MinWidth="400" MinHeight="600" Height="800" Width="800" Closing="View_Closing"
+                d:DataContext="{d:DesignInstance applications:RunnerViewModel}"
+                Title="Revit Test Runner"
+        >
     
     <Window.Resources>
         <applications:AssemblyPathConverter x:Key="AssemblyPathConverter"></applications:AssemblyPathConverter>
@@ -27,7 +30,7 @@
                 <TextBlock Text="{Binding StackTrace}" HorizontalAlignment="Left"></TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
-        
+
         <HierarchicalDataTemplate x:Key="TestTemplate" 
                                   DataType="{x:Type runners:TestData}"
                                   ItemsSource="{Binding ResultData}"
@@ -40,6 +43,13 @@
                     <TextBlock Text="{Binding Name}" 
                                HorizontalAlignment="Left" 
                                Background="{Binding TestStatus, Converter={StaticResource TestStatusToColorConverter}, Mode= OneWay}">
+                        <TextBlock.ToolTip>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Fixture.Name}"/>
+                                <TextBlock Text="."/>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
+                        </TextBlock.ToolTip>
                     </TextBlock>
                     <TextBlock Margin="5,0,0,0" Text="{Binding ShortModelPath}" HorizontalAlignment="Left" 
                                Foreground="{Binding ModelExists, Converter={StaticResource BoolExistsConverter}}">
@@ -48,26 +58,6 @@
                         </TextBlock.ToolTip>
                     </TextBlock>
                 </StackPanel>
-            </StackPanel>
-        </HierarchicalDataTemplate>
-        
-        <HierarchicalDataTemplate x:Key="FixtureTemplate" 
-                                  ItemsSource="{Binding Tests}" 
-                                  DataType="{x:Type runners:FixtureData}"
-                                  ItemTemplate="{StaticResource TestTemplate}">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding ShouldRun,Mode=TwoWay}" 
-                          Checked="UpdateRequired"
-                          Unchecked="UpdateRequired"></CheckBox>
-                <TextBlock Text="{Binding Name}" 
-                       VerticalAlignment="Center" 
-                       Tag="{Binding ElementName=TestDataTreeView, Path=DataContext}"
-                       Background="{Binding FixtureStatus, Converter={StaticResource FixtureStatusToColorConverter}, Mode=OneWay}">
-                    <TextBlock.ToolTip>
-                        <TextBlock Text="{Binding Summary}"></TextBlock>
-                    </TextBlock.ToolTip>
-                </TextBlock>
-                <TextBlock Margin="5,0,0,0" Text="{Binding FixtureSummary}" HorizontalAlignment="Left" Foreground="DarkGray"></TextBlock>
             </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -114,169 +104,175 @@
         </ObjectDataProvider>
         
     </Window.Resources>
-    
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height ="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <StackPanel Grid.Row="0">
-            
-            <Menu>
-                <MenuItem Header="File">
-                    <MenuItem Header="Open..." Command="{Binding OpenFileCommand}"/>
-                    <MenuItem Header="Save As..." Command="{Binding SaveCommand}"/>
-                    <MenuItem Header="Recent Files" 
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="Open..." Command="{Binding OpenFileCommand}"/>
+                <MenuItem Header="Save As..." Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Recent Files" 
                               ItemsSource="{Binding RecentFiles}"
                               Visibility="{Binding HasRecentFiles, Converter={StaticResource BoolToVisibilityCollapsedConverter}}">
-                        <MenuItem.ItemContainerStyle>
-                            <Style>
-                                <Setter Property="MenuItem.Command" Value="{Binding Path=DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType={x:Type StackPanel}}}"/>
-                                <Setter Property="MenuItem.CommandParameter" Value="{Binding Path=Header, RelativeSource={RelativeSource Self}}"/>
-                            </Style>
-                        </MenuItem.ItemContainerStyle>
-                    </MenuItem>
+                    <MenuItem.ItemContainerStyle>
+                        <Style>
+                            <Setter Property="MenuItem.Command" Value="{Binding Path=DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType={x:Type StackPanel}}}"/>
+                            <Setter Property="MenuItem.CommandParameter" Value="{Binding Path=Header, RelativeSource={RelativeSource Self}}"/>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
                 </MenuItem>
-            </Menu>
+            </MenuItem>
+        </Menu>
 
-            <!--INPUT FIELDS-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="40"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+        <Grid Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <!--TEST ASSEMBLY-->
-                <StackPanel Margin="5" Grid.Column="0" Grid.Row="0">
-                    <TextBlock Text="Test Assembly:">
+            <StackPanel Grid.Row="0">
+                <!--INPUT FIELDS-->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--TEST ASSEMBLY-->
+                    <TextBlock Text="Test Assembly:" Grid.Row="0" Grid.Column="0">
                         <TextBlock.ToolTip>
                             <TextBlock Text="The path of the assembly (.dll, .exe) which contains test fixtures."></TextBlock>
                         </TextBlock.ToolTip>
                 </TextBlock>
                     <TextBox Name="AssemblyPathTextBox" 
-                             Text="{Binding Path=TestAssembly, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" 
-                             IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                             TextChanged="UpdateRequired" 
-                             PreviewDragOver="OnPreviewDragOver"
-                             AllowDrop="True" 
-                             Drop="Assembly_OnDrop"/>
-                </StackPanel>
+                         Text="{Binding Path=TestAssembly, Converter={StaticResource AssemblyPathConverter},Mode=TwoWay}" 
+                         IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                         TextChanged="UpdateRequired" 
+                         PreviewDragOver="OnPreviewDragOver"
+                         AllowDrop="True" 
+                         Drop="Assembly_OnDrop"
+                         Grid.Row="0" Grid.Column="1"/>
 
-                <Button Grid.Column="1" Grid.Row="0" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
+                    <Button Grid.Column="2" Grid.Row="0" Height="18" VerticalAlignment="Bottom" Content="..." 
                     Command="{Binding SetAssemblyPathCommand}"
                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
 
-                <!--RESULTS PATH-->
-                <StackPanel Grid.Column="0" Grid.Row="1" Margin="5">
-                    <TextBlock Text="Results File Path:">
+                    <!--RESULTS PATH-->
+                    <TextBlock Text="Results File Path:" Grid.Column="0" Grid.Row="2">
                         <TextBlock.ToolTip>
                             <TextBlock Text="The path of the results file."></TextBlock>
                         </TextBlock.ToolTip>
                 </TextBlock>
                     <TextBox  Text="{Binding Path=Results, Converter={StaticResource ResultsPathConverter}, Mode=TwoWay}"
                           IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                              TextChanged="UpdateRequired"
-                              PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Results_OnDrop"/>
-                </StackPanel>
+                          TextChanged="UpdateRequired"
+                          PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Results_OnDrop"
+                          Grid.Column="1" Grid.Row="2"/>
 
-                <Button Grid.Row="1" Grid.Column="1" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
+                    <Button Grid.Row="2" Grid.Column="2" Height="18" VerticalAlignment="Bottom" Content="..." 
                     Command="{Binding SetResultsPathCommand}"
                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
 
-                <!--WORKING DIRECTORY-->
-                <StackPanel Grid.Column="0" Grid.Row="2" Margin="5">
-                    <TextBlock Text="Working Directory:">
+                    <!--WORKING DIRECTORY-->
+                    <TextBlock Text="Working Directory:" Grid.Column="0" Grid.Row="4">
                         <TextBlock.ToolTip>
                             <TextBlock Text="The directory where the RTF addin file is located and relative to which all test models will be sourced."></TextBlock>
                         </TextBlock.ToolTip>
                 </TextBlock>
                     <TextBox Text="{Binding Path=WorkingDirectory, Converter={StaticResource WorkingPathConverter}, Mode=TwoWay}"
-                            IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                            TextChanged="UpdateRequired"
-                            PreviewDragOver="OnPreviewDragOver"
-                            AllowDrop="True"
-                            Drop="WorkingDir_OnDrop"/>
-                </StackPanel>
+                         IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                         TextChanged="UpdateRequired"
+                         PreviewDragOver="OnPreviewDragOver"
+                         AllowDrop="True"
+                         Drop="WorkingDir_OnDrop"
+                         Grid.Column="1" Grid.Row="4"/>
 
-                <Button Grid.Column="1" Grid.Row="2" Margin="5" Height="18" VerticalAlignment="Bottom" Content="..." 
+                    <Button Grid.Column="2" Grid.Row="4" Height="18" VerticalAlignment="Bottom" Content="..." 
                     Command="{Binding SetWorkingPathCommand}"
                     IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"></Button>
 
-                <!--ADDITIONAL DIRECTORY PATHS-->
-                <StackPanel Grid.Column="0" Grid.Row="3" Margin="5">
-                    <TextBlock Text="Additional Resolution Directories:">
+                    <!--ADDITIONAL DIRECTORY PATHS-->
+                    <TextBlock Text="Additional Resolution Directories:" Grid.Column="0" Grid.Row="6" TextWrapping="Wrap">
                         <TextBlock.ToolTip>
                             <TextBlock Text="Additional directories which will be used during assembly resolution. Separate directory names with a ;"></TextBlock>
                         </TextBlock.ToolTip>
                 </TextBlock>
                     <TextBox Text="{Binding Path=AdditionalResolutionDirectoriesText, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                            IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
-                            TextChanged="UpdateRequired"
-                            PreviewDragOver="OnPreviewDragOver" 
-                             Height="50" 
-                             VerticalScrollBarVisibility="Auto" 
-                             TextWrapping="Wrap" KeyDown="UIElement_OnKeyDown" LostFocus="UIElement_OnLostFocus"/>
-                </StackPanel>
+                         IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"
+                         TextChanged="UpdateRequired"
+                         PreviewDragOver="OnPreviewDragOver"
+                         Height="35"
+                         VerticalScrollBarVisibility="Auto" 
+                         TextWrapping="Wrap" KeyDown="UIElement_OnKeyDown" LostFocus="UIElement_OnLostFocus"
+                         Grid.Column="1" Grid.Row="6"/>
+                </Grid>
 
-            </Grid>
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox ItemsSource="{Binding Path=Products}" Margin="0,5,0,5" 
+                          SelectedIndex="{Binding SelectedProductIndex, Mode=OneWay}"
+                          IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}" 
+                          SelectionChanged="ProductSelectionChanged"
+                          Width="85">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}"></TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                        <ComboBox.ToolTip>
+                            <TextBlock Text="Select an installed version of Revit on which you would like to run the tests."></TextBlock>
+                        </ComboBox.ToolTip>
+                    </ComboBox>
 
-            <ComboBox ItemsSource="{Binding Path=Products}" Margin="5" 
-                      SelectedIndex="{Binding SelectedProductIndex, Mode=OneWay}"
-                      IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}" 
-                      SelectionChanged="ProductSelectionChanged">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Name}"></TextBlock>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-                <ComboBox.ToolTip>
-                    <TextBlock Text="Select an installed version of Revit on which you would like to run the tests."></TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
-        
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <CheckBox Content="Debug" IsChecked="{Binding Path=IsDebug, Mode=TwoWay}" VerticalAlignment="Center">
-                    <CheckBox.ToolTip>
-                        <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
-                    </CheckBox.ToolTip>
-                </CheckBox>
-                <TextBlock Margin="20,0,0,0" Text="Timeout" VerticalAlignment="Center">
-                   <TextBlock.ToolTip>
-                       <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
-                   </TextBlock.ToolTip>
+                    <CheckBox Content="Debug" IsChecked="{Binding Path=IsDebug, Mode=TwoWay}" VerticalAlignment="Center" Margin="16,0">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="When running in Debug mode, the test process will ask whether you would like to connect the debugger."></TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <TextBlock Text="Timeout" VerticalAlignment="Center">
+                        <TextBlock.ToolTip>
+                            <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
+                        </TextBlock.ToolTip>
                 </TextBlock>
-                <TextBox Width ="100" Margin="5,0,0,0" Text="{Binding Path=Timeout, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}"></TextBox>
-                <CheckBox Content="Concatenate Results" IsChecked="{Binding Path=Concat, Mode=TwoWay}" Margin="20,0,0,0" VerticalAlignment="Center">
-                    <CheckBox.ToolTip>
-                        <TextBlock Text="Add the results of the current test to an existing results file if one exists at the path specified."></TextBlock>
-                    </CheckBox.ToolTip>
-                </CheckBox>
-                <CheckBox Content="Continuous" IsChecked="{Binding Path=Continuous, Mode=TwoWay}" VerticalAlignment="Center" Margin="20,0,0,0">
-                    <CheckBox.ToolTip>
-                        <TextBlock Text="When selected, all tests will be run in the same Revit session."></TextBlock>
-                    </CheckBox.ToolTip>
-                </CheckBox>
-                <TextBlock Text="Sort By:" Margin="20,0,0,0" VerticalAlignment="Center"></TextBlock>
-                <ComboBox Margin="5,0,0,0" 
-                          Width="100"
+                    <TextBox Width="60" VerticalAlignment="Center" Margin="5,0,0,0" Text="{Binding Path=Timeout, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}"></TextBox>
+                    <CheckBox Content="Concatenate Results" IsChecked="{Binding Path=Concat, Mode=TwoWay}" Margin="16,0,0,0" VerticalAlignment="Center">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="Add the results of the current test to an existing results file if one exists at the path specified."></TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <CheckBox Content="Continuous" IsChecked="{Binding Path=Continuous, Mode=TwoWay}" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="When selected, all tests will be run in the same Revit session."></TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <CheckBox Content="Group by model" IsChecked="{Binding Path=GroupByModel, Mode=TwoWay}" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="When selected, all tests with the same model will run without reopening the model (requires Continuous)."></TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <TextBlock Text="Sort By:" Margin="16,0,5,0" VerticalAlignment="Center"></TextBlock>
+                    <ComboBox Width="80"
                           VerticalAlignment="Center" 
                           ItemsSource="{Binding Source={StaticResource dataFromEnum}}" 
                           SelectedItem="{Binding Path=GroupingType}" 
                           SelectionChanged="UpdateRequired"/>
+                </StackPanel>
+
             </StackPanel>
 
-        </StackPanel>
-        
-        <TreeView Grid.Row="1" Margin="5" MinHeight="200"
+            <TreeView Grid.Row="2" MinHeight="200"
                       ItemsSource="{Binding Path=Assemblies}"
                       ItemTemplate="{StaticResource AssemblyTemplate}"
                       VirtualizingStackPanel.IsVirtualizing="True"
@@ -287,39 +283,72 @@
                         PreviewDragOver="OnPreviewDragOver" AllowDrop="True" Drop="Assembly_OnDrop">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="{x:Type TreeViewItem}">
-                        <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded}">
+                        <Setter Property="IsExpanded" Value="{Binding IsNodeExpanded, Mode=TwoWay}">
                         </Setter>
                     </Style>
                 </TreeView.ItemContainerStyle>
             </TreeView>
 
-        <StackPanel Grid.Row="3">
-            
-            <!--RUN BUTTONS-->
-            <Grid Margin="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
-                    <ColumnDefinition Width="*"></ColumnDefinition>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Grid.Row="0" Margin="5"
-                    Content="Run Selected Tests" 
-                    Command="{Binding RunCommand}" 
-                    CommandParameter="{Binding SelectedItem}"
-                    IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}"/>
-                <Button Grid.Column="1" Grid.Row="0" Margin="5" Height="40"
-                    Content="Cancel" 
-                    Command="{Binding CancelCommand}">
-                </Button>
-            </Grid>
+            <RichTextBox Grid.Row="4" x:Name="ConsoleTextBlock" Height="150" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas">
+                <RichTextBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="ApplicationCommands.Copy"/>
+                        <MenuItem Command="ApplicationCommands.SelectAll"/>
+                        <MenuItem Header="Clear" Click="ClearOutput_Click"/>
+                    </ContextMenu>
+                </RichTextBox.ContextMenu>
+            </RichTextBox>
+            <StackPanel Grid.Row="5">
 
-            <Grid>
-                <TextBlock DockPanel.Dock="Bottom" Text="{Binding SelectedTestSummary}" 
-                       FontSize="30" 
-                       Margin="5"/>
-            </Grid>
-            
-        </StackPanel>
-        <TextBox Grid.Row="2" x:Name="ConsoleTextBlock" Height="100" Margin="5"/>
-    </Grid>
+                <!--RUN BUTTONS-->
+                <Grid Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="16"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Grid.Row="0"
+                            Command="{Binding RunCommand}" 
+                            CommandParameter="{Binding SelectedItem}"
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource BoolInverseConverter}}">
 
+                        <TextBlock>
+                            <Run Text="Run"/>
+                            <Run Text="{Binding SelectedTestSummary, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Button>
+                    <Button Grid.Column="2" Grid.Row="0"
+                        Content="Cancel" 
+                        Command="{Binding CancelCommand}">
+                    </Button>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Results from previous run: " Grid.Column="0"/>
+                    <StackPanel Orientation="Horizontal" Grid.Column="1">
+                        <TextBlock Text="Passed: " FontWeight="Bold" Foreground="DarkGreen"/>
+                        <TextBlock Text="{Binding PassedTestCount}" FontWeight="DemiBold" Foreground="DarkGreen"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="3">
+                        <TextBlock Text="Skipped: " FontWeight="Bold" Foreground="DarkOrange"/>
+                        <TextBlock Text="{Binding SkippedTestCount}" FontWeight="DemiBold" Foreground="DarkOrange"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Grid.Column="5">
+                        <TextBlock Text="Failed: " FontWeight="Bold" Foreground="DarkRed"/>
+                        <TextBlock Text="{Binding FailedTestCount}" FontWeight="DemiBold" Foreground="DarkRed"/>
+                    </StackPanel>
+                </Grid>
+
+            </StackPanel>
+        </Grid>
+    </DockPanel>
 </Window>

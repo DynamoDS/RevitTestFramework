@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -7,11 +6,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Xml.Serialization;
-using Microsoft.Practices.Prism.ViewModel;
 
 namespace RTF.Framework
 {
@@ -19,13 +14,34 @@ namespace RTF.Framework
     public class AssemblyData : IAssemblyData
     {
         private bool? _shouldRun = true;
-        private ObservableCollection<ITestGroup> _sortingGroup;
+        private bool _isNodeExpanded;
+
         public virtual string Path { get; set; }
         public virtual string Name { get; set; }
         public ObservableCollection<ITestGroup> Fixtures { get; set; }
         public ObservableCollection<ITestGroup> Categories { get; set; }
-        public bool IsNodeExpanded { get; set; }
         public GroupingType GroupingType { get; set; }
+
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Version of Revit referenced by the assembly
+        /// </summary>
+        public string ReferencedRevitVersion { get; set; }
 
         public ObservableCollection<ITestGroup> SortingGroup
         {
@@ -181,8 +197,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -198,11 +213,27 @@ namespace RTF.Framework
     public class FixtureData : IFixtureData
     {
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public FixtureStatus FixtureStatus { get; set; }
         public IAssemblyData Assembly { get; set; }
-        public bool IsNodeExpanded { get; set; }
+
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public string Summary
         {
@@ -326,8 +357,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -349,8 +379,8 @@ namespace RTF.Framework
     public class TestData : ITestData
     {
         private TestStatus _testStatus;
-        private IList<IResultData> _resultData;
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
 
         public virtual string Name { get; set; }
 
@@ -361,12 +391,41 @@ namespace RTF.Framework
         public virtual string ModelPath { get; set; }
 
         [XmlIgnore]
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [XmlIgnore]
         public bool ModelExists
         {
-            get { return ModelPath != null && File.Exists(ModelPath); }
+            get
+            {
+                bool modelExists = false;
+
+                try
+                {
+                    modelExists = (ModelPath != null) && File.Exists(ModelPath);
+                }
+                catch
+                {
+                    // Nothing to do, just say the model isn't there (probably a wildcard in the file name
+                    // and no models were found in the give path)
+                }
+
+                return modelExists;
+            }
         }
 
         [XmlIgnore]
@@ -390,9 +449,7 @@ namespace RTF.Framework
                     return string.Empty;
                 }
 
-                var info = new FileInfo(ModelPath);
-                //return string.Format("[{0}]", info.Name);
-                return string.Format("[{0}]", info.FullName);
+                return $"[{ModelPath}]";
             }
         }
 
@@ -451,8 +508,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void SetChildrenShouldRunWithoutRaise(bool? shouldRun)
@@ -473,11 +529,26 @@ namespace RTF.Framework
     public class CategoryData : ICategoryData
     {
         private bool? _shouldRun = true;
+        private bool _isNodeExpanded;
         public virtual string Name { get; set; }
         public ObservableCollection<ITestData> Tests { get; set; }
         public IAssemblyData Assembly { get; set; }
 
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public bool? ShouldRun
         {
@@ -486,7 +557,7 @@ namespace RTF.Framework
             {
                 _shouldRun = value;
                 SetChildrenShouldRunWithoutRaise(_shouldRun);
-                OnPropertyChanged("ShouldRun");
+                OnPropertyChanged();
             }
         }
 
@@ -499,7 +570,7 @@ namespace RTF.Framework
                 t.SetChildrenShouldRunWithoutRaise(shouldRun);
             }
 
-            OnPropertyChanged("ShouldRun");
+            OnPropertyChanged(nameof(ShouldRun));
         }
 
         public string Summary
@@ -581,8 +652,7 @@ namespace RTF.Framework
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
@@ -591,8 +661,23 @@ namespace RTF.Framework
     {
         private string _message = "";
         private string _stackTrace = "";
+        private bool _isNodeExpanded;
 
-        public bool IsNodeExpanded { get; set; }
+        public bool IsNodeExpanded
+        {
+            get
+            {
+                return _isNodeExpanded;
+            }
+            set
+            {
+                if (_isNodeExpanded != value)
+                {
+                    _isNodeExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public string Message
         {
@@ -600,7 +685,7 @@ namespace RTF.Framework
             set
             {
                 _message = value;
-                OnPropertyChanged("Message");
+                OnPropertyChanged();
             }
         }
 
@@ -610,15 +695,14 @@ namespace RTF.Framework
             set
             {
                 _stackTrace = value;
-                OnPropertyChanged("StackTrace");
+                OnPropertyChanged();
             }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

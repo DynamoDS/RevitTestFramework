@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Autodesk.RevitAddIns;
 using Moq;
 using NUnit.Framework;
 using RTF.Framework;
@@ -76,6 +77,18 @@ namespace RTF.Tests
             {
                 Directory.CreateDirectory(workingDir);
             }
+
+            // Override Revit look up since on CI machine we don't have Revit installed
+            RunnerSetupData.RevitLookupOverride = () =>
+            {
+                RevitProduct dummyProduct = (RevitProduct)Activator.CreateInstance(typeof(RevitProduct), true);
+
+                typeof(RevitProduct)
+                    .GetMethod("SetInstallLocation", BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.Instance)
+                    .Invoke(dummyProduct, new object[] { @"C:\dummy\path" });
+
+                return new List<RevitProduct>() { dummyProduct };
+            };
         }
 
         [TearDown]

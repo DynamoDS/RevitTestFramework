@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -14,7 +15,6 @@ using Autodesk.RevitAddIns;
 using Microsoft.Practices.Prism;
 using Microsoft.Practices.Prism.Commands;
 using Microsoft.Practices.Prism.ViewModel;
-using Microsoft.Win32.SafeHandles;
 using RTF.Applications.Properties;
 using RTF.Framework;
 using MessageBox = System.Windows.MessageBox;
@@ -82,9 +82,14 @@ namespace RTF.Applications
         private object isRunningLock = new object();
         private IContext context;
         private FileSystemWatcher watcher;
-        private string selectedTestSummary;
         private ObservableCollection<string> recentFiles = new ObservableCollection<string>();
-        private int selectedProductIndex;
+
+        private bool workingDirSetByUser = false;
+        private bool resultsFileSetByUser = false;
+
+        private int passedTestCount;
+        private int skippedTestCount;
+        private int failedTestCount;
 
         #endregion
 
@@ -96,8 +101,8 @@ namespace RTF.Applications
             set
             {
                 selectedItem = value;
-                RaisePropertyChanged("SelectedItem");
-                RaisePropertyChanged("RunText");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(RunText));
                 RunCommand.RaiseCanExecuteChanged();
             }
         }
@@ -138,7 +143,7 @@ namespace RTF.Applications
             }
             set
             {
-                RaisePropertyChanged("RunText");
+                RaisePropertyChanged();
             }
         }
         
@@ -156,7 +161,7 @@ namespace RTF.Applications
                 lock (isRunningLock)
                 {
                     isRunning = value;
-                    RaisePropertyChanged("IsRunning");
+                    RaisePropertyChanged();
                 }
             }
         }
@@ -170,7 +175,64 @@ namespace RTF.Applications
                 var allTests = runner.GetAllTests();
                 var selectedTests = runner.GetRunnableTests();
 
-                return string.Format("{0} tests selected of {1}", selectedTests.Count(), allTests.Count());
+                return string.Format($"{selectedTests.Count()} (out of {allTests.Count()})");
+            }
+        }
+
+        /// <summary>
+        /// Number of tests that passed from current/last run
+        /// </summary>
+        public int PassedTestCount
+        {
+            get
+            {
+                return passedTestCount;
+            }
+            set
+            {
+                if (passedTestCount != value)
+                {
+                    passedTestCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Number of tests that were skipped from current/last run
+        /// </summary>
+        public int SkippedTestCount
+        {
+            get
+            {
+                return skippedTestCount;
+            }
+            set
+            {
+                if (skippedTestCount != value)
+                {
+                    skippedTestCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Number of tests that failed as of current/last run
+        /// </summary>
+        public int FailedTestCount
+        {
+            get
+            {
+                return failedTestCount;
+            }
+            set
+            {
+                if (failedTestCount != value)
+                {
+                    failedTestCount = value;
+                    RaisePropertyChanged();
+                }
             }
         }
 
@@ -180,8 +242,8 @@ namespace RTF.Applications
             set
             {
                 recentFiles = value;
-                RaisePropertyChanged("RecentFiles");
-                RaisePropertyChanged("HasRecentFiles");
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(HasRecentFiles));
             }
         }
 
@@ -206,7 +268,7 @@ namespace RTF.Applications
             set
             {
                 runner.IsDebug = value;
-                RaisePropertyChanged("IsDebug");
+                RaisePropertyChanged();
             }
         }
 
@@ -216,7 +278,7 @@ namespace RTF.Applications
             set
             {
                 runner.Concat = value;
-                RaisePropertyChanged("Concat");
+                RaisePropertyChanged();
             }
         }
 
@@ -226,7 +288,7 @@ namespace RTF.Applications
             set
             {
                 runner.Timeout = value;
-                RaisePropertyChanged("Timeout");
+                RaisePropertyChanged();
             }
         }
 
@@ -237,18 +299,40 @@ namespace RTF.Applications
             {
                 runner.WorkingDirectory = value;
                 runner.InitializeTests();
-                RaisePropertyChanged("WorkingDirectory");
-                RaisePropertyChanged("Assemblies");
+                UpdateTestCounts();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
             }
         }
 
+        /// <summary>
+        /// true to run tests without restarting Revit in between each tests
+        /// </summary>
         public bool Continuous
         {
             get { return runner.Continuous; }
             set
             {
                 runner.Continuous = value;
-                RaisePropertyChanged("Continuous");
+                RaisePropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// true to group tests by model path
+        /// When grouped, tests with the same model path will run without reopening the .RVT file
+        /// Requires <see cref="Continuous"/>
+        /// </summary>
+        public bool GroupByModel
+        {
+            get { return runner.GroupByModel; }
+            set
+            {
+                if (runner.GroupByModel != value)
+                {
+                    runner.GroupByModel = value;
+                    RaisePropertyChanged();
+                }
             }
         }
 
@@ -259,8 +343,9 @@ namespace RTF.Applications
             {
                 runner.GroupingType = value;
                 runner.InitializeTests();
-                RaisePropertyChanged("GroupingType");
-                RaisePropertyChanged("Assemblies");
+                UpdateTestCounts();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
             }
         }
 
@@ -270,9 +355,23 @@ namespace RTF.Applications
             set
             {
                 runner.TestAssembly = value;
+
+                // Infer working directory from assembly, if the user hasn't set it yet
+                if (!workingDirSetByUser)
+                {
+                    SetWorkingDirectory(runner.TestAssembly);
+                }
+
+                if (!resultsFileSetByUser)
+                {
+                    SetResultsPath(Path.Combine(WorkingDirectory, "results.xml"));
+                }
+
                 runner.InitializeTests();
-                RaisePropertyChanged("TestAssembly");
-                RaisePropertyChanged("Assemblies");
+                UpdateTestCounts();
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(Assemblies));
+                RaisePropertyChanged(nameof(SelectedProductIndex));
             }
         }
 
@@ -282,7 +381,7 @@ namespace RTF.Applications
             set
             {
                 runner.Results = value;
-                RaisePropertyChanged("Results");
+                RaisePropertyChanged();
             }
         }
 
@@ -302,7 +401,7 @@ namespace RTF.Applications
                 {
                     runner.AdditionalResolutionDirectories.Add(split);
                 }
-                RaisePropertyChanged("AdditionalResolutionDirectoriesText");
+                RaisePropertyChanged();
             }
         } 
         #endregion
@@ -333,6 +432,10 @@ namespace RTF.Applications
             InitializeRunner();
 
             InitializeCommands();
+
+            // Make some convenient defaults
+            Continuous = true;
+            GroupByModel = true;
         }
 
         private void InitializeRunner()
@@ -389,6 +492,7 @@ namespace RTF.Applications
             runner.TestFailed += runner_TestFailed;
             runner.TestTimedOut += runner_TestTimedOut;
             runner.Initialized += runner_Initialized;
+            runner.TestRunsComplete += runner_TestRunsComplete;
         }
 
         private void RemoveEventHandlers()
@@ -399,6 +503,7 @@ namespace RTF.Applications
             runner.TestFailed -= runner_TestFailed;
             runner.TestTimedOut -= runner_TestTimedOut;
             runner.Initialized -= runner_Initialized;
+            runner.TestRunsComplete -= runner_TestRunsComplete;
         }
 
         private void InitializeCommands()
@@ -435,20 +540,114 @@ namespace RTF.Applications
 
         private void runner_TestTimedOut(ITestData data)
         {
-            context.BeginInvoke(() => Runner.Runner_TestTimedOut(data));
+            context.BeginInvoke(() =>
+            {
+                Runner.Runner_TestTimedOut(data);
+                UpdateTestCounts();
+            });
         }
 
         private void runner_TestFailed(ITestData data, string message, string stackTrace)
         {
-            context.BeginInvoke(() => Runner.Runner_TestFailed(data, message, stackTrace));
+            context.BeginInvoke(() =>
+            {
+                Runner.Runner_TestFailed(data, message, stackTrace);
+                UpdateTestCounts();
+            });
         }
 
         private void runner_TestComplete(IEnumerable<ITestData> data, string resultsPath)
         {
-            context.BeginInvoke(() => Runner.GetTestResultStatus(data, resultsPath));
+            context.BeginInvoke(() => 
+            {
+                Runner.GetTestResultStatus(data, resultsPath);
+                UpdateTestCounts();
+            });
         }
 
-        void Products_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void runner_TestRunsComplete(object sender, EventArgs e)
+        {
+            context.BeginInvoke(() =>
+            {
+                UpdateTestCounts();
+
+                bool isError = (FailedTestCount > 0);
+                bool isWarning = (SkippedTestCount > 0);
+
+                if (isError)
+                {
+                    Console.WriteLine($"ERROR: Test run completed with errors: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
+                else if (isWarning)
+                {
+                    Console.WriteLine($"WARNING: Test run completed with warnings: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
+                else
+                {
+                    Console.WriteLine($"Test run completed successfully: {PassedTestCount} passed, {SkippedTestCount} skipped, {FailedTestCount} failed");
+                }
+            });
+        }
+
+        private void UpdateTestCounts()
+        {
+            var runnableTests = runner.GetRunnableTests();
+
+            var successValues = new List<TestStatus>
+            {
+                TestStatus.Success
+            };
+
+            var skippedValues = new List<TestStatus>
+            {
+                TestStatus.Ignored,
+                TestStatus.Skipped,
+                TestStatus.Cancelled
+            };
+
+            var failedValues = new List<TestStatus>
+            {
+                TestStatus.Failure,
+                TestStatus.Error,
+                TestStatus.Inconclusive,
+                TestStatus.TimedOut,
+                TestStatus.NotRunnable
+            };
+
+            PassedTestCount = runnableTests.Count(x => successValues.Contains(x.TestStatus));
+            SkippedTestCount = runnableTests.Count(x => skippedValues.Contains(x.TestStatus));
+            FailedTestCount = runnableTests.Count(x => failedValues.Contains(x.TestStatus));
+
+            // Expand all the failed tests:
+            foreach (var assembly in Assemblies)
+            {
+                foreach (var category in (GroupingType == GroupingType.Fixture) ? assembly.Fixtures : assembly.Categories)
+                {
+                    foreach (var test in category.Tests)
+                    {
+                        bool testFailed = (test.TestStatus != TestStatus.None) && (!successValues.Contains(test.TestStatus));
+                        bool modelMissing = !((TestData)test).ModelExists;
+
+                        if ((test.ShouldRun ?? false) && (testFailed || modelMissing))
+                        {
+                            ((TestData)test).IsNodeExpanded = true;
+
+                            if (category is FixtureData fd)
+                            {
+                                fd.IsNodeExpanded = true;
+                            }
+                            else if (category is CategoryData cd)
+                            {
+                                cd.IsNodeExpanded = true;
+                            }
+                            ((AssemblyData)assembly).IsNodeExpanded = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        void Products_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // When the products collection is changed, we want to set
             // the selected product index to the first in the list
@@ -461,12 +660,12 @@ namespace RTF.Applications
             //    SelectedProductIndex = -1;
             //}
 
-            RaisePropertyChanged("Products");
+            RaisePropertyChanged(nameof(Products));
         }
 
         void Assemblies_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            RaisePropertyChanged("Assemblies");
+            RaisePropertyChanged(nameof(Assemblies));
         }
 
         #endregion
@@ -491,8 +690,7 @@ namespace RTF.Applications
 
         private bool CanRun(object parameter)
         {
-            //return runner.GetRunnableTests().Any();
-            return true;
+            return !IsRunning && runner.GetRunnableTests().Any();
         }
 
         private void Run(object parameter)
@@ -508,6 +706,10 @@ namespace RTF.Applications
                 File.Delete(runner.Results);
             }
 
+            PassedTestCount = 0;
+            FailedTestCount = 0;
+            SkippedTestCount = 0;
+
             var worker = new BackgroundWorker();
 
             worker.DoWork += TestThread;
@@ -519,8 +721,14 @@ namespace RTF.Applications
             IsRunning = true;
 
             runner.StartServer();
-            runner.SetupTests();
-            runner.RunAllTests();
+            if (runner.SetupTests())
+            {
+                runner.RunAllTests();
+            }
+            else
+            {
+                Console.WriteLine("ERROR: No tests were run due to configuration problems");
+            }
             runner.EndServer();
 
             IsRunning = false;
@@ -540,6 +748,7 @@ namespace RTF.Applications
                 if (dirs.ShowDialog() == DialogResult.OK)
                 {
                     WorkingDirectory = dirs.SelectedPath;
+                    workingDirSetByUser = true;
                 }
             }
             else
@@ -572,27 +781,31 @@ namespace RTF.Applications
             {
                 var files = new SaveFileDialog()
                 {
-                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                     Filter = "xml files (*.xml) | *.xml",
                     RestoreDirectory = true,
                     DefaultExt = ".xml"
                 };
+
+                if (Directory.Exists(Path.GetDirectoryName(TestAssembly)))
+                {
+                    files.InitialDirectory = TestAssembly;
+                }
+                else
+                {
+                    files.InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                }
 
                 var filesResult = files.ShowDialog();
 
                 if (filesResult != null && filesResult == true)
                 {
                     Results = files.FileName;
+                    resultsFileSetByUser = true;
                     RunCommand.RaiseCanExecuteChanged();
                 }
             }
             else
             {
-                if (!File.Exists(path))
-                {
-                    return;
-                }
-
                 var fi = new FileInfo(path);
                 if (fi.Extension != ".xml")
                 {
@@ -614,7 +827,6 @@ namespace RTF.Applications
             {
                 var files = new OpenFileDialog
                 {
-                    InitialDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                     Filter = "assembly files (*.dll)|*.dll| executable files (*.exe)|*.exe",
                     RestoreDirectory = true,
                     DefaultExt = ".dll"
@@ -655,7 +867,8 @@ namespace RTF.Applications
 
         private void Update()
         {
-            RaisePropertyChanged("SelectedTestSummary");
+            RaisePropertyChanged(nameof(SelectedTestSummary));
+            RunCommand.RaiseCanExecuteChanged();
         }
 
         private bool CanUpdate()
@@ -773,7 +986,7 @@ namespace RTF.Applications
 
             if (runner == null)
             {
-                Console.WriteLine("Test session could not be opened.");
+                Console.WriteLine("ERROR: Test session could not be opened.");
                 runner = new Runner();
                 return;
             }
@@ -783,7 +996,7 @@ namespace RTF.Applications
             InitializeEventHandlers();
 
             RaisePropertyChanged("");
-            RaisePropertyChanged("SelectedProductIndex");
+            RaisePropertyChanged(nameof(SelectedProductIndex));
 
             SaveRecentFile(fileName);
         }
@@ -808,5 +1021,10 @@ namespace RTF.Applications
         }
 
         #endregion
+
+        protected override void RaisePropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            base.RaisePropertyChanged(propertyName);
+        }
     }
 }

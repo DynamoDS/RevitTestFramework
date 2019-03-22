@@ -24,16 +24,15 @@ namespace RTF.Applications
             DataContext = vm;
 
             Closing += View_Closing;
-            Loaded += MainWindow_Loaded;
-        }
-
-        void MainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            // When running with a UI, we redirect the console output
-            // to a text box in the application's interface.
 
             var outputter = new TextBoxOutputter(ConsoleTextBlock);
             Console.SetOut(outputter);
+
+            var args = Environment.GetCommandLineArgs();
+            if (args.Length == 2)
+            {
+                vm.TestAssembly = args[1];
+            }
         }
 
         private void View_Closing(object sender, CancelEventArgs e)
@@ -118,6 +117,11 @@ namespace RTF.Applications
             {
                 be.UpdateSource();
             }
+        }
+
+        private void ClearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleTextBlock.Document.Blocks.Clear();
         }
     }
 }

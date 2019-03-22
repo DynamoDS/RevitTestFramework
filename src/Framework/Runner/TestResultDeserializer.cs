@@ -45,7 +45,7 @@ namespace RTF.Framework
             catch (Exception e)
             {
                 return String.Format("Could not parse the result file at {0}.  There is something wrong with the " +
-                                     "output file emitted by the RevitTestExecutive.", resultsPath);
+                                     "output file emitted by the RevitTestExecutive: " + e.ToString(), resultsPath);
             }
         }
 
