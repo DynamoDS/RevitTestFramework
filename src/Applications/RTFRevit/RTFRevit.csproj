@@ -40,9 +40,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AdWindows, Version=2015.11.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\AdWindows.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="AdWindows">
+      <HintPath>$(REVITAPI)\AdWindows.dll</HintPath>
     </Reference>
     <Reference Include="Costura, Version=3.1.2.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Costura.Fody.3.1.2\lib\net46\Costura.dll</HintPath>
@@ -54,25 +53,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\lib\NUnit\nunit.core.interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPI, Version=17.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\RevitAPI.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAPI">
+      <HintPath>$(REVITAPI)\RevitAPI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIIFC, Version=17.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\RevitAPIIFC.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>$(REVITAPI)\RevitAPIIFC.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIMacros, Version=17.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\RevitAPIMacros.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAPIMacros">
+      <HintPath>$(REVITAPI)\RevitAPIMacros.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIUI, Version=17.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\RevitAPIUI.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(REVITAPI)\RevitAPIUI.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPIUIMacros, Version=17.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Revit-2017.1.1-x64.Base.2.0.0\lib\net452\RevitAPIUIMacros.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="RevitAPIUIMacros">
+      <HintPath>$(REVITAPI)\RevitAPIUIMacros.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -100,7 +94,9 @@
     <None Include="NUnitResultTypes.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
