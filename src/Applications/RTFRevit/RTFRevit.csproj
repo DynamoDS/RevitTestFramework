@@ -42,6 +42,7 @@
   <ItemGroup>
     <Reference Include="AdWindows">
       <HintPath>$(REVITAPI)\AdWindows.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Costura, Version=3.1.2.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Costura.Fody.3.1.2\lib\net46\Costura.dll</HintPath>
@@ -55,18 +56,23 @@
     </Reference>
     <Reference Include="RevitAPI">
       <HintPath>$(REVITAPI)\RevitAPI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIIFC">
       <HintPath>$(REVITAPI)\RevitAPIIFC.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIMacros">
       <HintPath>$(REVITAPI)\RevitAPIMacros.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
       <HintPath>$(REVITAPI)\RevitAPIUI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUIMacros">
       <HintPath>$(REVITAPI)\RevitAPIUIMacros.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
