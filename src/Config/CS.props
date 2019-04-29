@@ -3,10 +3,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <RevitVersionNumber Condition=" '$(RevitVersionNumber)' == '' ">2019</RevitVersionNumber>
+    <RevitVersionNumber Condition=" '$(RevitVersionNumber)' == '' ">2020</RevitVersionNumber>
     <OutputPath Condition=" '$(OutputPath)' == '' ">$(SolutionDir)..\bin\$(Platform)\$(Configuration)</OutputPath>
     <NunitPath Condition=" '$(NunitPath)' == '' ">$(SolutionDir)..\lib\NUnit</NunitPath>
-    <REVITAPI Condition=" '$(REVITAPI)' == '' ">$(SolutionDir)..\lib\Revit $(RevitVersionNumber)\net452</REVITAPI>
+    <REVITAPI Condition=" '$(REVITAPI)' == '' ">$(SolutionDir)..\lib\Revit $(RevitVersionNumber)\net47</REVITAPI>
     <REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit Architecture $(RevitVersionNumber)</REVITAPI>
     <REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit $(RevitVersionNumber)</REVITAPI>
 	<REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit Preview Release</REVITAPI>
@@ -21,10 +21,10 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <RevitVersionNumber Condition=" '$(RevitVersionNumber)' == '' ">2019</RevitVersionNumber>
+    <RevitVersionNumber Condition=" '$(RevitVersionNumber)' == '' ">2020</RevitVersionNumber>
     <OutputPath Condition=" '$(OutputPath)' == '' ">$(SolutionDir)..\bin\$(Platform)\$(Configuration)</OutputPath>
     <NunitPath Condition=" '$(NunitPath)' == '' ">$(SolutionDir)..\lib\NUnit</NunitPath>
-    <REVITAPI Condition=" '$(REVITAPI)' == '' ">$(SolutionDir)..\lib\Revit $(RevitVersionNumber)\net452</REVITAPI>
+    <REVITAPI Condition=" '$(REVITAPI)' == '' ">$(SolutionDir)..\lib\Revit $(RevitVersionNumber)\net47</REVITAPI>
     <REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit Architecture $(RevitVersionNumber)</REVITAPI>
     <REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit $(RevitVersionNumber)</REVITAPI>
 	<REVITAPI Condition=" !Exists('$(REVITAPI)') ">C:\Program Files\Autodesk\Revit Preview Release</REVITAPI>
