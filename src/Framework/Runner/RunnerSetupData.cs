@@ -53,7 +53,7 @@ namespace RTF.Framework
             //might return Unknown version.
             //if (products.Any())
             //{
-            //    products = products.Where(x => x.Version == RevitVersion.Revit2015 || x.Version==RevitVersion.Revit2016 || x.Version==RevitVersion.Revit2017 || x.Version==RevitVersion.Revit2018 || x.Version==RevitVersion.Revit2019 || x.Version==RevitVersion.Revit2020).ToList();
+            //    products = products.Where(x => x.Version == RevitVersion.Revit2015 || x.Version==RevitVersion.Revit2016 || x.Version==RevitVersion.Revit2017 || x.Version==RevitVersion.Revit2018 || x.Version==RevitVersion.Revit2019 || x.Version==RevitVersion.Revit2020 || x.Version==RevitVersion.Revit Preview Release).ToList();
             //}
 
             return products;
