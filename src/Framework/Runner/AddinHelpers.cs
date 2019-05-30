@@ -20,9 +20,12 @@ namespace RTF.Framework
         public static void FullyQualifyAddinPaths (FileInfo copiedAddinFile, FileInfo originalAddin)
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load(copiedAddinFile.FullName);
+            using (StreamReader streamReader = new StreamReader(copiedAddinFile.FullName, true))
+            {
+                doc.Load(streamReader);
+            }
 
-            foreach(XmlElement addinElement in doc.DocumentElement.ChildNodes)
+            foreach (XmlElement addinElement in doc.DocumentElement.ChildNodes)
             {
                 //if this element is an addin attempt to make the assembly path a full path
              if (addinElement.LocalName != "AddIn")
