@@ -41,9 +41,28 @@ Options:
 
 As an example, the following command:
 ```
-RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"C:\Program Files\Autodesk\Revit 2019\Revit.exe" --continuous
+RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"C:\Program Files\Autodesk\Revit 2019\Revit.exe" --copyAddins --continuous
 ```
 will execute all tests in `MyTest.dll` located in `C:\MyTestDir` and place all results in `MyTestResults.xml` (in the same folder). It will use Revit 2019 as specified and will run all tests without shutting down Revit.
+
+As another example:
+```
+RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"D：\Revit\Revit.exe" --copyAddins --continuous
+```
+You specified a non-normally installed Revit.exe, you do not need to add the '--copyAddins' parameter. You need to manually copy a `Dynamo.addin` file to your working directory 'C:\MyTestDir'. The `dynamo.addin` file looks like this:
+```
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+<AddIn Type="Application">
+<Name>Dynamo For Revit</Name>
+<Assembly>"'Your DynamoRevit folder'\Revit\DynamoRevitVersionSelector.dll"</Assembly>
+<AddInId>8D83C886-B739-4ACD-A9DB-1BC78F315B2B</AddInId>
+<FullClassName>Dynamo.Applications.VersionLoader</FullClassName>
+<VendorId>ADSK</VendorId>
+<VendorDescription>Dynamo</VendorDescription>
+</AddIn>
+</RevitAddIns>
+```
 
 The results of the run as well as any `Console.WriteLine` or `Console.Error.WriteLine` from test will be shown in the command window and written ot the results xml file, e.g.:
 
