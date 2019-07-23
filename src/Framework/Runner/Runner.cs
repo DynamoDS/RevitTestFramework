@@ -358,6 +358,7 @@ namespace RTF.Framework
             Timeout = setupData.Timeout;
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
+            CopyAddins = (setupData as RunnerSetupData).CopyAddins;
 
             Initialize();
         }
@@ -864,7 +865,8 @@ namespace RTF.Framework
 
             if (Products == null || !Products.Any())
             {
-                throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
+                if(String.IsNullOrEmpty(RevitPath) || !File.Exists(RevitPath))
+                    throw new ArgumentException("No appropriate Revit versions found on this machine for testing.");
             }
 
             if (String.IsNullOrEmpty(RevitPath))
@@ -1762,8 +1764,19 @@ namespace RTF.Framework
                 AssemblyLoader loader;
                 AssemblyData assData;
 
-                var product = Products[_selectedProduct];
-                var revitDirectory = product.InstallLocation;
+                RevitProduct product = null;
+                String revitDirectory = "";
+                if(Products == null || !Products.Any())
+                {
+                    if(!String.IsNullOrEmpty(RevitPath) && File.Exists(RevitPath))
+                        revitDirectory = Path.GetDirectoryName(RevitPath);
+                }
+                else
+                {
+                    product = Products[_selectedProduct];
+                    revitDirectory = product.InstallLocation;
+                }
+
                 var resolver = new DefaultAssemblyResolver(revitDirectory, AdditionalResolutionDirectories);
 
                 if (!isTesting)
