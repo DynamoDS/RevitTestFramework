@@ -47,7 +47,7 @@ will execute all tests in `MyTest.dll` located in `C:\MyTestDir` and place all r
 
 As another example:
 ```
-RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"D：\Revit\Revit.exe" --copyAddins --continuous
+RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"D：\Revit\Revit.exe" --continuous
 ```
 You specified a non-normally installed Revit.exe, you do not need to add the '--copyAddins' parameter. You need to manually copy a `Dynamo.addin` file to your working directory 'C:\MyTestDir'. The `dynamo.addin` file looks like this:
 ```
