@@ -54,6 +54,7 @@ namespace RTF.Framework
         private bool _gui = true;
         private string _revitPath;
         private bool _copyAddins = true;
+        private bool _copyUserAddins = true;
         private int _timeout = 120000;
         private bool _concat;
         private List<string> _copiedAddins = new List<string>();
@@ -237,6 +238,16 @@ namespace RTF.Framework
         {
             get { return _copyAddins; }
             set { _copyAddins = value; }
+        }
+
+        /// <summary>
+        /// Specified whether to copy addins from the 
+        /// User App Data Revit addin folder to the current working directory
+        /// </summary>
+        public bool CopyUserAddins
+        {
+            get { return _copyUserAddins; }
+            set { _copyUserAddins = value; }
         }
 
         /// <summary>
@@ -474,6 +485,19 @@ namespace RTF.Framework
             if (CopyAddins)
             {
                 var files = Directory.GetFiles(GetRevitAddinFolder());
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var fileName = Path.GetFileName(file);
+                        File.Copy(file, Path.Combine(WorkingDirectory, fileName), true);
+                        CopiedAddins.Add(fileName);
+                    }
+                }
+            }
+            if (CopyUserAddins)
+            {
+                var files = Directory.GetFiles(GetRevitUserAddinFolder());
                 foreach (var file in files)
                 {
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
@@ -1432,8 +1456,25 @@ namespace RTF.Framework
         /// <summary>
         /// This function returns the current Revit addin folder
         /// </summary>
-        /// <returns></returns>
         private string GetRevitAddinFolder()
+        {
+            var prod = GetRevitProduct();
+            return prod.AllUsersAddInFolder;
+        }
+
+        /// <summary>
+        /// This function returns the current user's Revit addin folder
+        /// </summary>
+        private string GetRevitUserAddinFolder()
+        {
+            var prod = GetRevitProduct();
+            return prod.CurrentUserAddInFolder;
+        }
+
+        /// <summary>
+        /// This function returns the Revit product
+        /// </summary>
+        private RevitProduct GetRevitProduct()
         {
             var prod =
                     Products.FirstOrDefault(
@@ -1441,7 +1482,7 @@ namespace RTF.Framework
                             System.String.CompareOrdinal(
                             Path.GetDirectoryName(x.InstallLocation), Path.GetDirectoryName(RevitPath)) ==
                             0);
-            return prod.AllUsersAddInFolder;
+            return prod;
         }
 
         /// <summary>
