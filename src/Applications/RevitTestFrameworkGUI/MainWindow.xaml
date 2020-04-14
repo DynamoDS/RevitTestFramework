@@ -269,7 +269,27 @@
                           SelectedItem="{Binding Path=GroupingType}" 
                           SelectionChanged="UpdateRequired"/>
                 </StackPanel>
-
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="ExportJournal" IsChecked="{Binding Path=IsExport, Mode=TwoWay}" Margin="0,5,0,5">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="When selected, all tests journal file will be created by a sample and won't be deleted."></TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <Button Content="Export" VerticalAlignment="Center" Margin="8,0,0,0" 
+                            Command="{Binding ExportCommand}"
+                            IsEnabled="{Binding IsExport}"/>
+                    <TextBlock Text="JournalSample:" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock.ToolTip>
+                            <TextBlock Text="Specify a timeout in milliseconds for tests which fail and hang the testing process."></TextBlock>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+                    <TextBox Height="18" Margin="5,0,0,0" Width="518" 
+                             Text="{Binding Path=JournalSample}" 
+                             TextChanged="UpdateRequired"
+                             PreviewDragOver="OnPreviewDragOver"/>
+                    <Button Height="18" VerticalAlignment="Center" Content="..." Width="28"
+                            Command="{Binding SetJournalSampleCommand}"/>
+                </StackPanel>
             </StackPanel>
 
             <TreeView Grid.Row="2" MinHeight="200"

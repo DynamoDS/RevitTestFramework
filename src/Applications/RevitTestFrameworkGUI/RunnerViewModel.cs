@@ -91,6 +91,9 @@ namespace RTF.Applications
         private int skippedTestCount;
         private int failedTestCount;
 
+        private string journalSamplePath = "";
+        private bool isExport = false;
+
         #endregion
 
         #region public properties
@@ -104,6 +107,7 @@ namespace RTF.Applications
                 RaisePropertyChanged();
                 RaisePropertyChanged(nameof(RunText));
                 RunCommand.RaiseCanExecuteChanged();
+                ExportCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -305,6 +309,16 @@ namespace RTF.Applications
             }
         }
 
+        public string JournalSample
+        {
+            get { return journalSamplePath; }
+            set
+            {
+                journalSamplePath = value;
+                RaisePropertyChanged();
+            }
+        }
+
         /// <summary>
         /// true to run tests without restarting Revit in between each tests
         /// </summary>
@@ -333,6 +347,21 @@ namespace RTF.Applications
                     runner.GroupByModel = value;
                     RaisePropertyChanged();
                 }
+            }
+        }
+
+        public bool IsExport
+        {
+            get { return isExport; }
+            set
+            {
+                if (isExport != value)
+                {
+                    isExport = value;
+                    RaisePropertyChanged();
+                    ExportCommand.RaiseCanExecuteChanged();
+                }
+                
             }
         }
 
@@ -411,7 +440,9 @@ namespace RTF.Applications
         public DelegateCommand<string> SetAssemblyPathCommand { get; set; }
         public DelegateCommand<string> SetResultsPathCommand { get; set; }
         public DelegateCommand<string> SetWorkingPathCommand { get; set; }
+        public DelegateCommand<string> SetJournalSampleCommand { get; set; }
         public DelegateCommand<object> RunCommand { get; set; }
+        public DelegateCommand ExportCommand { get; set; }
         public DelegateCommand CleanupCommand { get; set; }
         public DelegateCommand CancelCommand { get; set; }
         public DelegateCommand UpdateCommand { get; set; }
@@ -511,7 +542,9 @@ namespace RTF.Applications
             SetAssemblyPathCommand = new DelegateCommand<string>(SetAssemblyPath, CanSetAssemblyPath);
             SetResultsPathCommand = new DelegateCommand<string>(SetResultsPath, CanSetResultsPath);
             SetWorkingPathCommand = new DelegateCommand<string>(SetWorkingDirectory, CanSetWorkingPath);
+            SetJournalSampleCommand = new DelegateCommand<string>(SetJournalSamplePath, CanSetJournalSample);
             RunCommand = new DelegateCommand<object>(Run, CanRun);
+            ExportCommand = new DelegateCommand(ExportJournal, CanExport);
             CleanupCommand = new DelegateCommand(runner.Cleanup, CanCleanup);
             CancelCommand = new DelegateCommand(Cancel, CanCancel);
             UpdateCommand = new DelegateCommand(Update, CanUpdate);
@@ -869,6 +902,7 @@ namespace RTF.Applications
         {
             RaisePropertyChanged(nameof(SelectedTestSummary));
             RunCommand.RaiseCanExecuteChanged();
+            ExportCommand.RaiseCanExecuteChanged();
         }
 
         private bool CanUpdate()
@@ -1018,6 +1052,67 @@ namespace RTF.Applications
         private bool CanCleanup()
         {
             return true;
+        }
+
+        private bool CanExport()
+        {
+            return runner.GetRunnableTests().Any();
+        }
+
+        private void ExportJournal()
+        {
+            if (Continuous || GroupByModel) 
+            {
+                MessageBox.Show("Can't export Continuous or GroupByModel journal file!");
+                return;
+            }
+            if (String.IsNullOrEmpty(JournalSample) || !File.Exists(JournalSample)) 
+            {
+                MessageBox.Show("Should set a JournalSample File!");
+                return;
+            }
+            var dirs = new FolderBrowserDialog();
+
+            if (dirs.ShowDialog() == DialogResult.OK)
+            {
+                String ExportFolder = dirs.SelectedPath;
+                runner.ExportJournal(ExportFolder, JournalSample);
+            }
+        }
+
+        private bool CanSetJournalSample(string path)
+        {
+            return true;
+        }
+
+        private void SetJournalSamplePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                var files = new OpenFileDialog()
+                {
+                    Filter = "txt files (*.txt) | *.txt",
+                    RestoreDirectory = true,
+                    DefaultExt = ".txt"
+                };
+
+                var filesResult = files.ShowDialog();
+
+                if (filesResult != null && filesResult == true)
+                {
+                    JournalSample = files.FileName;
+                }
+            }
+            else
+            {
+                var fi = new FileInfo(path);
+                if (fi.Extension != ".txt")
+                {
+                    return;
+                }
+
+                JournalSample = path;
+            }
         }
 
         #endregion
