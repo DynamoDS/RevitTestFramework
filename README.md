@@ -105,7 +105,6 @@ RevitTestFrameworkGUI.exe can also take an argument for the test assembly path a
 
 JournalSample like this:
 ```
-' Please refer to wiki page for D4R regression details - https://wiki.autodesk.com/display/aeceng/Dynamo+for+Revit+Regression+Tests 
 'Dim Jrn 
 Set Jrn = CrsJournalScript 
 Dim fs: Set fs = CreateObject("Scripting.FileSystemObject") 
