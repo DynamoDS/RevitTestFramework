@@ -48,7 +48,6 @@ will execute all tests in `MyTest.dll` located in `C:\MyTestDir` and place all r
 As another example:
 ```
 RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"D：\Revit\Revit.exe" --continuous
-```
 You specified a non-normally installed Revit.exe, you do not need to add the '--copyAddins' parameter. You need to manually copy a `Dynamo.addin` file to your working directory 'C:\MyTestDir'. The `dynamo.addin` file looks like this:
 ```
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
@@ -97,10 +96,26 @@ RevitTestFrameworkGUI.exe can also take an argument for the test assembly path a
 `Results File Path` - Path to the xml file containing the tests results. If it's an existing file, RTF will replace it.  
 `Working Directory` - Path to where the testing Revit files are.  
 `Additional Resolution Directories` - Path to find Dynamo Core location when it is not set in the `Dynamo.Config` in DynamoRevit bin folder.  
-`Debug` - Check this if you decide to launch a debug session.
+`Debug` - Check this if you decide to launch a debug session.  
 `Timeout` - in milliseconds, the maximum time for a test to run. If a test doesn't finish in this time, Revit will be forcefully terminated and new test session without the offending test will start (the offending test will be marked as `timedout`).  
 `Continuous` - same as above, run tests without restarting Revit for each test.  
 `GroupByModel` - same as above, run tests with the same model without reopening the model.  
+`ExportJournal` - Enable the export journal files use a JournalSample to create expected journal files.  
+`JournalSample` - Path to a txt which will use to create journal files.  
+
+JournalSample like this:
+```
+' Please refer to wiki page for D4R regression details - https://wiki.autodesk.com/display/aeceng/Dynamo+for+Revit+Regression+Tests 
+'Dim Jrn 
+Set Jrn = CrsJournalScript 
+Dim fs: Set fs = CreateObject("Scripting.FileSystemObject") 
+Jrn.Command "StartupPage" , "Open this project , ID_FILE_MRU_FIRST" 
+Jrn.Data "MRUFileName"  , "{0}" 
+Jrn.RibbonEvent "Execute external command:{1}:{2}" 
+Jrn.Data "APIStringStringMapJournalData", 6, "testName", "{3}", "fixtureName", "{4}Tests", "testAssembly", "{5}", "resultsPath", "{6}", "debug","{7}","workingDirectory","{8}" 
+Jrn.Command "Internal" , "Flush undo and redo stacks , ID_FLUSH_UNDO" 
+Jrn.Command "SystemMenu" , "Quit the application; prompts to save projects , ID_APP_EXIT"
+```
 
 ## Results  
 

@@ -1,0 +1,10 @@
+' Please refer to wiki page for D4R regression details - https://wiki.autodesk.com/display/aeceng/Dynamo+for+Revit+Regression+Tests 
+'Dim Jrn 
+Set Jrn = CrsJournalScript 
+Dim fs: Set fs = CreateObject("Scripting.FileSystemObject") 
+Jrn.Command "StartupPage" , "Open this project , ID_FILE_MRU_FIRST" 
+Jrn.Data "MRUFileName"  , "{0}" 
+Jrn.RibbonEvent "Execute external command:{1}:{2}" 
+Jrn.Data "APIStringStringMapJournalData", 6, "testName", "{3}", "fixtureName", "{4}Tests", "testAssembly", "{5}", "resultsPath", "{6}", "debug","{7}","workingDirectory","{8}" 
+Jrn.Command "Internal" , "Flush undo and redo stacks , ID_FLUSH_UNDO" 
+Jrn.Command "SystemMenu" , "Quit the application; prompts to save projects , ID_APP_EXIT"

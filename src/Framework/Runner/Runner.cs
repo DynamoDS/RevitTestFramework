@@ -643,7 +643,7 @@ namespace RTF.Framework
 
                 DeleteAddins();
 
-                if (WorkingDirectory == null) return;
+                if (String.IsNullOrEmpty(WorkingDirectory)) return;
 
                 var journals = Directory.GetFiles(WorkingDirectory, "journal.*.txt");
                 foreach (var journal in journals)
@@ -766,6 +766,16 @@ namespace RTF.Framework
                 Console.WriteLine("ERROR: Failed to initialize test runner.");
                 Console.WriteLine(ex.Message);
                 return null;
+            }
+        }
+
+        public void ExportJournal(String DstDir, String JournalSample)
+        {
+            var runnable = GetRunnableTests();
+
+            foreach(var test in runnable)
+            {
+                SetupJournalForExport(test, DstDir, JournalSample);
             }
         }
 
@@ -1484,6 +1494,33 @@ namespace RTF.Framework
                 File.Delete(file);
             }
             CopiedAddins.Clear();
+        }
+
+        private void SetupJournalForExport(ITestData td, String DstDir, String JournalSample)
+        {
+            var JournalPath = Path.Combine(DstDir, td.Name + ".txt");
+            CreateJournalForExport(JournalPath, JournalSample, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, td.ModelPath);
+        }
+
+        private void CreateJournalForExport(string path, string JournalSample, string testName, string fixtureName, string assemblyPath, string modelPath)
+        {
+            string content = "";
+            StreamReader sr = new StreamReader(JournalSample);
+            content = sr.ReadToEnd();
+            sr.Close();
+            if(String.IsNullOrEmpty(WorkingDirectory)||!Directory.Exists(WorkingDirectory))
+            {
+                modelPath = Path.GetFileName(modelPath);
+                assemblyPath = Path.GetFileName(assemblyPath);
+            }
+            using (var tw = new StreamWriter(path, false))
+            {
+                var journal = String.Format(content,
+                    modelPath, PluginGuid, PluginClass, testName, fixtureName.Replace("Tests", ""), assemblyPath, testName + ".xml", IsDebug, WorkingDirectory);
+
+                tw.Write(journal);
+                tw.Flush();
+            }
         }
 
         #endregion
