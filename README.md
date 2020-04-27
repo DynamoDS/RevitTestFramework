@@ -20,23 +20,26 @@ A console application which allows running RTF without a user interface. If you'
 ```
 Options:   
 
-         --dir=[VALUE]          The full path to the working directory. The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.  
-    -a,  --assembly=[VALUE]     The full path to the assembly containing your tests.  
-    -r,  --results=[VALUE]      This is the full path to an .xml file that will contain the results. 
-    -f,  --fixture=[VALUE]      The full name (with namespace) of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.(OPTIONAL)  
-    -t,  --testName[=VALUE]     The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)    
-         --category[=VALUE]     The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)   
-         --exclude[=VALUE]      The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases that belongs to that category will not be run. (OPTIONAL)  
-    -c,  --concatenate          Concatenate the results from this run of RTF with an existing results file if one exists at the path specified. The default behavior is to replace the existing results file. (OPTIONAL)  
-         --revit[=VALUE]        The Revit executable to be used for testing. If no executable is specified, RTF will use the first version of Revit that is found on the machine using the RevitAddinUtility. (OPTIONAL)  
-         --copyAddins           Specify whether to copy the addins from the Revit folder to the current working directory. Copying the addins from the Revit folder will cause the test process to simulate the typical setup on your machine. (OPTIONAL)  
-         --dry                  Conduct a dry run. (OPTIONAL)  
-    -x,  --clean                Cleanup journal files after test completion. (OPTIONAL)   
-         --continuous           Run all selected tests in one Revit session. (OPTIONAL)  
-         --groupByModel         Run tests with same model without reopening the model for faster execution, requires --continuous. (OPTIONAL)
-         --time                 The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)  
-    -d,  --debug                Should RTF attempt to attach to a debugger?. (OPTIONAL)  
-    -h,  --help                 Show this message and exit. (OPTIONAL)  
+         --dir=[VALUE]           The full path to the working directory. The working directory is the directory in which RTF will generate the journal and the addin to Run Revit. Revit's run-by-journal capability requires that all addins which need to be loaded are in the same directory as the journal file. So, if you're testing other addins on top of Revit using RTF, you'll need to put those addins in whatever directory you specify as the working directory.  
+    -a,  --assembly=[VALUE]      The full path to the assembly containing your tests.  
+    -r,  --results=[VALUE]       This is the full path to an .xml file that will contain the results. 
+    -f,  --fixture=[VALUE]       The full name (with namespace) of a test fixture to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly.(OPTIONAL)  
+    -t,  --testName[=VALUE]      The name of a test to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)    
+         --category[=VALUE]      The name of a test category to run. If no fixture, no category and no test names are specified, RTF will run all tests in the assembly. (OPTIONAL)   
+         --exclude[=VALUE]       The name of a test category to exclude. This has a higher priortiy than other settings. If a specified category is set here, any test cases that belongs to that category will not be run. (OPTIONAL)  
+    -c,  --concatenate           Concatenate the results from this run of RTF with an existing results file if one exists at the path specified. The default behavior is to replace the existing results file. (OPTIONAL)  
+         --revit[=VALUE]         The Revit executable to be used for testing. If no executable is specified, RTF will use the first version of Revit that is found on the machine using the RevitAddinUtility. (OPTIONAL)  
+         --copyAddins            Specify whether to copy the addins from the Revit folder to the current working directory. Copying the addins from the Revit folder will cause the test process to simulate the typical setup on your machine. (OPTIONAL)  
+         --dry                   Conduct a dry run. (OPTIONAL)  
+    -x,  --clean                 Cleanup journal files after test completion. (OPTIONAL)   
+         --continuous            Run all selected tests in one Revit session. (OPTIONAL)  
+         --groupByModel          Run tests with same model without reopening the model for faster execution, requires --continuous. (OPTIONAL)
+         --isExport              Export the journal file for each wanted test. (OPTIONAL)
+         --journalSample=[VALUE] A sample file for export. (OPRIONAL)
+         --exportFolder=[VALUE]  A folder to store the export journal files. (OPTIONAL)
+         --time                  The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)  
+    -d,  --debug                 Should RTF attempt to attach to a debugger?. (OPTIONAL)  
+    -h,  --help                  Show this message and exit. (OPTIONAL)  
 ```
 
 As an example, the following command:
@@ -81,6 +84,11 @@ WARNING: One or more journal files could not be deleted.
 ```
 
 The warning about some journal files not being deleted can be safely ignored.
+
+You can use console application to generate Journal files for exporting:
+```
+RevitTestFrameworkConsole.exe -a MyTest.dll -t:[TestName] --isExport --journalSample MyJournalSample.txt --exportFolder C:\MyFolder
+```
 
 ### RevitTestFrameworkGUI.exe   
 Provides a visual interface for you to choose tests from a treeview and to visualize the results of the tests as they are run. The same settings provided in the command line argument help above are available in the UI. The UI also allows you to save your testing session.

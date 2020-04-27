@@ -251,6 +251,15 @@ namespace RTF.Framework
 
         public bool GroupByModel { get; set; }
 
+        /// <summary>
+        /// True to export the journal file for each selected test
+        /// </summary>
+        public bool IsExport { get; set; }
+
+        public string JournalSample { get; set; }
+
+        public string ExportFolder { get; set; }
+
         public List<SelectionHint> SelectionHints { get; set; } = new List<SelectionHint>();
 
         public GroupingType GroupingType
@@ -332,7 +341,8 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(setupData.WorkingDirectory) || !Directory.Exists(setupData.WorkingDirectory))
             {
-                setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if(!(setupData as RunnerSetupData).IsExport)
+                    setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
             if (!String.IsNullOrEmpty(setupData.Category))
@@ -359,6 +369,9 @@ namespace RTF.Framework
             IsTesting = setupData.IsTesting;
             ExcludedCategory = setupData.ExcludedCategory;
             CopyAddins = (setupData as RunnerSetupData).CopyAddins;
+            IsExport = (setupData as RunnerSetupData).IsExport;
+            JournalSample = (setupData as RunnerSetupData).JournalSample;
+            ExportFolder = (setupData as RunnerSetupData).ExportFolder;
 
             Initialize();
         }
@@ -769,13 +782,13 @@ namespace RTF.Framework
             }
         }
 
-        public void ExportJournal(String DstDir, String JournalSample)
+        public void ExportJournal()
         {
             var runnable = GetRunnableTests();
 
             foreach(var test in runnable)
             {
-                SetupJournalForExport(test, DstDir, JournalSample);
+                SetupJournalForExport(test);
             }
         }
 
@@ -859,7 +872,8 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(WorkingDirectory) || !Directory.Exists(WorkingDirectory))
             {
-                WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if(!IsExport)
+                    WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
             if (!String.IsNullOrEmpty(Category))
@@ -1496,13 +1510,13 @@ namespace RTF.Framework
             CopiedAddins.Clear();
         }
 
-        private void SetupJournalForExport(ITestData td, String DstDir, String JournalSample)
+        private void SetupJournalForExport(ITestData td)
         {
-            var JournalPath = Path.Combine(DstDir, td.Name + ".txt");
-            CreateJournalForExport(JournalPath, JournalSample, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, td.ModelPath);
+            var JournalPath = Path.Combine(ExportFolder, td.Name + ".txt");
+            CreateJournalForExport(JournalPath, td.Name, td.Fixture.Name, td.Fixture.Assembly.Path, td.ModelPath);
         }
 
-        private void CreateJournalForExport(string path, string JournalSample, string testName, string fixtureName, string assemblyPath, string modelPath)
+        private void CreateJournalForExport(string path, string testName, string fixtureName, string assemblyPath, string modelPath)
         {
             string content = "";
             StreamReader sr = new StreamReader(JournalSample);
@@ -1904,6 +1918,9 @@ namespace RTF.Framework
                 {"x|clean", "Cleanup journal files after test completion. (OPTIONAL)", v=> setupData.CleanUp = v != null},
                 {"continuous", "Run all selected tests in one Revit session. (OPTIONAL)", v=> setupData.Continuous = v != null},
                 {"groupByModel", "Run tests with same model without reopening the model for faster execution, requires continuous. (OPTIONAL)", v=> setupData.GroupByModel = v != null },
+                {"isExport","Export the journal file for each wanted test. (OPTIONAL)",v=> setupData.IsExport = v != null },
+                {"journalSample=","A sample file for export. (OPRIONAL)", v=> setupData.JournalSample = Path.GetFullPath(v)},
+                {"exportFolder=","A folder to store the export journal files. (OPTIONAL)", v=> setupData.ExportFolder = Path.GetFullPath(v)},
                 {"time", "The time, in milliseconds, after which RTF will close the testing process automatically. (OPTIONAL)", v=>setupData.Timeout = Int32.Parse(v) },
                 {"d|debug", "Should RTF attempt to attach to a debugger?. (OPTIONAL)", v=>setupData.IsDebug = v != null },
                 {"h|help", "Show this message and exit. (OPTIONAL)", v=> showHelp = v != null }
@@ -1934,9 +1951,9 @@ namespace RTF.Framework
                 throw new Exception();
             }
 
-            if (string.IsNullOrEmpty(setupData.WorkingDirectory))
+            if (string.IsNullOrEmpty(setupData.WorkingDirectory) && !setupData.IsExport) 
             {
-                throw new Exception("You must specify a working directory.");
+                throw new Exception("You must specify a working directory except for export journal.");
             }
 
             if (string.IsNullOrEmpty(setupData.TestAssembly))
@@ -1944,9 +1961,25 @@ namespace RTF.Framework
                 throw new Exception("You must specify a test assembly.");
             }
 
-            if (string.IsNullOrEmpty(setupData.Results))
+            if (string.IsNullOrEmpty(setupData.Results) && !setupData.IsExport)
             {
-                throw new Exception("You must specify a results file.");
+                throw new Exception("You must specify a results file except for export journal.");
+            }
+
+            if(setupData.IsExport)
+            {
+                if(setupData.Continuous || setupData.GroupByModel)
+                {
+                    throw new Exception("You should not set Continuous or GroupByModel when you want to export journal files.");
+                }
+                if(string.IsNullOrEmpty(setupData.JournalSample) || !File.Exists(setupData.JournalSample))
+                {
+                    throw new Exception("You should set a JournalSample File!");
+                }
+                if(string.IsNullOrEmpty(setupData.ExportFolder) || !Directory.Exists(setupData.ExportFolder))
+                {
+                    throw new Exception("You should specify an Export folder to store the exported journal files.");
+                }
             }
 
             return setupData;
