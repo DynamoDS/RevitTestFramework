@@ -341,7 +341,8 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(setupData.WorkingDirectory) || !Directory.Exists(setupData.WorkingDirectory))
             {
-                setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if(!(setupData as RunnerSetupData).IsExport)
+                    setupData.WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
             if (!String.IsNullOrEmpty(setupData.Category))
@@ -871,7 +872,8 @@ namespace RTF.Framework
 
             if (String.IsNullOrEmpty(WorkingDirectory) || !Directory.Exists(WorkingDirectory))
             {
-                WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if(!IsExport)
+                    WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
             if (!String.IsNullOrEmpty(Category))
