@@ -17,7 +17,12 @@ namespace RTF.Applications
 
                 runner = new Runner(setupData);
 
-                Run();
+                if(runner.IsExport)
+                {
+                    runner.ExportJournal();
+                }
+                else
+                    Run();
             }
             catch (Exception ex)
             {

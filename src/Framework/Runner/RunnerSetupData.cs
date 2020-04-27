@@ -30,6 +30,9 @@ namespace RTF.Framework
         public bool CopyAddins { get; set; }
         public bool IsTesting { get; set; }
         public int SelectedProduct { get; set; }
+        public bool IsExport { get; set; }
+        public string JournalSample { get; set; }
+        public string ExportFolder { get; set; }
 
         public RunnerSetupData()
         {

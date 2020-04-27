@@ -91,9 +91,6 @@ namespace RTF.Applications
         private int skippedTestCount;
         private int failedTestCount;
 
-        private string journalSamplePath = "";
-        private bool isExport = false;
-
         #endregion
 
         #region public properties
@@ -311,10 +308,10 @@ namespace RTF.Applications
 
         public string JournalSample
         {
-            get { return journalSamplePath; }
+            get { return runner.JournalSample; }
             set
             {
-                journalSamplePath = value;
+                runner.JournalSample = value;
                 RaisePropertyChanged();
             }
         }
@@ -350,14 +347,17 @@ namespace RTF.Applications
             }
         }
 
+        /// <summary>
+        /// True to export the journal file for each selected test
+        /// </summary>
         public bool IsExport
         {
-            get { return isExport; }
+            get { return runner.IsExport; }
             set
             {
-                if (isExport != value)
+                if (runner.IsExport != value)
                 {
-                    isExport = value;
+                    runner.IsExport = value;
                     RaisePropertyChanged();
                     ExportCommand.RaiseCanExecuteChanged();
                 }
@@ -1075,8 +1075,8 @@ namespace RTF.Applications
 
             if (dirs.ShowDialog() == DialogResult.OK)
             {
-                String ExportFolder = dirs.SelectedPath;
-                runner.ExportJournal(ExportFolder, JournalSample);
+                runner.ExportFolder = dirs.SelectedPath;
+                runner.ExportJournal();
             }
         }
 
