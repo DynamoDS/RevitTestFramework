@@ -51,7 +51,6 @@ will execute all tests in `MyTest.dll` located in `C:\MyTestDir` and place all r
 As another example:
 ```
 RevitTestFrameworkConsole.exe --dir C:\MyTestDir -a MyTest.dll -r MyTestResults.xml -revit:"D：\Revit\Revit.exe" --continuous
-```
 You specified a non-normally installed Revit.exe, you do not need to add the '--copyAddins' parameter. You need to manually copy a `Dynamo.addin` file to your working directory 'C:\MyTestDir'. The `dynamo.addin` file looks like this:
 ```
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
@@ -114,7 +113,6 @@ RevitTestFrameworkGUI.exe can also take an argument for the test assembly path a
 
 JournalSample like this:
 ```
-' Please refer to wiki page for D4R regression details - https://wiki.autodesk.com/display/aeceng/Dynamo+for+Revit+Regression+Tests 
 'Dim Jrn 
 Set Jrn = CrsJournalScript 
 Dim fs: Set fs = CreateObject("Scripting.FileSystemObject") 
