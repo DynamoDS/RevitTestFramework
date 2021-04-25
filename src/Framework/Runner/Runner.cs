@@ -430,7 +430,7 @@ namespace RTF.Framework
                     Console.WriteLine("ERROR: Revit Addin Folder \"{0}\" don't exist.", revitAddinFolder);
                     return false;
                 }
-                var files = Directory.GetFiles(GetRevitAddinFolder());
+                var files = Directory.GetFiles(revitAddinFolder);
                 foreach (var file in files)
                 {
                     if (file.EndsWith(".addin", StringComparison.OrdinalIgnoreCase))
