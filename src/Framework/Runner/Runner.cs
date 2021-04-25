@@ -424,6 +424,12 @@ namespace RTF.Framework
             // so that they can be loaded.
             if (CopyAddins)
             {
+                var revitAddinFolder = GetRevitAddinFolder();
+                if(!Directory.Exists(revitAddinFolder))
+                {
+                    Console.WriteLine("ERROR: Revit Addin Folder \"{0}\" don't exist.", revitAddinFolder);
+                    return false;
+                }
                 var files = Directory.GetFiles(GetRevitAddinFolder());
                 foreach (var file in files)
                 {
