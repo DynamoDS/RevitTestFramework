@@ -87,11 +87,11 @@ namespace RTF.Applications
                 case TestStatus.Cancelled:
                     return new SolidColorBrush(Colors.DarkGray);
                 case TestStatus.TimedOut:
-                    return new SolidColorBrush(Colors.Orange);
+                    return new SolidColorBrush(Colors.DarkRed);
                 case TestStatus.Error:
-                    return new SolidColorBrush(Colors.OrangeRed);
+                    return new SolidColorBrush(Colors.DarkRed);
                 case TestStatus.Failure:
-                    return new SolidColorBrush(Colors.OrangeRed);
+                    return new SolidColorBrush(Colors.DarkRed);
                 case TestStatus.Ignored:
                     return Brushes.Transparent;
                 case TestStatus.Inconclusive:
@@ -125,11 +125,11 @@ namespace RTF.Applications
                 case FixtureStatus.None:
                     return Brushes.Transparent;
                 case FixtureStatus.Mixed:
-                    return new SolidColorBrush(Colors.Orange);
+                    return new SolidColorBrush(Colors.DarkRed);
                 case FixtureStatus.Failure:
-                    return new SolidColorBrush(Colors.OrangeRed);
+                    return new SolidColorBrush(Colors.DarkRed);
                 case FixtureStatus.Success:
-                    return new SolidColorBrush(Colors.GreenYellow);
+                    return new SolidColorBrush(Colors.Green);
                 default:
                     return Brushes.Transparent;
             }
@@ -177,10 +177,10 @@ namespace RTF.Applications
         {
             if ((bool) value)
             {
-                return new SolidColorBrush(Colors.LightGreen);
+                return new SolidColorBrush(Colors.DarkGreen);
             }
 
-            return new SolidColorBrush(Colors.LightPink);
+            return new SolidColorBrush(Colors.DarkRed);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
